@@ -67,25 +67,25 @@ class Tasting(Base):
     tasted_at: Mapped[Optional[str]] = mapped_column(
         String(8), nullable=True
     )  # "HH:MM" локальное для юзера
-    gear: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    gear: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    aroma_dry: Mapped[Optional[str]] = mapped_column(nullable=True)
+    aroma_dry: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     aroma_warmed: Mapped[Optional[str]] = mapped_column(
-        nullable=True
+        Text, nullable=True
     )  # объединённый «прогретый/промытый»
     aroma_after: Mapped[Optional[str]] = mapped_column(
-        nullable=True
+        Text, nullable=True
     )  # оставлено для совместимости
 
     effects_csv: Mapped[Optional[str]] = mapped_column(
-        String(300), nullable=True
+        Text, nullable=True
     )  # «Ощущения»
     scenarios_csv: Mapped[Optional[str]] = mapped_column(
-        String(200), nullable=True
+        Text, nullable=True
     )  # «Сценарии»
 
     rating: Mapped[int] = mapped_column(Integer, default=0)
-    summary: Mapped[Optional[str]] = mapped_column(nullable=True)
+    summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     seq_no: Mapped[int] = mapped_column(Integer, nullable=False)
 
     infusions: Mapped[List["Infusion"]] = relationship(
@@ -116,13 +116,11 @@ class Infusion(Base):
     n: Mapped[int] = mapped_column(Integer)
 
     seconds: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    liquor_color: Mapped[Optional[str]] = mapped_column(
-        String(120), nullable=True
-    )
-    taste: Mapped[Optional[str]] = mapped_column(nullable=True)
-    special_notes: Mapped[Optional[str]] = mapped_column(nullable=True)
-    body: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
-    aftertaste: Mapped[Optional[str]] = mapped_column(nullable=True)
+    liquor_color: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    taste: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    special_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    body: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    aftertaste: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     tasting: Mapped["Tasting"] = relationship(back_populates="infusions")
 

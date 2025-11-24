@@ -469,34 +469,17 @@ async def update_photo_progress(
 ) -> None:
     data = await state.get_data()
     progress_id = data.get("progress_msg_id")
-    prev_count = int(data.get("photo_count") or 0)
-
-    if not progress_id and not force:
-        await state.update_data(photo_count=count, photo_limit=limit)
-        return
 
     text, markup = photo_status_markup(count, limit)
     if prefix:
         text = f"{prefix} {text}" if not prefix.endswith(" ") else f"{prefix}{text}"
 
-    if progress_id and prev_count == 0 and count > 0:
+    if progress_id:
         with suppress(Exception):
             await message.bot.delete_message(message.chat.id, progress_id)
-        progress_id = None
 
-    if progress_id:
-        try:
-            await message.bot.edit_message_text(
-                text, message.chat.id, progress_id, reply_markup=markup
-            )
-        except TelegramBadRequest:
-            with suppress(Exception):
-                await message.bot.delete_message(message.chat.id, progress_id)
-            progress_id = None
-
-    if not progress_id:
-        sent = await message.answer(text, reply_markup=markup)
-        progress_id = sent.message_id
+    sent = await message.answer(text, reply_markup=markup)
+    progress_id = sent.message_id
 
     await state.update_data(
         progress_msg_id=progress_id,
@@ -1351,9 +1334,6 @@ async def prompt_photos(target: Union[Message, CallbackQuery], state: FSMContext
         photo_limit=MAX_PHOTOS,
     )
 
-    if isinstance(target, CallbackQuery):
-        await ui(target, prompt_text, reply_markup=None)
-
     if base_message is not None:
         await clear_photo_progress(base_message.bot, base_message.chat.id, state)
         sent = await base_message.answer(prompt_text, reply_markup=prompt_markup)
@@ -1370,10 +1350,10 @@ async def photo_add(message: Message, state: FSMContext):
 
     photos: List[PhotoDraft] = list(data.get("new_photos", []) or [])
     if len(photos) >= limit:
-        await message.answer(
-            f"Уже загружено максимум фото ({limit}/{limit}). Лишние не сохраняю."
-        )
         await update_photo_progress(message, state, len(photos), limit)
+        await message.answer(
+            f"Уже загружено максимум фото ({len(photos)}/{limit}). Лишние не сохраняю."
+        )
         return
 
     uid = data.get("user_id") or message.from_user.id

@@ -210,7 +210,10 @@ AFTERTASTE_SET = [
 ]
 
 PAGE_SIZE = 5
-MAX_PHOTOS = 3
+try:
+    MAX_PHOTOS = max(1, int(os.getenv("PHOTO_LIMIT", "3")))
+except ValueError:
+    MAX_PHOTOS = 3
 CAPTION_LIMIT = 1024
 MESSAGE_LIMIT = 4096
 ALBUM_TIMEOUT = 2.0
@@ -428,24 +431,30 @@ def confirm_del_kb(t_id: int) -> InlineKeyboardBuilder:
     return kb
 
 
+def photo_prompt_content(limit: int) -> Tuple[str, InlineKeyboardMarkup]:
+    text = (
+        "📷 Можешь добавить до {limit} фото. Пришли их одним или несколькими "
+        "сообщениями и дождись ответа, что фото загружены. Если без фото — "
+        "нажми «Пропустить»"
+    ).format(limit=limit)
+    markup = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="Пропустить", callback_data="skip:photos")]
+        ]
+    )
+    return text, markup
+
+
 def photo_status_markup(count: int, limit: int) -> Tuple[str, InlineKeyboardMarkup]:
-    if count >= limit:
-        kb = InlineKeyboardMarkup(
-            inline_keyboard=[
-                [InlineKeyboardButton(text="Готово", callback_data="photos:done")]
-            ]
-        )
-        text = f"✅ Добавлено {count}/{limit}. Нажмите «Готово»."
-    else:
-        kb = InlineKeyboardMarkup(
-            inline_keyboard=[
-                [
-                    InlineKeyboardButton(text="Готово", callback_data="photos:done"),
-                    InlineKeyboardButton(text="Пропустить", callback_data="skip:photos"),
-                ]
-            ]
-        )
-        text = f"Добавлено {count}/{limit}. Отправьте ещё или нажмите «Готово»."
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="Готово", callback_data="photos:done")]
+        ]
+    )
+    text = (
+        f"📷 Фото загружены: {count}/{limit}\n"
+        "Если всё ок, нажми «Готово», чтобы продолжить."
+    )
     return text, kb
 
 
@@ -461,21 +470,19 @@ async def update_photo_progress(
     data = await state.get_data()
     progress_id = data.get("progress_msg_id")
 
-    if not progress_id and not force:
-        await state.update_data(photo_count=count, photo_limit=limit)
-        return
+    text, markup = photo_status_markup(count, limit)
+    if prefix:
+        text = f"{prefix} {text}" if not prefix.endswith(" ") else f"{prefix}{text}"
 
     if progress_id:
         with suppress(Exception):
             await message.bot.delete_message(message.chat.id, progress_id)
 
-    text, markup = photo_status_markup(count, limit)
-    if prefix:
-        text = f"{prefix} {text}" if not prefix.endswith(" ") else f"{prefix}{text}"
-
     sent = await message.answer(text, reply_markup=markup)
+    progress_id = sent.message_id
+
     await state.update_data(
-        progress_msg_id=sent.message_id,
+        progress_msg_id=progress_id,
         photo_count=count,
         photo_limit=limit,
     )
@@ -1185,7 +1192,7 @@ async def _process_album_entry(entry: dict) -> None:
     )
     if extra > 0:
         await message.answer(
-            f"Из-за лимита {limit} фото сохранил только часть альбома."
+            f"Уже загружено максимум фото ({len(photos)}/{limit}). Лишние не сохраняю."
         )
 
 
@@ -1319,24 +1326,18 @@ async def prompt_photos(target: Union[Message, CallbackQuery], state: FSMContext
     else:
         base_message = None
 
+    prompt_text, prompt_markup = photo_prompt_content(MAX_PHOTOS)
+
     await state.update_data(
         new_photos=[],
         photo_count=0,
         photo_limit=MAX_PHOTOS,
     )
 
-    if isinstance(target, CallbackQuery):
-        await ui(target, f"📷 Добавьте фото (до {MAX_PHOTOS}).", reply_markup=None)
-
     if base_message is not None:
         await clear_photo_progress(base_message.bot, base_message.chat.id, state)
-        await update_photo_progress(
-            base_message,
-            state,
-            0,
-            MAX_PHOTOS,
-            prefix=f"📷 Добавьте фото (до {MAX_PHOTOS}).",
-        )
+        sent = await base_message.answer(prompt_text, reply_markup=prompt_markup)
+        await state.update_data(progress_msg_id=sent.message_id)
     await state.set_state(PhotoFlow.photos)
 
 
@@ -1350,6 +1351,9 @@ async def photo_add(message: Message, state: FSMContext):
     photos: List[PhotoDraft] = list(data.get("new_photos", []) or [])
     if len(photos) >= limit:
         await update_photo_progress(message, state, len(photos), limit)
+        await message.answer(
+            f"Уже загружено максимум фото ({len(photos)}/{limit}). Лишние не сохраняю."
+        )
         return
 
     uid = data.get("user_id") or message.from_user.id
@@ -1386,6 +1390,19 @@ async def photo_add(message: Message, state: FSMContext):
 
 
 async def photos_done(call: CallbackQuery, state: FSMContext):
+    current_state = await state.get_state()
+    if current_state != PhotoFlow.photos.state:
+        await call.answer("Сейчас нельзя завершить добавление фото.")
+        return
+
+    data = await state.get_data()
+    photos: List[PhotoDraft] = list(data.get("new_photos", []) or [])
+    if not photos:
+        await call.answer(
+            "Сначала добавь хотя бы одно фото или пропусти шаг.", show_alert=True
+        )
+        return
+
     if call.message:
         await clear_photo_progress(call.bot, call.message.chat.id, state)
     await finalize_save(call.message, state)
@@ -1393,6 +1410,12 @@ async def photos_done(call: CallbackQuery, state: FSMContext):
 
 
 async def photos_skip(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    photos_present = bool(data.get("new_photos"))
+    if photos_present:
+        await call.answer("Уже есть загруженные фото, нажми «Готово».", show_alert=True)
+        return
+
     await flush_user_albums(call.from_user.id, state, process=False)
     await state.update_data(new_photos=[])
     if call.message:

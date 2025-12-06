@@ -30,6 +30,7 @@ from app.db.engine import SessionLocal, create_sa_engine, startup_ping
 from app.db.models import Infusion, Photo, Tasting, User
 from app.routers.diagnostics import create_router
 from app.utils.admins import get_admin_ids
+from app.services.stats import get_bot_stats
 from app.services.tastings import create_tasting
 from app.services.users import get_or_create_user, set_user_timezone
 from app.validators import parse_float, parse_int
@@ -3618,6 +3619,25 @@ async def hide_cmd(message: Message):
     await message.answer("Скрываю кнопки.", reply_markup=ReplyKeyboardRemove())
 
 
+async def stats_cmd(message: Message):
+    uid = getattr(message.from_user, "id", None)
+    if uid not in ADMINS:
+        await message.answer("Эта команда доступна только админу.")
+        return
+
+    stats = await get_bot_stats()
+    text = (
+        "📊 Статистика бота\n\n"
+        f"Всего пользователей: {stats.total_users}\n"
+        f"Всего дегустаций: {stats.total_tastings}\n\n"
+        "За последние 7 дней:\n"
+        f"• Дегустаций: {stats.tastings_last_7d}\n"
+        f"• Активных пользователей: {stats.active_users_last_7d}"
+    )
+
+    await message.answer(text)
+
+
 async def reply_buttons_router(message: Message, state: FSMContext):
     t = (message.text or "").strip()
     if "Новая дегустация" in t:
@@ -3720,6 +3740,7 @@ def setup_handlers(dp: Dispatcher):
     dp.message.register(reset_state_cmd, Command("resetstate"))
     dp.message.register(menu_cmd, Command("menu"))
     dp.message.register(hide_cmd, Command("hide"))
+    dp.message.register(stats_cmd, Command("stats"))
     dp.message.register(new_cmd, Command("new"))
     dp.message.register(find_cmd, Command("find"))
     dp.message.register(last_cmd, Command("last"))

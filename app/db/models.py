@@ -1,6 +1,7 @@
 import datetime
 from typing import List, Optional
 
+import sqlalchemy as sa
 from sqlalchemy import (
     BigInteger,
     DateTime,
@@ -61,6 +62,9 @@ class Tasting(Base):
     year: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     region: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
     category: Mapped[str] = mapped_column(String(60))
+    entry_mode: Mapped[str] = mapped_column(
+        String(16), default="full", server_default=sa.text("'full'"), nullable=False
+    )
 
     grams: Mapped[Optional[float]] = mapped_column(nullable=True)
     temp_c: Mapped[Optional[int]] = mapped_column(nullable=True)

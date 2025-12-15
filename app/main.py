@@ -986,7 +986,8 @@ def short_row(t: Tasting) -> str:
     if t.region:
         meta.append(t.region)
     suffix = f" — {' • '.join(meta)}" if meta else ""
-    return f"#{t.seq_no} [{t.category}] {t.name}{suffix}"
+    prefix = "⚡️ " if getattr(t, "entry_mode", "full") == "quick" else ""
+    return f"{prefix}#{t.seq_no} [{t.category}] {t.name}{suffix}"
 
 
 def build_card_text(
@@ -1072,16 +1073,18 @@ def build_quick_card_text(t: Tasting, photo_count: int = 0) -> str:
             return html.escape(f"{value:g}")
         return html.escape(str(value))
 
-    lines = [f"<b>#{t.seq_no} {html.escape(t.title)}</b>"]
+    header = f"⚡️ Быстрая заметка #{t.seq_no} {html.escape(t.title)}"
+    lines = [f"<b>{header}</b>"]
     lines.append(f"🏷️ Тип: {fmt_text(t.category)}")
     lines.append(f"⚖️ Граммовка: {fmt_text(t.grams)} г")
     lines.append(f"🌡️ Температура: {fmt_text(t.temp_c)} °C")
     lines.append(f"🍶 Посуда: {fmt_text(t.gear)}")
     lines.append(f"🌬️ Аромат: {fmt_text(t.aroma_dry)}")
-    lines.append(f"👅 Вкус: {fmt_text(t.aroma_warmed)}")
+    lines.append(f"🍬 Вкус: {fmt_text(t.aroma_warmed)}")
     lines.append(f"🧘 Ощущения: {fmt_text(t.effects_csv)}")
     lines.append(f"⭐ Оценка: {fmt_text(t.rating)}")
-    lines.append(f"📝 Заметка: {fmt_text(t.summary)}")
+    if t.summary:
+        lines.append(f"📝 Заметка: {fmt_text(t.summary)}")
     lines.append(f"📷 Фото: {fmt_text(photo_count)} шт.")
     return "\n".join(lines)
 
@@ -1472,6 +1475,7 @@ async def finalize_save(target_message: Message, state: FSMContext):
         "year": data.get("year"),
         "region": data.get("region"),
         "category": data.get("category"),
+        "entry_mode": "full",
         "grams": data.get("grams"),
         "temp_c": data.get("temp_c"),
         "tasted_at": data.get("tasted_at"),
@@ -1533,6 +1537,7 @@ async def finalize_quick_save(target_message: Message, state: FSMContext):
         "year": None,
         "region": None,
         "category": data.get("category") or QUICK_CATEGORY_FALLBACK,
+        "entry_mode": "quick",
         "grams": data.get("grams"),
         "temp_c": data.get("temp_c"),
         "tasted_at": None,
@@ -4399,15 +4404,22 @@ async def open_card(call: CallbackQuery):
             .all()
         )
 
-    card_text = build_card_text(
-        t, infusions_data, photo_count=photo_count or 0
-    )
+        is_quick = getattr(t, "entry_mode", "full") == "quick"
+
+    if is_quick:
+        card_text = build_quick_card_text(t, photo_count=photo_count or 0)
+        actions_markup = quick_card_actions_kb(t.id).as_markup()
+    else:
+        card_text = build_card_text(
+            t, infusions_data, photo_count=photo_count or 0
+        )
+        actions_markup = card_actions_kb(t.id).as_markup()
     await send_card_with_media(
         call.message,
         t.id,
         card_text,
         photo_ids,
-        reply_markup=card_actions_kb(t.id).as_markup(),
+        reply_markup=actions_markup,
     )
     await call.answer()
 
@@ -4581,6 +4593,21 @@ async def edit_cb(call: CallbackQuery, state: FSMContext):
                 await call.answer()
                 return
             seq_no = t.seq_no
+            entry_mode = getattr(t, "entry_mode", "full") or "full"
+
+        if entry_mode == "quick":
+            await state.clear()
+            await state.set_state(QuickEditFlow.choosing)
+            await state.update_data(
+                edit_tid=tid, edit_field=None, edit_effects=[]
+            )
+            await ui(
+                call,
+                f"Редактирование #{seq_no}. Выбери поле.",
+                reply_markup=quick_edit_fields_kb(tid).as_markup(),
+            )
+            await call.answer()
+            return
 
         await state.clear()
         await state.set_state(EditFlow.choosing)
@@ -4910,16 +4937,25 @@ async def edit_cmd(message: Message, state: FSMContext):
     if not target:
         await message.answer("Запись не найдена.")
         return
+    entry_mode = getattr(target, "entry_mode", "full") or "full"
     await state.clear()
-    await state.set_state(EditFlow.choosing)
-    await state.update_data(
-        edit_t_id=target.id,
-        edit_seq_no=target.seq_no,
-        edit_field=None,
-        awaiting_category_text=False,
-        edit_ctx_warned=False,
-    )
-    await send_edit_menu(message, target.seq_no)
+    if entry_mode == "quick":
+        await state.set_state(QuickEditFlow.choosing)
+        await state.update_data(edit_tid=target.id, edit_field=None, edit_effects=[])
+        await message.answer(
+            f"Редактирование #{target.seq_no}. Выбери поле.",
+            reply_markup=quick_edit_fields_kb(target.id).as_markup(),
+        )
+    else:
+        await state.set_state(EditFlow.choosing)
+        await state.update_data(
+            edit_t_id=target.id,
+            edit_seq_no=target.seq_no,
+            edit_field=None,
+            awaiting_category_text=False,
+            edit_ctx_warned=False,
+        )
+        await send_edit_menu(message, target.seq_no)
 
 
 async def delete_cmd(message: Message):

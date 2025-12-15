@@ -210,6 +210,38 @@ AFTERTASTE_SET = [
     "землистый",
 ]
 
+QUICK_CATEGORIES = {
+    "green": "Зелёный",
+    "white": "Белый",
+    "oolong": "Улун",
+    "red": "Красный",
+    "shu": "Шу Пуэр",
+    "shen": "Шен Пуэр",
+    "hei": "Хэй Ча",
+}
+
+QUICK_CATEGORY_FALLBACK = "Другое"
+
+QUICK_GEAR = {
+    "gaiwan": "Гайвань",
+    "teapot": "Чайник",
+    "teapot2": "Типот",
+    "flask": "Колба",
+}
+
+QUICK_TEMPS = [(75, 80), (80, 85), (85, 90), (90, 95), (95, 100)]
+
+QUICK_EFFECTS = {
+    "warm": "Тепло",
+    "relax": "Расслабление",
+    "calm": "Спокойствие",
+    "focus": "Фокус",
+    "energy": "Бодрость",
+    "tone": "Тонус",
+    "inspire": "Вдохновение",
+    "cozy": "Уют",
+}
+
 PAGE_SIZE = 5
 try:
     MAX_PHOTOS = max(1, int(os.getenv("PHOTO_LIMIT", "3")))
@@ -235,9 +267,10 @@ class PhotoDraft(TypedDict):
 def main_kb() -> InlineKeyboardBuilder:
     kb = InlineKeyboardBuilder()
     kb.button(text="📝 Новая дегустация", callback_data="new")
+    kb.button(text="⚡ Быстрая заметка", callback_data="q:new")
     kb.button(text="🔎 Найти записи", callback_data="find")
     kb.button(text="❔ Помощь", callback_data="help")
-    kb.adjust(1, 1, 1)
+    kb.adjust(1, 1, 1, 1)
     return kb
 
 
@@ -246,17 +279,102 @@ def reply_main_kb() -> ReplyKeyboardMarkup:
         keyboard=[
             [
                 KeyboardButton(text="📝 Новая дегустация"),
-                KeyboardButton(text="🔎 Найти записи"),
+                KeyboardButton(text="⚡ Быстрая заметка"),
             ],
             [
+                KeyboardButton(text="🔎 Найти записи"),
                 KeyboardButton(text="🕔 Последние 5"),
-                KeyboardButton(text="❔ Помощь"),
             ],
+            [KeyboardButton(text="❔ Помощь")],
             [KeyboardButton(text="Сброс")],
         ],
         resize_keyboard=True,
         input_field_placeholder="Выбери действие",
     )
+
+
+def q_cancel_only_kb() -> InlineKeyboardBuilder:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="Отмена", callback_data="q:cancel")
+    kb.adjust(1)
+    return kb
+
+
+def q_nav_kb(
+    can_back: bool, can_skip: bool, skip_step: str | None = None, skip_text: str = "Пропустить"
+) -> InlineKeyboardBuilder:
+    kb = InlineKeyboardBuilder()
+    if can_back:
+        kb.button(text="⬅️ Назад", callback_data="q:back")
+    if can_skip and skip_step:
+        kb.button(text=skip_text, callback_data=f"q:skip:{skip_step}")
+    kb.button(text="Отмена", callback_data="q:cancel")
+    kb.adjust(2, 1)
+    return kb
+
+
+def q_type_kb() -> InlineKeyboardBuilder:
+    kb = InlineKeyboardBuilder()
+    for code, label in QUICK_CATEGORIES.items():
+        kb.button(text=label, callback_data=f"q:type:{code}")
+    kb.button(text="Другое (ввести)", callback_data="q:type:other")
+    nav = q_nav_kb(can_back=False, can_skip=True, skip_step="type", skip_text="Не знаю")
+    kb.attach(nav)
+    kb.adjust(2, 2, 2, 2)
+    return kb
+
+
+def q_temp_kb() -> InlineKeyboardBuilder:
+    kb = InlineKeyboardBuilder()
+    for lo, hi in QUICK_TEMPS:
+        kb.button(text=f"{lo}–{hi} °C", callback_data=f"q:temp:{hi}")
+    nav = q_nav_kb(can_back=True, can_skip=True, skip_step="temp")
+    kb.attach(nav)
+    kb.adjust(2, 2, 1)
+    return kb
+
+
+def q_gear_kb() -> InlineKeyboardBuilder:
+    kb = InlineKeyboardBuilder()
+    for code, label in QUICK_GEAR.items():
+        kb.button(text=label, callback_data=f"q:gear:{code}")
+    kb.button(text="Другое (ввести)", callback_data="q:gear:other")
+    nav = q_nav_kb(can_back=True, can_skip=True, skip_step="gear")
+    kb.attach(nav)
+    kb.adjust(2, 2, 1)
+    return kb
+
+
+def q_effects_kb(selected: list[str]) -> InlineKeyboardBuilder:
+    kb = InlineKeyboardBuilder()
+    selected_set = {item.strip() for item in selected}
+    for code, label in QUICK_EFFECTS.items():
+        prefix = "✅ " if label in selected_set else ""
+        kb.button(text=f"{prefix}{label}", callback_data=f"q:eff:{code}")
+    kb.button(text="Другое (ввести)", callback_data="q:eff:other")
+    kb.button(text="Готово", callback_data="q:eff:done")
+    nav = q_nav_kb(can_back=True, can_skip=True, skip_step="eff")
+    kb.attach(nav)
+    kb.adjust(2, 2, 2, 2)
+    return kb
+
+
+def q_rating_kb() -> InlineKeyboardBuilder:
+    kb = InlineKeyboardBuilder()
+    for val in range(0, 11):
+        kb.button(text=str(val), callback_data=f"q:rate:{val}")
+    kb.button(text="⬅️ Назад", callback_data="q:back")
+    kb.button(text="Отмена", callback_data="q:cancel")
+    kb.adjust(6, 5, 2)
+    return kb
+
+
+def q_cancel_confirm_kb() -> InlineKeyboardBuilder:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="Да, отменить", callback_data="q:cancel:yes")
+    kb.button(text="Вернуться к заполнению", callback_data="q:cancel:no")
+    kb.adjust(1, 1)
+    return kb
 
 
 def category_kb() -> InlineKeyboardBuilder:
@@ -381,6 +499,15 @@ def card_actions_kb(t_id: int) -> InlineKeyboardBuilder:
     return kb
 
 
+def quick_card_actions_kb(t_id: int) -> InlineKeyboardBuilder:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="✏️ Редактировать", callback_data=f"qedit:{t_id}")
+    kb.button(text="🗑️ Удалить", callback_data=f"del:{t_id}")
+    kb.button(text="⬅️ В меню", callback_data="back:main")
+    kb.adjust(2, 1)
+    return kb
+
+
 def edit_fields_kb() -> InlineKeyboardBuilder:
     kb = InlineKeyboardBuilder()
     buttons = [
@@ -403,6 +530,28 @@ def edit_fields_kb() -> InlineKeyboardBuilder:
     for text, field in buttons:
         kb.button(text=text, callback_data=f"efld:{field}")
     kb.adjust(2, 2, 2, 2, 2, 2, 2, 1)
+    return kb
+
+
+def quick_edit_fields_kb(tid: int) -> InlineKeyboardBuilder:
+    kb = InlineKeyboardBuilder()
+    buttons = [
+        ("Название", "name"),
+        ("Тип", "category"),
+        ("Граммовка", "grams"),
+        ("Температура", "temp_c"),
+        ("Посуда", "gear"),
+        ("Аромат", "aroma_dry"),
+        ("Вкус", "aroma_warmed"),
+        ("Ощущения", "effects"),
+        ("Оценка", "rating"),
+        ("Заметка", "summary"),
+    ]
+    for text, field in buttons:
+        kb.button(text=text, callback_data=f"qefld:{field}")
+    kb.button(text="⬅️ Назад", callback_data=f"qedit:back:{tid}")
+    kb.button(text="⬅️ В меню", callback_data="back:main")
+    kb.adjust(2, 2, 2, 2, 2, 2)
     return kb
 
 
@@ -543,6 +692,32 @@ class SearchFlow(StatesGroup):
 
 
 class EditFlow(StatesGroup):
+    choosing = State()
+    waiting_text = State()
+
+
+class QuickNote(StatesGroup):
+    name = State()
+    type_pick = State()
+    type_custom = State()
+    grams = State()
+    temp_pick = State()
+    gear_pick = State()
+    gear_custom = State()
+    aroma = State()
+    taste = State()
+    eff_pick = State()
+    eff_custom = State()
+    rating = State()
+    note = State()
+    photos = State()
+
+
+class QuickCancel(StatesGroup):
+    confirm = State()
+
+
+class QuickEditFlow(StatesGroup):
     choosing = State()
     waiting_text = State()
 
@@ -880,6 +1055,32 @@ def build_card_text(
                 f"<b>Послевкусие:</b> {aftertaste}",
             ]
             lines.append("• " + "; ".join(line_parts))
+    return "\n".join(lines)
+
+
+def build_quick_card_text(t: Tasting, photo_count: int = 0) -> str:
+    def fmt_text(value: Optional[Union[str, int, float]]) -> str:
+        if value is None:
+            return "—"
+        if isinstance(value, str):
+            if not value.strip():
+                return "—"
+            return html.escape(value)
+        if isinstance(value, float):
+            return html.escape(f"{value:g}")
+        return html.escape(str(value))
+
+    lines = [f"<b>#{t.seq_no} {html.escape(t.title)}</b>"]
+    lines.append(f"🏷️ Тип: {fmt_text(t.category)}")
+    lines.append(f"⚖️ Граммовка: {fmt_text(t.grams)} г")
+    lines.append(f"🌡️ Температура: {fmt_text(t.temp_c)} °C")
+    lines.append(f"🍶 Посуда: {fmt_text(t.gear)}")
+    lines.append(f"🌬️ Аромат: {fmt_text(t.aroma_dry)}")
+    lines.append(f"👅 Вкус: {fmt_text(t.aroma_warmed)}")
+    lines.append(f"🧘 Ощущения: {fmt_text(t.effects_csv)}")
+    lines.append(f"⭐ Оценка: {fmt_text(t.rating)}")
+    lines.append(f"📝 Заметка: {fmt_text(t.summary)}")
+    lines.append(f"📷 Фото: {fmt_text(photo_count)} шт.")
     return "\n".join(lines)
 
 
@@ -1311,6 +1512,65 @@ async def finalize_save(target_message: Message, state: FSMContext):
     )
 
 
+async def finalize_after_photos(target_message: Message, state: FSMContext):
+    data = await state.get_data()
+    if data.get("flow_kind") == "quick":
+        await finalize_quick_save(target_message, state)
+    else:
+        await finalize_save(target_message, state)
+
+
+async def finalize_quick_save(target_message: Message, state: FSMContext):
+    data = await state.get_data()
+    await flush_user_albums(data.get("user_id"), state)
+    data = await state.get_data()
+
+    tasting_data = {
+        "user_id": data.get("user_id"),
+        "name": data.get("name"),
+        "year": None,
+        "region": None,
+        "category": data.get("category") or QUICK_CATEGORY_FALLBACK,
+        "grams": data.get("grams"),
+        "temp_c": data.get("temp_c"),
+        "tasted_at": None,
+        "gear": data.get("gear"),
+        "aroma_dry": data.get("aroma_dry"),
+        "aroma_warmed": data.get("aroma_warmed"),
+        "effects_csv": ",".join(data.get("effects", [])) or None,
+        "scenarios_csv": None,
+        "rating": data.get("rating"),
+        "summary": data.get("summary"),
+    }
+
+    infusions_data: List[dict] = []
+    photo_entries: List[PhotoDraft] = list(data.get("new_photos", []) or [])
+
+    t = create_tasting(tasting_data, infusions_data, photo_entries)
+
+    await state.clear()
+
+    text_card = build_quick_card_text(t, photo_count=len(photo_entries))
+    photo_ids_to_send: List[str] = []
+    for entry in photo_entries:
+        if isinstance(entry, dict):
+            telegram_file_id = entry.get("telegram_file_id")
+            if telegram_file_id:
+                photo_ids_to_send.append(telegram_file_id)
+            continue
+
+        if isinstance(entry, str) and entry:
+            photo_ids_to_send.append(entry)
+
+    await send_card_with_media(
+        target_message,
+        t.id,
+        text_card,
+        photo_ids_to_send,
+        reply_markup=quick_card_actions_kb(t.id).as_markup(),
+    )
+
+
 # ---------------- ФОТО ПОСЛЕ ЗАМЕТКИ ----------------
 
 async def prompt_photos(target: Union[Message, CallbackQuery], state: FSMContext):
@@ -1406,7 +1666,7 @@ async def photos_done(call: CallbackQuery, state: FSMContext):
 
     if call.message:
         await clear_photo_progress(call.bot, call.message.chat.id, state)
-    await finalize_save(call.message, state)
+    await finalize_after_photos(call.message, state)
     await call.answer()
 
 
@@ -1421,7 +1681,7 @@ async def photos_skip(call: CallbackQuery, state: FSMContext):
     await state.update_data(new_photos=[])
     if call.message:
         await clear_photo_progress(call.bot, call.message.chat.id, state)
-    await finalize_save(call.message, state)
+    await finalize_after_photos(call.message, state)
     await call.answer()
 
 
@@ -2320,6 +2580,878 @@ async def summary_skip(call: CallbackQuery, state: FSMContext):
     await state.update_data(summary=None)
     await close_inline(call, "Заметка: пропущено")
     await prompt_photos(call, state)
+    await call.answer()
+
+
+# ---------------- QUICK NOTE FLOW ----------------
+
+
+def _parse_quick_effects_csv(raw: Optional[str]) -> list[str]:
+    parts = [piece.strip() for piece in (raw or "").split(",")]
+    return [p for p in parts if p]
+
+
+def quick_edit_nav_kb(tid: int) -> InlineKeyboardBuilder:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="⬅️ Назад", callback_data=f"qedit:back:{tid}")
+    kb.button(text="⬅️ В меню", callback_data="back:main")
+    kb.adjust(2)
+    return kb
+
+
+def qedit_type_kb(tid: int) -> InlineKeyboardBuilder:
+    kb = InlineKeyboardBuilder()
+    for code, label in QUICK_CATEGORIES.items():
+        kb.button(text=label, callback_data=f"qedit:type:{code}")
+    kb.button(text="Другое (ввести)", callback_data="qedit:type:other")
+    kb.attach(quick_edit_nav_kb(tid))
+    kb.adjust(2, 2, 2, 2)
+    return kb
+
+
+def qedit_temp_kb(tid: int) -> InlineKeyboardBuilder:
+    kb = InlineKeyboardBuilder()
+    for lo, hi in QUICK_TEMPS:
+        kb.button(text=f"{lo}–{hi} °C", callback_data=f"qedit:temp:{hi}")
+    kb.attach(quick_edit_nav_kb(tid))
+    kb.adjust(2, 2, 1)
+    return kb
+
+
+def qedit_gear_kb(tid: int) -> InlineKeyboardBuilder:
+    kb = InlineKeyboardBuilder()
+    for code, label in QUICK_GEAR.items():
+        kb.button(text=label, callback_data=f"qedit:gear:{code}")
+    kb.button(text="Другое (ввести)", callback_data="qedit:gear:other")
+    kb.attach(quick_edit_nav_kb(tid))
+    kb.adjust(2, 2, 1)
+    return kb
+
+
+def qedit_effects_kb(selected: list[str], tid: int) -> InlineKeyboardBuilder:
+    kb = InlineKeyboardBuilder()
+    selected_set = {item.strip() for item in selected}
+    for code, label in QUICK_EFFECTS.items():
+        prefix = "✅ " if label in selected_set else ""
+        kb.button(text=f"{prefix}{label}", callback_data=f"qedit:eff:{code}")
+    kb.button(text="Другое (ввести)", callback_data="qedit:eff:other")
+    kb.button(text="Готово", callback_data="qedit:eff:done")
+    kb.attach(quick_edit_nav_kb(tid))
+    kb.adjust(2, 2, 2, 2)
+    return kb
+
+
+def qedit_rating_kb(tid: int) -> InlineKeyboardBuilder:
+    kb = InlineKeyboardBuilder()
+    for val in range(0, 11):
+        kb.button(text=str(val), callback_data=f"qedit:rate:{val}")
+    kb.attach(quick_edit_nav_kb(tid))
+    kb.adjust(6, 5, 2)
+    return kb
+
+
+async def start_quick_flow(
+    target: Union[Message, CallbackQuery], state: FSMContext, uid: int, username: Optional[str]
+):
+    await state.clear()
+    await flush_user_albums(uid, state, process=False)
+    get_or_create_user(uid, username)
+    await state.update_data(
+        flow_kind="quick",
+        user_id=uid,
+        name=None,
+        category=None,
+        grams=None,
+        temp_c=None,
+        gear=None,
+        aroma_dry=None,
+        aroma_warmed=None,
+        effects=[],
+        rating=None,
+        summary=None,
+        new_photos=[],
+        live_q_id=None,
+    )
+    await ask_quick_name(target, state)
+
+
+async def ask_quick_name(target: Union[Message, CallbackQuery], state: FSMContext):
+    await state.set_state(QuickNote.name)
+    await ask_next(target, state, "Название чая?", q_cancel_only_kb().as_markup())
+
+
+async def ask_quick_type(target: Union[Message, CallbackQuery], state: FSMContext):
+    await state.set_state(QuickNote.type_pick)
+    await ask_next(target, state, "Тип чая?", q_type_kb().as_markup())
+
+
+async def ask_quick_type_custom(target: Union[Message, CallbackQuery], state: FSMContext):
+    await state.set_state(QuickNote.type_custom)
+    await ask_next(
+        target,
+        state,
+        "Напиши тип чая текстом",
+        q_nav_kb(can_back=True, can_skip=False, skip_step=None).as_markup(),
+    )
+
+
+async def ask_quick_grams(target: Union[Message, CallbackQuery], state: FSMContext):
+    await state.set_state(QuickNote.grams)
+    await ask_next(
+        target,
+        state,
+        "Граммовка? Можно пропустить.",
+        q_nav_kb(can_back=True, can_skip=True, skip_step="grams").as_markup(),
+    )
+
+
+async def ask_quick_temp(target: Union[Message, CallbackQuery], state: FSMContext):
+    await state.set_state(QuickNote.temp_pick)
+    await ask_next(target, state, "Температура воды?", q_temp_kb().as_markup())
+
+
+async def ask_quick_gear(target: Union[Message, CallbackQuery], state: FSMContext):
+    await state.set_state(QuickNote.gear_pick)
+    await ask_next(target, state, "Посудa дегустации?", q_gear_kb().as_markup())
+
+
+async def ask_quick_gear_custom(target: Union[Message, CallbackQuery], state: FSMContext):
+    await state.set_state(QuickNote.gear_custom)
+    await ask_next(
+        target,
+        state,
+        "Напиши посуду текстом",
+        q_nav_kb(can_back=True, can_skip=False, skip_step=None).as_markup(),
+    )
+
+
+async def ask_quick_aroma(target: Union[Message, CallbackQuery], state: FSMContext):
+    await state.set_state(QuickNote.aroma)
+    await ask_next(
+        target,
+        state,
+        "Аромат? Можно пропустить.",
+        q_nav_kb(can_back=True, can_skip=True, skip_step="aroma").as_markup(),
+    )
+
+
+async def ask_quick_taste(target: Union[Message, CallbackQuery], state: FSMContext):
+    await state.set_state(QuickNote.taste)
+    await ask_next(
+        target,
+        state,
+        "Вкус? Можно пропустить.",
+        q_nav_kb(can_back=True, can_skip=True, skip_step="taste").as_markup(),
+    )
+
+
+async def ask_quick_effects(target: Union[Message, CallbackQuery], state: FSMContext):
+    data = await state.get_data()
+    selected = list(data.get("effects", []) or [])
+    await state.set_state(QuickNote.eff_pick)
+    await ask_next(
+        target,
+        state,
+        "Ощущения? Жми варианты, затем «Готово», можно пропустить.",
+        q_effects_kb(selected).as_markup(),
+    )
+
+
+async def ask_quick_rating(target: Union[Message, CallbackQuery], state: FSMContext):
+    await state.set_state(QuickNote.rating)
+    await ask_next(target, state, "Оценка 0..10?", q_rating_kb().as_markup())
+
+
+async def ask_quick_note(target: Union[Message, CallbackQuery], state: FSMContext):
+    await state.set_state(QuickNote.note)
+    await ask_next(
+        target,
+        state,
+        "Заметка? Можно пропустить.",
+        q_nav_kb(can_back=True, can_skip=True, skip_step="note").as_markup(),
+    )
+
+
+async def ask_quick_effect_custom(
+    target: Union[Message, CallbackQuery], state: FSMContext
+):
+    await state.set_state(QuickNote.eff_custom)
+    await ask_next(
+        target,
+        state,
+        "Напиши своё ощущение",
+        q_nav_kb(can_back=True, can_skip=False, skip_step=None).as_markup(),
+    )
+
+
+async def quick_new_cmd(message: Message, state: FSMContext):
+    uid = message.from_user.id
+    await start_quick_flow(message, state, uid, message.from_user.username)
+
+
+async def quick_new_cb(call: CallbackQuery, state: FSMContext):
+    uid = call.from_user.id
+    await start_quick_flow(call, state, uid, call.from_user.username)
+    await call.answer()
+
+
+async def quick_name_in(message: Message, state: FSMContext):
+    title = (message.text or "").strip()
+    if not title:
+        await message.answer("Название нужно указать")
+        await ask_quick_name(message, state)
+        return
+
+    await state.update_data(name=title)
+    await ask_quick_type(message, state)
+
+
+async def quick_type_pick(call: CallbackQuery, state: FSMContext):
+    _, _, tail = call.data.partition(":")
+    _, _, code = tail.partition(":")
+
+    if code == "other":
+        await ask_quick_type_custom(call, state)
+        await call.answer()
+        return
+
+    value = QUICK_CATEGORIES.get(code)
+    await state.update_data(category=value)
+    await close_inline(call, f"Тип: {value or 'не указан'}")
+    await ask_quick_grams(call, state)
+    await call.answer()
+
+
+async def quick_type_custom_in(message: Message, state: FSMContext):
+    text_val = (message.text or "").strip()
+    if not text_val:
+        await message.answer("Укажи тип текста или нажми «Назад».")
+        await ask_quick_type_custom(message, state)
+        return
+    await state.update_data(category=text_val)
+    await ask_quick_grams(message, state)
+
+
+async def quick_grams_in(message: Message, state: FSMContext):
+    raw = (message.text or "").strip()
+    try:
+        val = parse_grams_value(raw)
+    except ValueError as exc:
+        await message.answer(str(exc))
+        await ask_quick_grams(message, state)
+        return
+    await state.update_data(grams=val)
+    await ask_quick_temp(message, state)
+
+
+async def quick_temp_pick(call: CallbackQuery, state: FSMContext):
+    _, _, tail = call.data.partition(":")
+    _, _, raw_val = tail.partition(":")
+    try:
+        temp_val = int(raw_val)
+    except ValueError:
+        await call.answer()
+        return
+
+    await state.update_data(temp_c=temp_val)
+    await close_inline(call, f"Температура: {temp_val}°C")
+    await ask_quick_gear(call, state)
+    await call.answer()
+
+
+async def quick_gear_pick(call: CallbackQuery, state: FSMContext):
+    _, _, tail = call.data.partition(":")
+    _, _, code = tail.partition(":")
+
+    if code == "other":
+        await ask_quick_gear_custom(call, state)
+        await call.answer()
+        return
+
+    value = QUICK_GEAR.get(code)
+    await state.update_data(gear=value)
+    await close_inline(call, f"Посуда: {value or 'не указана'}")
+    await ask_quick_aroma(call, state)
+    await call.answer()
+
+
+async def quick_gear_custom_in(message: Message, state: FSMContext):
+    text_val = (message.text or "").strip()
+    if not text_val:
+        await message.answer("Введи посуду текстом или нажми «Назад».")
+        await ask_quick_gear_custom(message, state)
+        return
+    await state.update_data(gear=text_val)
+    await ask_quick_aroma(message, state)
+
+
+async def quick_aroma_in(message: Message, state: FSMContext):
+    text_val = (message.text or "").strip()
+    if not text_val:
+        await message.answer("Можешь описать аромат или нажать «Пропустить».")
+        await ask_quick_aroma(message, state)
+        return
+    await state.update_data(aroma_dry=text_val)
+    await ask_quick_taste(message, state)
+
+
+async def quick_taste_in(message: Message, state: FSMContext):
+    text_val = (message.text or "").strip()
+    if not text_val:
+        await message.answer("Можешь описать вкус или нажать «Пропустить».")
+        await ask_quick_taste(message, state)
+        return
+    await state.update_data(aroma_warmed=text_val)
+    await ask_quick_effects(message, state)
+
+
+async def quick_eff_toggle(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    selected: list[str] = list(data.get("effects", []) or [])
+    _, _, tail = call.data.partition(":")
+    _, _, code = tail.partition(":")
+
+    if code == "done":
+        await close_inline(call, "Ощущения: выбрано")
+        await ask_quick_rating(call, state)
+        await call.answer()
+        return
+    if code == "other":
+        await ask_quick_effect_custom(call, state)
+        await call.answer()
+        return
+
+    label = QUICK_EFFECTS.get(code)
+    if not label:
+        await call.answer()
+        return
+    if label in selected:
+        selected.remove(label)
+    else:
+        selected.append(label)
+
+    await state.update_data(effects=selected)
+    kb = q_effects_kb(selected)
+    try:
+        await call.message.edit_reply_markup(reply_markup=kb.as_markup())
+    except TelegramBadRequest:
+        pass
+    await call.answer()
+
+
+async def quick_eff_custom_in(message: Message, state: FSMContext):
+    text_val = (message.text or "").strip()
+    if not text_val:
+        await message.answer("Введи ощущение текстом или нажми «Назад»." )
+        await ask_quick_effect_custom(message, state)
+        return
+    data = await state.get_data()
+    selected: list[str] = list(data.get("effects", []) or [])
+    selected.append(text_val)
+    await state.update_data(effects=selected)
+    await ask_quick_effects(message, state)
+
+
+async def quick_rating_pick(call: CallbackQuery, state: FSMContext):
+    _, _, tail = call.data.partition(":")
+    _, _, raw_val = tail.partition(":")
+    try:
+        val = int(raw_val)
+    except ValueError:
+        await call.answer()
+        return
+    val = max(0, min(10, val))
+    await state.update_data(rating=val)
+    await close_inline(call, f"Оценка: {val}/10")
+    await ask_quick_note(call, state)
+    await call.answer()
+
+
+async def quick_note_in(message: Message, state: FSMContext):
+    text_val = (message.text or "").strip()
+    await state.update_data(summary=text_val if text_val else None)
+    await prompt_photos(message, state)
+
+
+async def quick_skip(call: CallbackQuery, state: FSMContext):
+    _, _, tail = call.data.partition(":")
+    _, _, step = tail.partition(":")
+    if step == "type":
+        await state.update_data(category=QUICK_CATEGORY_FALLBACK)
+        await close_inline(call, "Тип: не знаю")
+        await ask_quick_grams(call, state)
+    elif step == "grams":
+        await state.update_data(grams=None)
+        await close_inline(call, "Граммовка: пропущено")
+        await ask_quick_temp(call, state)
+    elif step == "temp":
+        await state.update_data(temp_c=None)
+        await close_inline(call, "Температура: пропущено")
+        await ask_quick_gear(call, state)
+    elif step == "gear":
+        await state.update_data(gear=None)
+        await close_inline(call, "Посуда: пропущено")
+        await ask_quick_aroma(call, state)
+    elif step == "aroma":
+        await state.update_data(aroma_dry=None)
+        await close_inline(call, "Аромат: пропущено")
+        await ask_quick_taste(call, state)
+    elif step == "taste":
+        await state.update_data(aroma_warmed=None)
+        await close_inline(call, "Вкус: пропущено")
+        await ask_quick_effects(call, state)
+    elif step == "eff":
+        await state.update_data(effects=[])
+        await close_inline(call, "Ощущения: пропущено")
+        await ask_quick_rating(call, state)
+    elif step == "note":
+        await state.update_data(summary=None)
+        await close_inline(call, "Заметка: пропущено")
+        await prompt_photos(call, state)
+    await call.answer("Пропущено")
+
+
+async def quick_back(call: CallbackQuery, state: FSMContext):
+    current_state = await state.get_state()
+    if current_state == QuickNote.grams.state:
+        await ask_quick_type(call, state)
+    elif current_state == QuickNote.temp_pick.state:
+        await ask_quick_grams(call, state)
+    elif current_state == QuickNote.gear_pick.state:
+        await ask_quick_temp(call, state)
+    elif current_state == QuickNote.type_custom.state:
+        await ask_quick_type(call, state)
+    elif current_state == QuickNote.gear_custom.state:
+        await ask_quick_gear(call, state)
+    elif current_state == QuickNote.aroma.state:
+        await ask_quick_gear(call, state)
+    elif current_state == QuickNote.taste.state:
+        await ask_quick_aroma(call, state)
+    elif current_state == QuickNote.eff_pick.state:
+        await ask_quick_taste(call, state)
+    elif current_state == QuickNote.eff_custom.state:
+        await ask_quick_effects(call, state)
+    elif current_state == QuickNote.rating.state:
+        await ask_quick_effects(call, state)
+    elif current_state == QuickNote.note.state:
+        await ask_quick_rating(call, state)
+    await call.answer()
+
+
+async def quick_cancel(call: CallbackQuery, state: FSMContext):
+    current_state = await state.get_state()
+    if not current_state:
+        await call.answer()
+        return
+    await state.update_data(cancel_return_state=current_state)
+    await state.set_state(QuickCancel.confirm)
+    await ask_next(
+        call,
+        state,
+        "Отменить все изменения и вернуться в меню?",
+        q_cancel_confirm_kb().as_markup(),
+    )
+    await call.answer()
+
+
+async def quick_cancel_yes(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    await flush_user_albums(data.get("user_id"), state, process=False)
+    await state.clear()
+    bot = call.message.bot if call.message else call.bot
+    await show_main_menu(bot, call.from_user.id)
+    await call.answer()
+
+
+async def quick_cancel_no(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    return_state = data.get("cancel_return_state")
+    if not return_state:
+        await call.answer()
+        return
+    await state.set_state(return_state)
+    if return_state == QuickNote.name.state:
+        await ask_quick_name(call, state)
+    elif return_state == QuickNote.type_pick.state:
+        await ask_quick_type(call, state)
+    elif return_state == QuickNote.type_custom.state:
+        await ask_quick_type_custom(call, state)
+    elif return_state == QuickNote.grams.state:
+        await ask_quick_grams(call, state)
+    elif return_state == QuickNote.temp_pick.state:
+        await ask_quick_temp(call, state)
+    elif return_state == QuickNote.gear_pick.state:
+        await ask_quick_gear(call, state)
+    elif return_state == QuickNote.gear_custom.state:
+        await ask_quick_gear_custom(call, state)
+    elif return_state == QuickNote.aroma.state:
+        await ask_quick_aroma(call, state)
+    elif return_state == QuickNote.taste.state:
+        await ask_quick_taste(call, state)
+    elif return_state == QuickNote.eff_pick.state:
+        await ask_quick_effects(call, state)
+    elif return_state == QuickNote.eff_custom.state:
+        await ask_quick_effect_custom(call, state)
+    elif return_state == QuickNote.rating.state:
+        await ask_quick_rating(call, state)
+    elif return_state == QuickNote.note.state:
+        await ask_quick_note(call, state)
+    await call.answer()
+
+
+async def quick_cancel_router(call: CallbackQuery, state: FSMContext):
+    if call.data == "q:cancel:yes":
+        await quick_cancel_yes(call, state)
+    elif call.data == "q:cancel:no":
+        await quick_cancel_no(call, state)
+
+
+async def get_quick_card_payload(tid: int, uid: Optional[int] = None):
+    with SessionLocal() as s:
+        t = s.get(Tasting, tid)
+        if not t or (uid and t.user_id != uid):
+            return None
+
+        photo_count = (
+            s.execute(select(func.count(Photo.id)).where(Photo.tasting_id == tid))
+            .scalar_one()
+        )
+        photo_ids = (
+            s.execute(
+                select(func.coalesce(Photo.telegram_file_id, Photo.file_id))
+                .where(Photo.tasting_id == tid)
+                .order_by(Photo.id.asc())
+                .limit(MAX_PHOTOS)
+            )
+            .scalars()
+            .all()
+        )
+        return t, photo_ids, photo_count
+
+
+async def send_quick_card_by_id(
+    target: Union[Message, CallbackQuery], tid: int, uid: Optional[int] = None
+):
+    payload = await get_quick_card_payload(tid, uid)
+    if not payload:
+        await ui(target, "Запись не найдена.")
+        return
+    t, photo_ids, photo_count = payload
+    text_card = build_quick_card_text(t, photo_count=photo_count or 0)
+    await send_card_with_media(
+        target if isinstance(target, Message) else target.message,
+        tid,
+        text_card,
+        photo_ids,
+        reply_markup=quick_card_actions_kb(tid).as_markup(),
+    )
+
+
+async def quick_edit_cb(call: CallbackQuery, state: FSMContext):
+    try:
+        _, sid = call.data.split(":", 1)
+        tid = int(sid)
+    except Exception:
+        await call.answer()
+        return
+
+    payload = await get_quick_card_payload(tid, call.from_user.id)
+    if not payload:
+        await call.answer()
+        return
+    t, _, _ = payload
+    await state.set_state(QuickEditFlow.choosing)
+    await state.update_data(edit_tid=tid, edit_field=None, edit_effects=[])
+    await ui(
+        call,
+        f"Редактирование #{t.seq_no}. Выбери поле.",
+        reply_markup=quick_edit_fields_kb(tid).as_markup(),
+    )
+    await call.answer()
+
+
+async def quick_edit_back(call: CallbackQuery, state: FSMContext):
+    try:
+        _, _, sid = call.data.split(":", 2)
+        tid = int(sid)
+    except Exception:
+        await call.answer()
+        return
+    await send_quick_card_by_id(call, tid, call.from_user.id)
+    await state.clear()
+    await call.answer()
+
+
+async def quick_edit_field_pick(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    tid = data.get("edit_tid")
+    if not tid:
+        await call.answer()
+        return
+    _, _, field = call.data.partition(":")
+    field = field or call.data.split(":", 1)[1]
+
+    if field == "category":
+        await state.update_data(edit_field="category")
+        await ui(call, "Выбери тип:", reply_markup=qedit_type_kb(tid).as_markup())
+        await call.answer()
+        return
+    if field == "temp_c":
+        await state.update_data(edit_field="temp_c")
+        await ui(call, "Выбери температуру:", reply_markup=qedit_temp_kb(tid).as_markup())
+        await call.answer()
+        return
+    if field == "gear":
+        await state.update_data(edit_field="gear")
+        await ui(call, "Выбери посуду:", reply_markup=qedit_gear_kb(tid).as_markup())
+        await call.answer()
+        return
+    if field == "effects":
+        payload = await get_quick_card_payload(tid, call.from_user.id)
+        if not payload:
+            await call.answer()
+            return
+        t, _, _ = payload
+        effects = _parse_quick_effects_csv(t.effects_csv)
+        await state.update_data(edit_field="effects", edit_effects=effects)
+        await ui(
+            call,
+            "Выбери ощущения и нажми «Готово».",
+            reply_markup=qedit_effects_kb(effects, tid).as_markup(),
+        )
+        await call.answer()
+        return
+    if field == "rating":
+        await state.update_data(edit_field="rating")
+        await ui(call, "Выбери оценку:", reply_markup=qedit_rating_kb(tid).as_markup())
+        await call.answer()
+        return
+
+    text_prompts = {
+        "name": "Введите новое название.",
+        "grams": "Введите граммовку (0.1-50) или «-» чтобы очистить.",
+        "aroma_dry": "Введите аромат.",
+        "aroma_warmed": "Введите вкус.",
+        "summary": "Введите заметку.",
+    }
+
+    if field in text_prompts:
+        await state.update_data(edit_field=field)
+        await ask_next(
+            call,
+            state,
+            text_prompts[field],
+            quick_edit_nav_kb(tid).as_markup(),
+        )
+        await state.set_state(QuickEditFlow.waiting_text)
+    await call.answer()
+
+
+async def quick_edit_apply_updates(
+    target: Union[Message, CallbackQuery], state: FSMContext, updates: dict
+):
+    data = await state.get_data()
+    tid = data.get("edit_tid")
+    if not tid:
+        await ui(target, "Контекст редактирования потерян.")
+        return
+    ok = update_tasting_fields(tid, target.from_user.id, **updates)
+    if not ok:
+        await ui(target, "Не удалось сохранить изменения.")
+        return
+    await state.clear()
+    await ui(target, "Обновлено.")
+    await send_quick_card_by_id(target, tid, target.from_user.id)
+
+
+async def quick_edit_text_in(message: Message, state: FSMContext):
+    data = await state.get_data()
+    field = data.get("edit_field")
+    tid = data.get("edit_tid")
+    if not field or not tid:
+        return
+
+    text_val = (message.text or "").strip()
+    updates: dict = {}
+    if field == "name":
+        if not text_val:
+            await message.answer("Название не может быть пустым.")
+            await ask_next(
+                message,
+                state,
+                "Введите новое название.",
+                quick_edit_nav_kb(tid).as_markup(),
+            )
+            await state.set_state(QuickEditFlow.waiting_text)
+            return
+        updates = {"name": text_val}
+    elif field == "grams":
+        if text_val == "-":
+            updates = {"grams": None}
+        else:
+            try:
+                updates = {"grams": parse_grams_value(text_val)}
+            except ValueError as exc:
+                await message.answer(str(exc))
+                await ask_next(
+                    message,
+                    state,
+                    "Введите граммовку (0.1-50) или «-» чтобы очистить.",
+                    quick_edit_nav_kb(tid).as_markup(),
+                )
+                await state.set_state(QuickEditFlow.waiting_text)
+                return
+    elif field == "aroma_dry":
+        updates = {"aroma_dry": text_val or None}
+    elif field == "aroma_warmed":
+        updates = {"aroma_warmed": text_val or None}
+    elif field == "summary":
+        updates = {"summary": text_val or None}
+    elif field == "category":
+        updates = {"category": text_val or None}
+    elif field == "gear":
+        updates = {"gear": text_val or None}
+    elif field == "effects_other":
+        effects = list(data.get("edit_effects", []) or [])
+        if text_val:
+            effects.append(text_val)
+        await state.update_data(edit_effects=effects, edit_field="effects")
+        await ui(
+            message,
+            "Выбери ощущения и нажми «Готово».",
+            reply_markup=qedit_effects_kb(effects, tid).as_markup(),
+        )
+        await state.set_state(QuickEditFlow.choosing)
+        return
+    else:
+        return
+
+    await quick_edit_apply_updates(message, state, updates)
+
+
+async def quick_edit_type_pick(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    tid = data.get("edit_tid")
+    if not tid:
+        await call.answer()
+        return
+    _, _, tail = call.data.partition(":")
+    _, _, code = tail.partition(":")
+    if code == "other":
+        await state.set_state(QuickEditFlow.waiting_text)
+        await state.update_data(edit_field="category")
+        await ask_next(
+            call,
+            state,
+            "Введите тип чая.",
+            quick_edit_nav_kb(tid).as_markup(),
+        )
+        await call.answer()
+        return
+    value = QUICK_CATEGORIES.get(code)
+    await quick_edit_apply_updates(call, state, {"category": value})
+    await call.answer()
+
+
+async def quick_edit_temp_pick(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    tid = data.get("edit_tid")
+    if not tid:
+        await call.answer()
+        return
+    _, _, tail = call.data.partition(":")
+    _, _, raw_val = tail.partition(":")
+    try:
+        val = int(raw_val)
+    except ValueError:
+        await call.answer()
+        return
+    await quick_edit_apply_updates(call, state, {"temp_c": val})
+    await call.answer()
+
+
+async def quick_edit_gear_pick(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    tid = data.get("edit_tid")
+    if not tid:
+        await call.answer()
+        return
+    _, _, tail = call.data.partition(":")
+    _, _, code = tail.partition(":")
+    if code == "other":
+        await state.set_state(QuickEditFlow.waiting_text)
+        await state.update_data(edit_field="gear")
+        await ask_next(
+            call,
+            state,
+            "Введите посуду.",
+            quick_edit_nav_kb(tid).as_markup(),
+        )
+        await call.answer()
+        return
+    value = QUICK_GEAR.get(code)
+    await quick_edit_apply_updates(call, state, {"gear": value})
+    await call.answer()
+
+
+async def quick_edit_eff_toggle(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    tid = data.get("edit_tid")
+    if not tid:
+        await call.answer()
+        return
+    effects: list[str] = list(data.get("edit_effects", []) or [])
+    _, _, tail = call.data.partition(":")
+    _, _, code = tail.partition(":")
+
+    if code == "done":
+        await quick_edit_apply_updates(call, state, {"effects_csv": ",".join(effects) or None})
+        await call.answer()
+        return
+    if code == "other":
+        await state.set_state(QuickEditFlow.waiting_text)
+        await state.update_data(edit_field="effects_other")
+        await ask_next(
+            call,
+            state,
+            "Введи ощущение.",
+            quick_edit_nav_kb(tid).as_markup(),
+        )
+        await call.answer()
+        return
+
+    label = QUICK_EFFECTS.get(code)
+    if not label:
+        await call.answer()
+        return
+    if label in effects:
+        effects.remove(label)
+    else:
+        effects.append(label)
+    await state.update_data(edit_effects=effects, edit_field="effects")
+    kb = qedit_effects_kb(effects, tid)
+    try:
+        await call.message.edit_reply_markup(reply_markup=kb.as_markup())
+    except TelegramBadRequest:
+        pass
+    await call.answer()
+
+
+async def quick_edit_rating_pick(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    tid = data.get("edit_tid")
+    if not tid:
+        await call.answer()
+        return
+    _, _, tail = call.data.partition(":")
+    _, _, raw_val = tail.partition(":")
+    try:
+        val = int(raw_val)
+    except ValueError:
+        await call.answer()
+        return
+    val = max(0, min(10, val))
+    await quick_edit_apply_updates(call, state, {"rating": val})
     await call.answer()
 
 
@@ -3537,7 +4669,7 @@ async def delete_cmd(message: Message):
 # ---------------- КОМАНДЫ /start /help /tz и т.п. ----------------
 
 async def show_main_menu(bot: Bot, chat_id: int):
-    caption = "Привет! Что делаем — создать новую запись или найти уже созданную?"
+    caption = "Привет! Что делаем?"
     await bot.send_message(
         chat_id=chat_id,
         text=caption,
@@ -3642,6 +4774,8 @@ async def reply_buttons_router(message: Message, state: FSMContext):
     t = (message.text or "").strip()
     if "Новая дегустация" in t:
         await new_cmd(message, state)
+    elif "Быстрая заметка" in t:
+        await quick_new_cmd(message, state)
     elif "Найти записи" in t:
         await find_cmd(message)
     elif "Последние 5" in t:
@@ -3742,6 +4876,7 @@ def setup_handlers(dp: Dispatcher):
     dp.message.register(hide_cmd, Command("hide"))
     dp.message.register(stats_cmd, Command("stats"))
     dp.message.register(new_cmd, Command("new"))
+    dp.message.register(quick_new_cmd, Command("quick"))
     dp.message.register(find_cmd, Command("find"))
     dp.message.register(last_cmd, Command("last"))
     dp.message.register(edit_cmd, Command("edit"))
@@ -3771,6 +4906,15 @@ def setup_handlers(dp: Dispatcher):
     dp.message.register(rating_in, RatingSummary.rating)
     dp.message.register(summary_in, RatingSummary.summary)
 
+    dp.message.register(quick_name_in, QuickNote.name)
+    dp.message.register(quick_type_custom_in, QuickNote.type_custom)
+    dp.message.register(quick_grams_in, QuickNote.grams)
+    dp.message.register(quick_gear_custom_in, QuickNote.gear_custom)
+    dp.message.register(quick_aroma_in, QuickNote.aroma)
+    dp.message.register(quick_taste_in, QuickNote.taste)
+    dp.message.register(quick_eff_custom_in, QuickNote.eff_custom)
+    dp.message.register(quick_note_in, QuickNote.note)
+
     dp.message.register(eff_custom, EffectsScenarios.effects)
     dp.message.register(scn_custom, EffectsScenarios.scenarios)
 
@@ -3783,6 +4927,7 @@ def setup_handlers(dp: Dispatcher):
 
     # редактирование записи
     dp.message.register(edit_flow_msg, EditFlow.waiting_text)
+    dp.message.register(quick_edit_text_in, QuickEditFlow.waiting_text)
 
     # reply-кнопки в самом конце!
     dp.message.register(
@@ -3794,6 +4939,7 @@ def setup_handlers(dp: Dispatcher):
 
     # callbacks
     dp.callback_query.register(new_cb, F.data == "new")
+    dp.callback_query.register(quick_new_cb, F.data == "q:new")
     dp.callback_query.register(find_cb, F.data == "find")
     dp.callback_query.register(help_cb, F.data == "help")
     dp.callback_query.register(tz_menu_back, F.data == "menu:main")
@@ -3838,6 +4984,54 @@ def setup_handlers(dp: Dispatcher):
     dp.callback_query.register(eff_toggle_or_done, F.data.startswith("eff:"))
     dp.callback_query.register(scn_toggle_or_done, F.data.startswith("scn:"))
 
+    dp.callback_query.register(
+        quick_type_pick, StateFilter(QuickNote.type_pick), F.data.startswith("q:type:")
+    )
+    dp.callback_query.register(
+        quick_temp_pick, StateFilter(QuickNote.temp_pick), F.data.startswith("q:temp:")
+    )
+    dp.callback_query.register(
+        quick_gear_pick, StateFilter(QuickNote.gear_pick), F.data.startswith("q:gear:")
+    )
+    dp.callback_query.register(
+        quick_eff_toggle, StateFilter(QuickNote.eff_pick), F.data.startswith("q:eff:")
+    )
+    dp.callback_query.register(
+        quick_rating_pick, StateFilter(QuickNote.rating), F.data.startswith("q:rate:")
+    )
+    dp.callback_query.register(quick_skip, F.data.startswith("q:skip:"))
+    dp.callback_query.register(quick_back, F.data == "q:back")
+    dp.callback_query.register(quick_cancel, F.data == "q:cancel")
+    dp.callback_query.register(
+        quick_cancel_router,
+        StateFilter(QuickCancel.confirm),
+        F.data.in_({"q:cancel:yes", "q:cancel:no"}),
+    )
+    dp.callback_query.register(quick_edit_back, F.data.startswith("qedit:back:"))
+    dp.callback_query.register(
+        quick_edit_field_pick, StateFilter(QuickEditFlow.choosing), F.data.startswith("qefld:")
+    )
+    dp.callback_query.register(
+        quick_edit_type_pick, StateFilter(QuickEditFlow.choosing), F.data.startswith("qedit:type:")
+    )
+    dp.callback_query.register(
+        quick_edit_temp_pick, StateFilter(QuickEditFlow.choosing), F.data.startswith("qedit:temp:")
+    )
+    dp.callback_query.register(
+        quick_edit_gear_pick, StateFilter(QuickEditFlow.choosing), F.data.startswith("qedit:gear:")
+    )
+    dp.callback_query.register(
+        quick_edit_eff_toggle,
+        StateFilter(QuickEditFlow.choosing),
+        F.data.startswith("qedit:eff:"),
+    )
+    dp.callback_query.register(
+        quick_edit_rating_pick,
+        StateFilter(QuickEditFlow.choosing),
+        F.data.startswith("qedit:rate:"),
+    )
+    dp.callback_query.register(quick_edit_cb, F.data.startswith("qedit:"))
+
     dp.callback_query.register(rate_pick, F.data.startswith("rate:"))
     dp.callback_query.register(summary_skip, F.data == "skip:summary")
 
@@ -3877,6 +5071,7 @@ async def set_bot_commands(bot: Bot):
         BotCommand(command="start", description="Главное меню"),
         BotCommand(command="help", description="Помощь"),
         BotCommand(command="new", description="Новая дегустация"),
+        BotCommand(command="quick", description="Быстрая заметка"),
         BotCommand(command="find", description="Поиск"),
         BotCommand(command="tz", description="Часовой пояс (UTC-сдвиг)"),
         BotCommand(command="cancel", description="Отмена шага"),

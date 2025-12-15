@@ -220,6 +220,8 @@ QUICK_CATEGORIES = {
     "hei": "Хэй Ча",
 }
 
+QUICK_CATEGORY_FALLBACK = "Не указан"
+
 QUICK_GEAR = {
     "gaiwan": "Гайвань",
     "teapot": "Чайник",
@@ -1526,7 +1528,7 @@ async def finalize_quick_save(target_message: Message, state: FSMContext):
         "name": data.get("name"),
         "year": None,
         "region": None,
-        "category": data.get("category"),
+        "category": data.get("category") or QUICK_CATEGORY_FALLBACK,
         "grams": data.get("grams"),
         "temp_c": data.get("temp_c"),
         "tasted_at": None,
@@ -2973,8 +2975,8 @@ async def quick_skip(call: CallbackQuery, state: FSMContext):
     _, _, tail = call.data.partition(":")
     _, _, step = tail.partition(":")
     if step == "type":
-        await state.update_data(category=None)
-        await close_inline(call, "Тип: пропущено")
+        await state.update_data(category=QUICK_CATEGORY_FALLBACK)
+        await close_inline(call, f"Тип: {QUICK_CATEGORY_FALLBACK}")
         await ask_quick_grams(call, state)
     elif step == "grams":
         await state.update_data(grams=None)

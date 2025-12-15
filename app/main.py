@@ -220,7 +220,7 @@ QUICK_CATEGORIES = {
     "hei": "Хэй Ча",
 }
 
-QUICK_CATEGORY_FALLBACK = "Не указан"
+QUICK_CATEGORY_FALLBACK = "Другое"
 
 QUICK_GEAR = {
     "gaiwan": "Гайвань",
@@ -300,12 +300,14 @@ def q_cancel_only_kb() -> InlineKeyboardBuilder:
     return kb
 
 
-def q_nav_kb(can_back: bool, can_skip: bool, skip_step: str | None = None) -> InlineKeyboardBuilder:
+def q_nav_kb(
+    can_back: bool, can_skip: bool, skip_step: str | None = None, skip_text: str = "Пропустить"
+) -> InlineKeyboardBuilder:
     kb = InlineKeyboardBuilder()
     if can_back:
         kb.button(text="⬅️ Назад", callback_data="q:back")
     if can_skip and skip_step:
-        kb.button(text="Пропустить", callback_data=f"q:skip:{skip_step}")
+        kb.button(text=skip_text, callback_data=f"q:skip:{skip_step}")
     kb.button(text="Отмена", callback_data="q:cancel")
     kb.adjust(2, 1)
     return kb
@@ -316,7 +318,7 @@ def q_type_kb() -> InlineKeyboardBuilder:
     for code, label in QUICK_CATEGORIES.items():
         kb.button(text=label, callback_data=f"q:type:{code}")
     kb.button(text="Другое (ввести)", callback_data="q:type:other")
-    nav = q_nav_kb(can_back=False, can_skip=True, skip_step="type")
+    nav = q_nav_kb(can_back=False, can_skip=True, skip_step="type", skip_text="Не знаю")
     kb.attach(nav)
     kb.adjust(2, 2, 2, 2)
     return kb
@@ -2976,7 +2978,7 @@ async def quick_skip(call: CallbackQuery, state: FSMContext):
     _, _, step = tail.partition(":")
     if step == "type":
         await state.update_data(category=QUICK_CATEGORY_FALLBACK)
-        await close_inline(call, f"Тип: {QUICK_CATEGORY_FALLBACK}")
+        await close_inline(call, "Тип: не знаю")
         await ask_quick_grams(call, state)
     elif step == "grams":
         await state.update_data(grams=None)

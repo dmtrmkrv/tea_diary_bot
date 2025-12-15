@@ -372,9 +372,12 @@ def q_rating_kb() -> InlineKeyboardBuilder:
 def q_cancel_confirm_kb() -> InlineKeyboardBuilder:
     kb = InlineKeyboardBuilder()
     kb.button(text="Да, отменить", callback_data="q:cancel:yes")
-    kb.button(text="Вернуться к заполнению", callback_data="q:cancel:no")
+    kb.button(text="Вернуться", callback_data="q:cancel:no")
     kb.adjust(1, 1)
     return kb
+
+
+CANCEL_CONFIRM_TEXT = "Отменить все изменения и вернуться в меню?"
 
 
 def category_kb() -> InlineKeyboardBuilder:
@@ -1574,11 +1577,6 @@ async def finalize_quick_save(target_message: Message, state: FSMContext):
 # ---------------- ФОТО ПОСЛЕ ЗАМЕТКИ ----------------
 
 async def prompt_photos(target: Union[Message, CallbackQuery], state: FSMContext):
-    await flush_user_albums(
-        getattr(target.from_user, "id", None) if hasattr(target, "from_user") else None,
-        state,
-        process=False,
-    )
     base_message: Optional[Message]
     if isinstance(target, CallbackQuery):
         base_message = target.message
@@ -1586,6 +1584,15 @@ async def prompt_photos(target: Union[Message, CallbackQuery], state: FSMContext
         base_message = target
     else:
         base_message = None
+
+    if base_message is not None:
+        await clear_live_question(target, base_message.chat.id, state=state)
+
+    await flush_user_albums(
+        getattr(target.from_user, "id", None) if hasattr(target, "from_user") else None,
+        state,
+        process=False,
+    )
 
     prompt_text, prompt_markup = photo_prompt_content(MAX_PHOTOS)
 
@@ -2675,19 +2682,56 @@ async def start_quick_flow(
     await ask_quick_name(target, state)
 
 
+def _extract_target_bot_chat(
+    target: Union[Message, CallbackQuery]
+) -> tuple[Bot, int]:
+    if isinstance(target, CallbackQuery):
+        bot = target.message.bot if target.message else target.bot
+        chat_id = target.message.chat.id if target.message else target.from_user.id
+    else:
+        bot = target.bot
+        chat_id = target.chat.id
+    return bot, chat_id
+
+
+async def ask_quick_question(
+    target: Union[Message, CallbackQuery], state: FSMContext, text: str, kb
+):
+    bot, chat_id = _extract_target_bot_chat(target)
+    return await send_live_question(
+        target,
+        chat_id,
+        text,
+        kb,
+        state=state,
+    )
+
+
+async def prompt_cancel_confirmation(
+    target: Union[Message, CallbackQuery], state: FSMContext, *, use_live_question: bool
+):
+    markup = q_cancel_confirm_kb().as_markup()
+    if use_live_question:
+        await ask_quick_question(target, state, CANCEL_CONFIRM_TEXT, markup)
+    else:
+        await ui(target, CANCEL_CONFIRM_TEXT, reply_markup=markup)
+
+
 async def ask_quick_name(target: Union[Message, CallbackQuery], state: FSMContext):
     await state.set_state(QuickNote.name)
-    await ask_next(target, state, "Название чая?", q_cancel_only_kb().as_markup())
+    await ask_quick_question(
+        target, state, "Название чая?", q_cancel_only_kb().as_markup()
+    )
 
 
 async def ask_quick_type(target: Union[Message, CallbackQuery], state: FSMContext):
     await state.set_state(QuickNote.type_pick)
-    await ask_next(target, state, "Тип чая?", q_type_kb().as_markup())
+    await ask_quick_question(target, state, "Тип чая?", q_type_kb().as_markup())
 
 
 async def ask_quick_type_custom(target: Union[Message, CallbackQuery], state: FSMContext):
     await state.set_state(QuickNote.type_custom)
-    await ask_next(
+    await ask_quick_question(
         target,
         state,
         "Напиши тип чая текстом",
@@ -2697,7 +2741,7 @@ async def ask_quick_type_custom(target: Union[Message, CallbackQuery], state: FS
 
 async def ask_quick_grams(target: Union[Message, CallbackQuery], state: FSMContext):
     await state.set_state(QuickNote.grams)
-    await ask_next(
+    await ask_quick_question(
         target,
         state,
         "Граммовка? Можно пропустить.",
@@ -2707,17 +2751,17 @@ async def ask_quick_grams(target: Union[Message, CallbackQuery], state: FSMConte
 
 async def ask_quick_temp(target: Union[Message, CallbackQuery], state: FSMContext):
     await state.set_state(QuickNote.temp_pick)
-    await ask_next(target, state, "Температура воды?", q_temp_kb().as_markup())
+    await ask_quick_question(target, state, "Температура воды?", q_temp_kb().as_markup())
 
 
 async def ask_quick_gear(target: Union[Message, CallbackQuery], state: FSMContext):
     await state.set_state(QuickNote.gear_pick)
-    await ask_next(target, state, "Посудa дегустации?", q_gear_kb().as_markup())
+    await ask_quick_question(target, state, "Посудa дегустации?", q_gear_kb().as_markup())
 
 
 async def ask_quick_gear_custom(target: Union[Message, CallbackQuery], state: FSMContext):
     await state.set_state(QuickNote.gear_custom)
-    await ask_next(
+    await ask_quick_question(
         target,
         state,
         "Напиши посуду текстом",
@@ -2727,7 +2771,7 @@ async def ask_quick_gear_custom(target: Union[Message, CallbackQuery], state: FS
 
 async def ask_quick_aroma(target: Union[Message, CallbackQuery], state: FSMContext):
     await state.set_state(QuickNote.aroma)
-    await ask_next(
+    await ask_quick_question(
         target,
         state,
         "Аромат? Можно пропустить.",
@@ -2737,7 +2781,7 @@ async def ask_quick_aroma(target: Union[Message, CallbackQuery], state: FSMConte
 
 async def ask_quick_taste(target: Union[Message, CallbackQuery], state: FSMContext):
     await state.set_state(QuickNote.taste)
-    await ask_next(
+    await ask_quick_question(
         target,
         state,
         "Вкус? Можно пропустить.",
@@ -2749,7 +2793,7 @@ async def ask_quick_effects(target: Union[Message, CallbackQuery], state: FSMCon
     data = await state.get_data()
     selected = list(data.get("effects", []) or [])
     await state.set_state(QuickNote.eff_pick)
-    await ask_next(
+    await ask_quick_question(
         target,
         state,
         "Ощущения? Жми варианты, затем «Готово», можно пропустить.",
@@ -2759,12 +2803,12 @@ async def ask_quick_effects(target: Union[Message, CallbackQuery], state: FSMCon
 
 async def ask_quick_rating(target: Union[Message, CallbackQuery], state: FSMContext):
     await state.set_state(QuickNote.rating)
-    await ask_next(target, state, "Оценка 0..10?", q_rating_kb().as_markup())
+    await ask_quick_question(target, state, "Оценка 0..10?", q_rating_kb().as_markup())
 
 
 async def ask_quick_note(target: Union[Message, CallbackQuery], state: FSMContext):
     await state.set_state(QuickNote.note)
-    await ask_next(
+    await ask_quick_question(
         target,
         state,
         "Заметка? Можно пропустить.",
@@ -2776,7 +2820,7 @@ async def ask_quick_effect_custom(
     target: Union[Message, CallbackQuery], state: FSMContext
 ):
     await state.set_state(QuickNote.eff_custom)
-    await ask_next(
+    await ask_quick_question(
         target,
         state,
         "Напиши своё ощущение",
@@ -2949,7 +2993,7 @@ async def quick_eff_custom_in(message: Message, state: FSMContext):
     selected: list[str] = list(data.get("effects", []) or [])
     selected.append(text_val)
     await state.update_data(effects=selected)
-    await ask_quick_effects(message, state)
+    await ask_quick_rating(message, state)
 
 
 async def quick_rating_pick(call: CallbackQuery, state: FSMContext):
@@ -3045,19 +3089,16 @@ async def quick_cancel(call: CallbackQuery, state: FSMContext):
         return
     await state.update_data(cancel_return_state=current_state)
     await state.set_state(QuickCancel.confirm)
-    await ask_next(
-        call,
-        state,
-        "Отменить все изменения и вернуться в меню?",
-        q_cancel_confirm_kb().as_markup(),
-    )
+    await prompt_cancel_confirmation(call, state, use_live_question=True)
     await call.answer()
 
 
 async def quick_cancel_yes(call: CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    await flush_user_albums(data.get("user_id"), state, process=False)
+    await clear_live_question(call, call.from_user.id, state=state)
+    await flush_user_albums(data.get("user_id") or call.from_user.id, state, process=False)
     await state.clear()
+    await state.update_data(numpad_active=False)
     bot = call.message.bot if call.message else call.bot
     await show_main_menu(bot, call.from_user.id)
     await call.answer()
@@ -4669,12 +4710,12 @@ async def delete_cmd(message: Message):
 # ---------------- КОМАНДЫ /start /help /tz и т.п. ----------------
 
 async def show_main_menu(bot: Bot, chat_id: int):
-    caption = "Привет! Что делаем?"
-    await bot.send_message(
-        chat_id=chat_id,
-        text=caption,
-        reply_markup=main_kb().as_markup(),
+    caption = (
+        "Привет! Новая дегустация, если хочешь записать подробно и по проливам.\n"
+        "Быстрая заметка, если нужно быстро зафиксировать аромат, вкус и ощущения.\n"
+        "Найти запись – поиск по созданным записям"
     )
+    await bot.send_message(chat_id=chat_id, text=caption, reply_markup=main_kb().as_markup())
 
 
 async def on_start(message: Message, state: FSMContext):
@@ -4687,9 +4728,10 @@ def help_text(is_admin: bool) -> str:
         "Команды:",
         "/start — главное меню",
         "/help — помощь",
-        "/new — новая дегустация",
-        "/find — найти запись",
-        "/cancel — отмена текущего шага",
+        "/new — новая дегустация в подробном режиме, с проливами",
+        "/quick — быстрая заметка (аромат, вкус, ощущения, оценка, фото)",
+        "/find — поиск записей",
+        "/cancel — отмена текущего действия",
         "",
         "Настройки:",
         "/tz — указать часовой пояс (UTC-сдвиг). Пример: /tz +3",
@@ -4721,11 +4763,20 @@ async def help_cmd(message: Message):
 
 
 async def cancel_cmd(message: Message, state: FSMContext):
-    await state.clear()
-    await state.update_data(numpad_active=False)
-    await message.answer(
-        "Ок, сбросил. Возвращаю в меню.",
-        reply_markup=main_kb().as_markup(),
+    current_state = await state.get_state()
+    if not current_state:
+        await message.answer(
+            "Сейчас нечего отменять.", reply_markup=main_kb().as_markup()
+        )
+        return
+
+    await state.update_data(cancel_return_state=current_state)
+    await state.set_state(QuickCancel.confirm)
+    data = await state.get_data()
+    await prompt_cancel_confirmation(
+        message,
+        state,
+        use_live_question=data.get("flow_kind") == "quick",
     )
 
 
@@ -5074,7 +5125,7 @@ async def set_bot_commands(bot: Bot):
         BotCommand(command="quick", description="Быстрая заметка"),
         BotCommand(command="find", description="Поиск"),
         BotCommand(command="tz", description="Часовой пояс (UTC-сдвиг)"),
-        BotCommand(command="cancel", description="Отмена шага"),
+        BotCommand(command="cancel", description="Отмена текущего действия"),
     ]
     await bot.set_my_commands(commands)
 

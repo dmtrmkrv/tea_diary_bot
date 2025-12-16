@@ -476,9 +476,8 @@ def search_menu_kb() -> InlineKeyboardBuilder:
     kb.button(text="По категории", callback_data="s_cat")
     kb.button(text="По году", callback_data="s_year")
     kb.button(text="По рейтингу", callback_data="s_rating")
-    kb.button(text="Последние 5", callback_data="s_last")
     kb.button(text="⬅️ Назад", callback_data="back:main")
-    kb.adjust(2, 2, 2)
+    kb.adjust(2, 2, 1)
     return kb
 
 
@@ -1267,7 +1266,7 @@ async def send_card_with_media(
     actions_message_id: Optional[int] = None
 
     async def send_text_chunks(text: str) -> None:
-        nonlocal markup_sent
+        nonlocal markup_sent, actions_message_id
         if not text:
             return
         chunks = split_text_for_telegram(text, MESSAGE_LIMIT)
@@ -1286,7 +1285,7 @@ async def send_card_with_media(
                 markup_sent = True
 
     async def ensure_actions_message() -> None:
-        nonlocal markup_sent
+        nonlocal markup_sent, actions_message_id
         if reply_markup and not markup_sent:
             msg = await bot.send_message(
                 chat_id,
@@ -4156,6 +4155,11 @@ async def notes_open_cb(call: CallbackQuery, state: FSMContext):
             cards = data.get("notes_cards", {})
             cards[action_message_id] = message_ids
             await state.update_data(notes_cards=cards)
+        logger.debug(
+            "notes_open_cb: actions_message_id=%s, card_len=%s",
+            action_message_id,
+            len(message_ids),
+        )
     await call.answer()
 
 
@@ -4164,12 +4168,21 @@ async def notes_back_cb(call: CallbackQuery, state: FSMContext):
     cards = data.get("notes_cards", {})
     message_ids = cards.pop(call.message.message_id, None)
 
+    logger.debug(
+        "notes_back_cb: message_id=%s, found=%s",
+        call.message.message_id,
+        bool(message_ids),
+    )
+
     if message_ids:
         chat_id = call.message.chat.id
         for mid in message_ids:
             with suppress(Exception):
                 await call.message.bot.delete_message(chat_id, mid)
         await state.update_data(notes_cards=cards)
+    else:
+        with suppress(Exception):
+            await call.message.delete()
     await call.answer()
 
 

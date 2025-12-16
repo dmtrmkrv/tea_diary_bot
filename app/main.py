@@ -9,7 +9,7 @@ import os
 import re
 import time
 from contextlib import suppress
-from typing import Any, Dict, List, Optional, Tuple, TypedDict, Union
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, TypedDict, Union
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart, Command, StateFilter
@@ -375,7 +375,7 @@ def q_rating_kb() -> InlineKeyboardBuilder:
 def q_cancel_confirm_kb() -> InlineKeyboardBuilder:
     kb = InlineKeyboardBuilder()
     kb.button(text="Да, отменить", callback_data="q:cancel:yes")
-    kb.button(text="Вернуться", callback_data="q:cancel:no")
+    kb.button(text="Вернуться к заполнению", callback_data="q:cancel:no")
     kb.adjust(1, 1)
     return kb
 
@@ -476,9 +476,8 @@ def search_menu_kb() -> InlineKeyboardBuilder:
     kb.button(text="По категории", callback_data="s_cat")
     kb.button(text="По году", callback_data="s_year")
     kb.button(text="По рейтингу", callback_data="s_rating")
-    kb.button(text="Последние 5", callback_data="s_last")
     kb.button(text="⬅️ Назад", callback_data="back:main")
-    kb.adjust(2, 2, 2)
+    kb.adjust(2, 2, 1)
     return kb
 
 
@@ -1267,7 +1266,7 @@ async def send_card_with_media(
     actions_message_id: Optional[int] = None
 
     async def send_text_chunks(text: str) -> None:
-        nonlocal markup_sent
+        nonlocal markup_sent, actions_message_id
         if not text:
             return
         chunks = split_text_for_telegram(text, MESSAGE_LIMIT)
@@ -1286,7 +1285,7 @@ async def send_card_with_media(
                 markup_sent = True
 
     async def ensure_actions_message() -> None:
-        nonlocal markup_sent
+        nonlocal markup_sent, actions_message_id
         if reply_markup and not markup_sent:
             msg = await bot.send_message(
                 chat_id,
@@ -2888,6 +2887,106 @@ async def prompt_cancel_confirmation(
         await ui(target, CANCEL_CONFIRM_TEXT, reply_markup=markup)
 
 
+async def resend_new_prompt(target: Union[Message, CallbackQuery], state: FSMContext) -> bool:
+    data = await state.get_data()
+    target_state = data.get("cancel_return_state") or await state.get_state()
+    if not target_state:
+        return False
+
+    prompt_map: dict[str, Callable[[], Awaitable[None]]] = {
+        NewTasting.name.state: lambda: ask_next(target, state, "🍵 Название чая?"),
+        NewTasting.year.state: lambda: ask_year_prompt(target, state),
+        NewTasting.region.state: lambda: ask_region_prompt(target, state),
+        NewTasting.category.state: lambda: ask_next(
+            target, state, "🏷️ Категория?", category_kb().as_markup()
+        ),
+        NewTasting.grams.state: lambda: ask_grams_prompt(target, state),
+        NewTasting.temp_c.state: lambda: ask_temp_prompt(target, state),
+        NewTasting.tasted_at.state: lambda: ask_tasted_at_prompt(
+            target, state, target.from_user.id  # type: ignore[arg-type]
+        ),
+        NewTasting.gear.state: lambda: ask_next(
+            target,
+            state,
+            "🍶 Посудa дегустации? Можно пропустить.",
+            skip_kb("gear").as_markup(),
+        ),
+        NewTasting.aroma_dry.state: lambda: (
+            ask_aroma_dry_call(target, state)
+            if isinstance(target, CallbackQuery)
+            else ask_aroma_dry_msg(target, state)
+        ),
+        NewTasting.aroma_warmed.state: lambda: ask_next(
+            target,
+            state,
+            "🌬️ Аромат прогретого/промытого листа: выбери и нажми «Готово».",
+            toggle_list_kb(DESCRIPTORS, [], "aw", include_other=True).as_markup(),
+        ),
+        InfusionState.seconds.state: lambda: prompt_infusion_seconds(target, state),
+        InfusionState.color.state: lambda: proceed_to_infusion_color(target, state),
+        InfusionState.taste.state: lambda: ask_next(
+            target,
+            state,
+            "Вкус настоя: выбери дескрипторы и нажми «Готово», или «Другое».",
+            toggle_list_kb(
+                DESCRIPTORS,
+                (data.get("cur_taste_sel") or []),
+                "taste",
+                include_other=True,
+            ).as_markup(),
+        ),
+        InfusionState.special.state: lambda: ask_next(
+            target,
+            state,
+            "✨ Особенные ноты пролива? (можно пропустить)",
+            skip_kb("special").as_markup(),
+        ),
+        InfusionState.body.state: lambda: ask_next(
+            target, state, "Тело настоя?", body_kb().as_markup()
+        ),
+        InfusionState.aftertaste.state: lambda: ask_next(
+            target,
+            state,
+            "Характер послевкусия: выбери пункты и нажми «Готово», или «Другое».",
+            toggle_list_kb(
+                AFTERTASTE_SET,
+                (data.get("cur_aftertaste_sel") or []),
+                "aft",
+                include_other=True,
+            ).as_markup(),
+        ),
+        EffectsScenarios.effects.state: lambda: ask_effects_prompt(target, state),
+        EffectsScenarios.scenarios.state: lambda: ask_next(
+            target,
+            state,
+            "Сценарии (мультивыбор). Жми пункты, затем «Готово», либо «Другое».",
+            toggle_list_kb(
+                SCENARIOS,
+                (data.get("scenarios") or []),
+                prefix="scn",
+                include_other=True,
+            ).as_markup(),
+        ),
+        RatingSummary.rating.state: lambda: ask_next(
+            target, state, "Оценка сорта 0..10?", rating_kb().as_markup()
+        ),
+        RatingSummary.summary.state: lambda: ask_next(
+            target,
+            state,
+            "📝 Заметка по дегустации? (можно пропустить)",
+            skip_kb("summary").as_markup(),
+        ),
+    }
+
+    prompt = prompt_map.get(target_state)
+    if not prompt:
+        return False
+
+    await state.set_state(target_state)
+    await prompt()
+    return True
+
+
 async def ask_quick_name(target: Union[Message, CallbackQuery], state: FSMContext):
     await state.set_state(QuickNote.name)
     await ask_quick_question(
@@ -3361,22 +3460,20 @@ async def quick_cancel(call: CallbackQuery, state: FSMContext):
 
 
 async def quick_cancel_yes(call: CallbackQuery, state: FSMContext):
+    await call.answer()
     data = await state.get_data()
+    with suppress(TelegramBadRequest):
+        if call.message:
+            await call.message.edit_reply_markup(reply_markup=None)
     await clear_live_question(call, call.from_user.id, state=state)
     await flush_user_albums(data.get("user_id") or call.from_user.id, state, process=False)
     await state.clear()
     await state.update_data(numpad_active=False)
     bot = call.message.bot if call.message else call.bot
     await show_main_menu(bot, call.from_user.id)
-    await call.answer()
 
 
-async def quick_cancel_no(call: CallbackQuery, state: FSMContext):
-    data = await state.get_data()
-    return_state = data.get("cancel_return_state")
-    if not return_state:
-        await call.answer()
-        return
+async def _quick_cancel_resume(call: CallbackQuery, state: FSMContext, return_state: str):
     target_step = _quick_state_to_step(return_state)
     if target_step:
         await _quick_cleanup_from_step(call, state, target_step)
@@ -3407,7 +3504,28 @@ async def quick_cancel_no(call: CallbackQuery, state: FSMContext):
         await ask_quick_rating(call, state)
     elif return_state == QuickNote.note.state:
         await ask_quick_note(call, state)
+
+
+async def quick_cancel_no(call: CallbackQuery, state: FSMContext):
     await call.answer()
+    with suppress(TelegramBadRequest):
+        if call.message:
+            await call.message.edit_reply_markup(reply_markup=None)
+    data = await state.get_data()
+    return_state = data.get("cancel_return_state")
+    if not return_state:
+        bot = call.message.bot if call.message else call.bot
+        await show_main_menu(bot, call.from_user.id)
+        return
+
+    if data.get("flow_kind") == "quick":
+        await _quick_cancel_resume(call, state, return_state)
+        return
+
+    resumed = await resend_new_prompt(call, state)
+    if not resumed:
+        bot = call.message.bot if call.message else call.bot
+        await show_main_menu(bot, call.from_user.id)
 
 
 async def quick_cancel_router(call: CallbackQuery, state: FSMContext):
@@ -4156,6 +4274,11 @@ async def notes_open_cb(call: CallbackQuery, state: FSMContext):
             cards = data.get("notes_cards", {})
             cards[action_message_id] = message_ids
             await state.update_data(notes_cards=cards)
+        logger.debug(
+            "notes_open_cb: actions_message_id=%s, card_len=%s",
+            action_message_id,
+            len(message_ids),
+        )
     await call.answer()
 
 
@@ -4164,12 +4287,21 @@ async def notes_back_cb(call: CallbackQuery, state: FSMContext):
     cards = data.get("notes_cards", {})
     message_ids = cards.pop(call.message.message_id, None)
 
+    logger.debug(
+        "notes_back_cb: message_id=%s, found=%s",
+        call.message.message_id,
+        bool(message_ids),
+    )
+
     if message_ids:
         chat_id = call.message.chat.id
         for mid in message_ids:
             with suppress(Exception):
                 await call.message.bot.delete_message(chat_id, mid)
         await state.update_data(notes_cards=cards)
+    else:
+        with suppress(Exception):
+            await call.message.delete()
     await call.answer()
 
 
@@ -5571,7 +5703,7 @@ def setup_handlers(dp: Dispatcher):
     dp.callback_query.register(quick_cancel, F.data == "q:cancel")
     dp.callback_query.register(
         quick_cancel_router,
-        StateFilter(QuickCancel.confirm),
+        StateFilter("*"),
         F.data.in_({"q:cancel:yes", "q:cancel:no"}),
     )
     dp.callback_query.register(quick_edit_back, F.data.startswith("qedit:back:"))

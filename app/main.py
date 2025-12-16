@@ -1647,6 +1647,32 @@ async def prompt_photos(target: Union[Message, CallbackQuery], state: FSMContext
     await state.set_state(PhotoFlow.photos)
 
 
+async def resend_photo_prompt(
+    target: Union[Message, CallbackQuery], state: FSMContext
+):
+    base_message: Optional[Message]
+    if isinstance(target, CallbackQuery):
+        base_message = target.message
+    elif isinstance(target, Message):
+        base_message = target
+    else:
+        base_message = None
+
+    data = await state.get_data()
+    limit = int(data.get("photo_limit") or MAX_PHOTOS)
+    photos: List[PhotoDraft] = list(data.get("new_photos", []) or [])
+
+    if base_message is not None:
+        if photos:
+            await update_photo_progress(base_message, state, len(photos), limit)
+        else:
+            prompt_text, prompt_markup = photo_prompt_content(limit)
+            sent = await base_message.answer(prompt_text, reply_markup=prompt_markup)
+            await state.update_data(progress_msg_id=sent.message_id, photo_limit=limit)
+
+    await state.set_state(PhotoFlow.photos)
+
+
 async def photo_add(message: Message, state: FSMContext):
     data = await state.get_data()
     limit = data.get("photo_limit")
@@ -2976,6 +3002,7 @@ async def resend_new_prompt(target: Union[Message, CallbackQuery], state: FSMCon
             "📝 Заметка по дегустации? (можно пропустить)",
             skip_kb("summary").as_markup(),
         ),
+        PhotoFlow.photos.state: lambda: resend_photo_prompt(target, state),
     }
 
     prompt = prompt_map.get(target_state)

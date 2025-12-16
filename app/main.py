@@ -2,13 +2,14 @@ import asyncio
 import base64
 import datetime
 import html
+import math
 import io
 import logging
 import os
 import re
 import time
 from contextlib import suppress
-from typing import Any, Dict, List, Optional, Tuple, TypedDict, Union
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, TypedDict, Union
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart, Command, StateFilter
@@ -241,6 +242,7 @@ QUICK_EFFECTS = {
 }
 
 PAGE_SIZE = 5
+NOTES_TITLE_MAX_LEN = 40
 try:
     MAX_PHOTOS = max(1, int(os.getenv("PHOTO_LIMIT", "3")))
 except ValueError:
@@ -266,9 +268,10 @@ def main_kb() -> InlineKeyboardBuilder:
     kb = InlineKeyboardBuilder()
     kb.button(text="📝 Новая дегустация", callback_data="new")
     kb.button(text="⚡ Быстрая заметка", callback_data="q:new")
-    kb.button(text="🔎 Найти записи", callback_data="find")
+    kb.button(text="Мои дегустации", callback_data="notes:list:0")
+    kb.button(text="🔎 Поиск", callback_data="find")
     kb.button(text="❔ Помощь", callback_data="help")
-    kb.adjust(1, 1, 1, 1)
+    kb.adjust(1, 1, 1, 1, 1)
     return kb
 
 
@@ -280,9 +283,10 @@ def reply_main_kb() -> ReplyKeyboardMarkup:
                 KeyboardButton(text="⚡ Быстрая заметка"),
             ],
             [
-                KeyboardButton(text="🔎 Найти записи"),
+                KeyboardButton(text="🔎 Поиск"),
                 KeyboardButton(text="🕔 Последние 5"),
             ],
+            [KeyboardButton(text="Мои дегустации")],
             [KeyboardButton(text="❔ Помощь")],
             [KeyboardButton(text="Сброс")],
         ],
@@ -371,7 +375,7 @@ def q_rating_kb() -> InlineKeyboardBuilder:
 def q_cancel_confirm_kb() -> InlineKeyboardBuilder:
     kb = InlineKeyboardBuilder()
     kb.button(text="Да, отменить", callback_data="q:cancel:yes")
-    kb.button(text="Вернуться", callback_data="q:cancel:no")
+    kb.button(text="Вернуться к заполнению", callback_data="q:cancel:no")
     kb.adjust(1, 1)
     return kb
 
@@ -472,9 +476,8 @@ def search_menu_kb() -> InlineKeyboardBuilder:
     kb.button(text="По категории", callback_data="s_cat")
     kb.button(text="По году", callback_data="s_year")
     kb.button(text="По рейтингу", callback_data="s_rating")
-    kb.button(text="Последние 5", callback_data="s_last")
     kb.button(text="⬅️ Назад", callback_data="back:main")
-    kb.adjust(2, 2, 2)
+    kb.adjust(2, 2, 1)
     return kb
 
 
@@ -507,6 +510,19 @@ def quick_card_actions_kb(t_id: int) -> InlineKeyboardBuilder:
     kb.button(text="🗑️ Удалить", callback_data=f"del:{t_id}")
     kb.button(text="⬅️ В меню", callback_data="back:main")
     kb.adjust(2, 1)
+    return kb
+
+
+def notes_card_actions_kb(t_id: int, is_quick: bool) -> InlineKeyboardBuilder:
+    kb = InlineKeyboardBuilder()
+    if is_quick:
+        kb.button(text="✏️ Редактировать", callback_data=f"qedit:{t_id}")
+    else:
+        kb.button(text="✏️ Редактировать", callback_data=f"edit:{t_id}")
+    kb.button(text="🗑️ Удалить", callback_data=f"del:{t_id}")
+    kb.button(text="⬅️ Назад к списку", callback_data="notes:back")
+    kb.button(text="В меню", callback_data="back:main")
+    kb.adjust(2, 2)
     return kb
 
 
@@ -1239,35 +1255,46 @@ async def send_card_with_media(
     text_card: str,
     photos: List[str],
     reply_markup=None,
-) -> None:
+    *,
+    collect_message_ids: bool = False,
+) -> Optional[Tuple[List[int], Optional[int]]]:
     bot = target_message.bot
     chat_id = target_message.chat.id
     photos = photos[:MAX_PHOTOS]
     markup_sent = False
+    message_ids: List[int] = []
+    actions_message_id: Optional[int] = None
 
     async def send_text_chunks(text: str) -> None:
-        nonlocal markup_sent
+        nonlocal markup_sent, actions_message_id
         if not text:
             return
         chunks = split_text_for_telegram(text, MESSAGE_LIMIT)
         for idx, chunk in enumerate(chunks):
-            await bot.send_message(
+            msg = await bot.send_message(
                 chat_id,
                 chunk,
                 parse_mode="HTML",
                 reply_markup=(reply_markup if not markup_sent and reply_markup and idx == 0 else None),
             )
+            if collect_message_ids:
+                message_ids.append(msg.message_id)
+                if reply_markup and not markup_sent and idx == 0:
+                    actions_message_id = msg.message_id
             if reply_markup and not markup_sent and idx == 0:
                 markup_sent = True
 
     async def ensure_actions_message() -> None:
-        nonlocal markup_sent
+        nonlocal markup_sent, actions_message_id
         if reply_markup and not markup_sent:
-            await bot.send_message(
+            msg = await bot.send_message(
                 chat_id,
                 "Действия:",
                 reply_markup=reply_markup,
             )
+            if collect_message_ids:
+                message_ids.append(msg.message_id)
+                actions_message_id = msg.message_id
             markup_sent = True
 
     try:
@@ -1285,7 +1312,9 @@ async def send_card_with_media(
                     )
                 else:
                     media.append(InputMediaPhoto(media=fid))
-            await bot.send_media_group(chat_id, media)
+            sent_album = await bot.send_media_group(chat_id, media)
+            if collect_message_ids:
+                message_ids.extend(m.message_id for m in sent_album)
             if use_caption:
                 await ensure_actions_message()
             else:
@@ -1300,11 +1329,16 @@ async def send_card_with_media(
         await ensure_actions_message()
         for fid in photos:
             try:
-                await bot.send_photo(chat_id, fid)
+                msg = await bot.send_photo(chat_id, fid)
+                if collect_message_ids:
+                    message_ids.append(msg.message_id)
             except Exception:
                 logging.exception(
                     "Fallback photo send failed for tasting %s", tasting_id
                 )
+    if collect_message_ids:
+        return message_ids, actions_message_id
+    return None
 
 
 async def _store_photo_from_file_id(
@@ -1610,6 +1644,32 @@ async def prompt_photos(target: Union[Message, CallbackQuery], state: FSMContext
         await clear_photo_progress(base_message.bot, base_message.chat.id, state)
         sent = await base_message.answer(prompt_text, reply_markup=prompt_markup)
         await state.update_data(progress_msg_id=sent.message_id)
+    await state.set_state(PhotoFlow.photos)
+
+
+async def resend_photo_prompt(
+    target: Union[Message, CallbackQuery], state: FSMContext
+):
+    base_message: Optional[Message]
+    if isinstance(target, CallbackQuery):
+        base_message = target.message
+    elif isinstance(target, Message):
+        base_message = target
+    else:
+        base_message = None
+
+    data = await state.get_data()
+    limit = int(data.get("photo_limit") or MAX_PHOTOS)
+    photos: List[PhotoDraft] = list(data.get("new_photos", []) or [])
+
+    if base_message is not None:
+        if photos:
+            await update_photo_progress(base_message, state, len(photos), limit)
+        else:
+            prompt_text, prompt_markup = photo_prompt_content(limit)
+            sent = await base_message.answer(prompt_text, reply_markup=prompt_markup)
+            await state.update_data(progress_msg_id=sent.message_id, photo_limit=limit)
+
     await state.set_state(PhotoFlow.photos)
 
 
@@ -2853,6 +2913,107 @@ async def prompt_cancel_confirmation(
         await ui(target, CANCEL_CONFIRM_TEXT, reply_markup=markup)
 
 
+async def resend_new_prompt(target: Union[Message, CallbackQuery], state: FSMContext) -> bool:
+    data = await state.get_data()
+    target_state = data.get("cancel_return_state") or await state.get_state()
+    if not target_state:
+        return False
+
+    prompt_map: dict[str, Callable[[], Awaitable[None]]] = {
+        NewTasting.name.state: lambda: ask_next(target, state, "🍵 Название чая?"),
+        NewTasting.year.state: lambda: ask_year_prompt(target, state),
+        NewTasting.region.state: lambda: ask_region_prompt(target, state),
+        NewTasting.category.state: lambda: ask_next(
+            target, state, "🏷️ Категория?", category_kb().as_markup()
+        ),
+        NewTasting.grams.state: lambda: ask_grams_prompt(target, state),
+        NewTasting.temp_c.state: lambda: ask_temp_prompt(target, state),
+        NewTasting.tasted_at.state: lambda: ask_tasted_at_prompt(
+            target, state, target.from_user.id  # type: ignore[arg-type]
+        ),
+        NewTasting.gear.state: lambda: ask_next(
+            target,
+            state,
+            "🍶 Посудa дегустации? Можно пропустить.",
+            skip_kb("gear").as_markup(),
+        ),
+        NewTasting.aroma_dry.state: lambda: (
+            ask_aroma_dry_call(target, state)
+            if isinstance(target, CallbackQuery)
+            else ask_aroma_dry_msg(target, state)
+        ),
+        NewTasting.aroma_warmed.state: lambda: ask_next(
+            target,
+            state,
+            "🌬️ Аромат прогретого/промытого листа: выбери и нажми «Готово».",
+            toggle_list_kb(DESCRIPTORS, [], "aw", include_other=True).as_markup(),
+        ),
+        InfusionState.seconds.state: lambda: prompt_infusion_seconds(target, state),
+        InfusionState.color.state: lambda: proceed_to_infusion_color(target, state),
+        InfusionState.taste.state: lambda: ask_next(
+            target,
+            state,
+            "Вкус настоя: выбери дескрипторы и нажми «Готово», или «Другое».",
+            toggle_list_kb(
+                DESCRIPTORS,
+                (data.get("cur_taste_sel") or []),
+                "taste",
+                include_other=True,
+            ).as_markup(),
+        ),
+        InfusionState.special.state: lambda: ask_next(
+            target,
+            state,
+            "✨ Особенные ноты пролива? (можно пропустить)",
+            skip_kb("special").as_markup(),
+        ),
+        InfusionState.body.state: lambda: ask_next(
+            target, state, "Тело настоя?", body_kb().as_markup()
+        ),
+        InfusionState.aftertaste.state: lambda: ask_next(
+            target,
+            state,
+            "Характер послевкусия: выбери пункты и нажми «Готово», или «Другое».",
+            toggle_list_kb(
+                AFTERTASTE_SET,
+                (data.get("cur_aftertaste_sel") or []),
+                "aft",
+                include_other=True,
+            ).as_markup(),
+        ),
+        EffectsScenarios.effects.state: lambda: ask_effects_prompt(target, state),
+        EffectsScenarios.scenarios.state: lambda: ask_next(
+            target,
+            state,
+            "Сценарии (мультивыбор). Жми пункты, затем «Готово», либо «Другое».",
+            toggle_list_kb(
+                SCENARIOS,
+                (data.get("scenarios") or []),
+                prefix="scn",
+                include_other=True,
+            ).as_markup(),
+        ),
+        RatingSummary.rating.state: lambda: ask_next(
+            target, state, "Оценка сорта 0..10?", rating_kb().as_markup()
+        ),
+        RatingSummary.summary.state: lambda: ask_next(
+            target,
+            state,
+            "📝 Заметка по дегустации? (можно пропустить)",
+            skip_kb("summary").as_markup(),
+        ),
+        PhotoFlow.photos.state: lambda: resend_photo_prompt(target, state),
+    }
+
+    prompt = prompt_map.get(target_state)
+    if not prompt:
+        return False
+
+    await state.set_state(target_state)
+    await prompt()
+    return True
+
+
 async def ask_quick_name(target: Union[Message, CallbackQuery], state: FSMContext):
     await state.set_state(QuickNote.name)
     await ask_quick_question(
@@ -3326,22 +3487,20 @@ async def quick_cancel(call: CallbackQuery, state: FSMContext):
 
 
 async def quick_cancel_yes(call: CallbackQuery, state: FSMContext):
+    await call.answer()
     data = await state.get_data()
+    with suppress(TelegramBadRequest):
+        if call.message:
+            await call.message.edit_reply_markup(reply_markup=None)
     await clear_live_question(call, call.from_user.id, state=state)
     await flush_user_albums(data.get("user_id") or call.from_user.id, state, process=False)
     await state.clear()
     await state.update_data(numpad_active=False)
     bot = call.message.bot if call.message else call.bot
     await show_main_menu(bot, call.from_user.id)
-    await call.answer()
 
 
-async def quick_cancel_no(call: CallbackQuery, state: FSMContext):
-    data = await state.get_data()
-    return_state = data.get("cancel_return_state")
-    if not return_state:
-        await call.answer()
-        return
+async def _quick_cancel_resume(call: CallbackQuery, state: FSMContext, return_state: str):
     target_step = _quick_state_to_step(return_state)
     if target_step:
         await _quick_cleanup_from_step(call, state, target_step)
@@ -3372,7 +3531,28 @@ async def quick_cancel_no(call: CallbackQuery, state: FSMContext):
         await ask_quick_rating(call, state)
     elif return_state == QuickNote.note.state:
         await ask_quick_note(call, state)
+
+
+async def quick_cancel_no(call: CallbackQuery, state: FSMContext):
     await call.answer()
+    with suppress(TelegramBadRequest):
+        if call.message:
+            await call.message.edit_reply_markup(reply_markup=None)
+    data = await state.get_data()
+    return_state = data.get("cancel_return_state")
+    if not return_state:
+        bot = call.message.bot if call.message else call.bot
+        await show_main_menu(bot, call.from_user.id)
+        return
+
+    if data.get("flow_kind") == "quick":
+        await _quick_cancel_resume(call, state, return_state)
+        return
+
+    resumed = await resend_new_prompt(call, state)
+    if not resumed:
+        bot = call.message.bot if call.message else call.bot
+        await show_main_menu(bot, call.from_user.id)
 
 
 async def quick_cancel_router(call: CallbackQuery, state: FSMContext):
@@ -3893,6 +4073,265 @@ async def last_cmd(message: Message):
     )
 
 
+def _try_parse_date(value: str) -> Optional[datetime.date]:
+    cleaned = (value or "").strip()
+    for fmt in ("%Y-%m-%d", "%Y.%m.%d", "%d.%m.%Y", "%d.%m", "%d/%m", "%d-%m"):
+        try:
+            dt = datetime.datetime.strptime(cleaned, fmt)
+            return dt.date()
+        except ValueError:
+            continue
+    return None
+
+
+def format_note_date(t: Tasting) -> str:
+    if t.tasted_at:
+        parsed = _try_parse_date(t.tasted_at)
+        if parsed:
+            return parsed.strftime("%d.%m")
+    if getattr(t, "created_at", None):
+        return t.created_at.strftime("%d.%m")
+    return "--.--"
+
+
+def format_note_title(t: Tasting) -> str:
+    parts: List[str] = [t.name]
+    extra: List[str] = []
+    if t.year:
+        extra.append(str(t.year))
+    if t.region:
+        extra.append(t.region)
+    if extra:
+        parts.append(f"({', '.join(extra)})")
+    full_title = " ".join(parts).strip()
+    if len(full_title) <= NOTES_TITLE_MAX_LEN:
+        return full_title
+    return full_title[: NOTES_TITLE_MAX_LEN - 1].rstrip() + "…"
+
+
+def format_note_row(t: Tasting) -> str:
+    icon = "⚡️ " if getattr(t, "entry_mode", "full") == "quick" else ""
+    date = format_note_date(t)
+    title = format_note_title(t)
+    rating = "–" if t.rating is None else str(t.rating)
+    return f"{icon}{date} · {t.category} · {title} · {rating}"
+
+
+def fetch_notes_page(uid: int, page: int) -> tuple[List[Tasting], int, int, int]:
+    with SessionLocal() as s:
+        total = (
+            s.execute(select(func.count(Tasting.id)).where(Tasting.user_id == uid))
+            .scalar_one()
+            or 0
+        )
+        pages = max(1, math.ceil(total / PAGE_SIZE)) if total else 1
+        page_idx = min(max(page, 0), max(pages - 1, 0))
+        tastings = (
+            s.execute(
+                select(Tasting)
+                .where(Tasting.user_id == uid)
+                .order_by(Tasting.id.desc())
+                .limit(PAGE_SIZE)
+                .offset(page_idx * PAGE_SIZE)
+            )
+            .scalars()
+            .all()
+        )
+    return tastings, total, page_idx, pages
+
+
+def notes_list_text(total: int, page: int, pages: int) -> str:
+    header = f"Мои дегустации · {total} записей · стр. {page + 1}/{pages}"
+    if total:
+        return (
+            header
+            + "\n\n"
+            + "Последние 5 записей. Нажми на строку, чтобы открыть карточку."
+        )
+    return header + "\n\nПока нет записей."
+
+
+def notes_list_kb(items: List[Tasting], page: int, pages: int) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    for t in items:
+        kb.button(text=format_note_row(t), callback_data=f"notes:open:{t.id}")
+    nav_buttons = []
+    if page > 0:
+        nav_buttons.append(
+            InlineKeyboardButton(text="⬅️ Назад", callback_data=f"notes:prev:{page - 1}")
+        )
+    if page < pages - 1:
+        nav_buttons.append(
+            InlineKeyboardButton(text="Вперёд ➡️", callback_data=f"notes:next:{page + 1}")
+        )
+    if items:
+        kb.adjust(1)
+    if nav_buttons:
+        kb.row(*nav_buttons)
+    kb.row(InlineKeyboardButton(text="В меню", callback_data="back:main"))
+    return kb.as_markup()
+
+
+async def render_notes_list(
+    target: Union[Message, CallbackQuery], uid: int, page: int, *, edit: bool = False
+):
+    items, total, page_idx, pages = fetch_notes_page(uid, page)
+    text = notes_list_text(total, page_idx, pages)
+    markup = notes_list_kb(items, page_idx, pages)
+
+    if edit:
+        await ui(target, text, reply_markup=markup)
+    else:
+        if isinstance(target, CallbackQuery):
+            await target.message.answer(text, reply_markup=markup)
+        else:
+            await target.answer(text, reply_markup=markup)
+
+
+async def notes_cmd(message: Message):
+    await render_notes_list(message, message.from_user.id, 0, edit=False)
+
+
+async def notes_list_cb(call: CallbackQuery):
+    try:
+        _, _, page_raw = call.data.split(":", 2)
+        page = int(page_raw)
+    except Exception:
+        await call.answer()
+        return
+
+    await render_notes_list(call, call.from_user.id, page, edit=True)
+    await call.answer()
+
+
+async def notes_prev_next_cb(call: CallbackQuery):
+    try:
+        _, _, page_raw = call.data.split(":", 2)
+        page = int(page_raw)
+    except Exception:
+        await call.answer()
+        return
+
+    await render_notes_list(call, call.from_user.id, page, edit=True)
+    await call.answer()
+
+
+def load_tasting_details(tid: int, uid: int):
+    with SessionLocal() as s:
+        t = s.get(Tasting, tid)
+        if not t or t.user_id != uid:
+            return None
+
+        inf_list = (
+            s.execute(
+                select(Infusion)
+                .where(Infusion.tasting_id == tid)
+                .order_by(Infusion.n)
+            )
+            .scalars()
+            .all()
+        )
+        infusions_data = [
+            {
+                "n": inf.n,
+                "seconds": inf.seconds,
+                "liquor_color": inf.liquor_color,
+                "taste": inf.taste,
+                "special_notes": inf.special_notes,
+                "body": inf.body,
+                "aftertaste": inf.aftertaste,
+            }
+            for inf in inf_list
+        ]
+
+        photo_count = (
+            s.execute(select(func.count(Photo.id)).where(Photo.tasting_id == tid))
+            .scalar_one()
+        )
+        photo_ids = (
+            s.execute(
+                select(func.coalesce(Photo.telegram_file_id, Photo.file_id))
+                .where(Photo.tasting_id == tid)
+                .order_by(Photo.id.asc())
+                .limit(MAX_PHOTOS)
+            )
+            .scalars()
+            .all()
+        )
+
+        is_quick = getattr(t, "entry_mode", "full") == "quick"
+
+    return t, infusions_data, photo_ids, is_quick, photo_count
+
+
+async def notes_open_cb(call: CallbackQuery, state: FSMContext):
+    try:
+        _, _, sid = call.data.split(":", 2)
+        tid = int(sid)
+    except Exception:
+        await call.answer()
+        return
+
+    details = load_tasting_details(tid, call.from_user.id)
+    if not details:
+        await call.message.answer("Запись не найдена.")
+        await call.answer()
+        return
+
+    t, infusions_data, photo_ids, is_quick, photo_count = details
+    if is_quick:
+        card_text = build_quick_card_text(t, photo_count=photo_count or 0)
+    else:
+        card_text = build_card_text(t, infusions_data, photo_count=photo_count or 0)
+
+    actions_markup = notes_card_actions_kb(t.id, is_quick=is_quick).as_markup()
+    sent = await send_card_with_media(
+        call.message,
+        t.id,
+        card_text,
+        photo_ids,
+        reply_markup=actions_markup,
+        collect_message_ids=True,
+    )
+
+    if sent:
+        message_ids, action_message_id = sent
+        if action_message_id:
+            data = await state.get_data()
+            cards = data.get("notes_cards", {})
+            cards[action_message_id] = message_ids
+            await state.update_data(notes_cards=cards)
+        logger.debug(
+            "notes_open_cb: actions_message_id=%s, card_len=%s",
+            action_message_id,
+            len(message_ids),
+        )
+    await call.answer()
+
+
+async def notes_back_cb(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    cards = data.get("notes_cards", {})
+    message_ids = cards.pop(call.message.message_id, None)
+
+    logger.debug(
+        "notes_back_cb: message_id=%s, found=%s",
+        call.message.message_id,
+        bool(message_ids),
+    )
+
+    if message_ids:
+        chat_id = call.message.chat.id
+        for mid in message_ids:
+            with suppress(Exception):
+                await call.message.bot.delete_message(chat_id, mid)
+        await state.update_data(notes_cards=cards)
+    else:
+        with suppress(Exception):
+            await call.message.delete()
+    await call.answer()
+
+
 async def more_last(call: CallbackQuery):
     _, _, payload = call.data.split(":", 2)
     try:
@@ -4358,54 +4797,13 @@ async def open_card(call: CallbackQuery):
         await call.answer()
         return
 
-    with SessionLocal() as s:
-        t = s.get(Tasting, tid)
-        if not t or t.user_id != call.from_user.id:
-            await call.message.answer("Запись не найдена.")
-            await call.answer()
-            return
+    details = load_tasting_details(tid, call.from_user.id)
+    if not details:
+        await call.message.answer("Запись не найдена.")
+        await call.answer()
+        return
 
-        inf_list = (
-            s.execute(
-                select(Infusion)
-                .where(Infusion.tasting_id == tid)
-                .order_by(Infusion.n)
-            )
-            .scalars()
-            .all()
-        )
-        infusions_data = [
-            {
-                "n": inf.n,
-                "seconds": inf.seconds,
-                "liquor_color": inf.liquor_color,
-                "taste": inf.taste,
-                "special_notes": inf.special_notes,
-                "body": inf.body,
-                "aftertaste": inf.aftertaste,
-            }
-            for inf in inf_list
-        ]
-
-        photo_count = (
-            s.execute(
-                select(func.count(Photo.id)).where(Photo.tasting_id == tid)
-            )
-            .scalar_one()
-        )
-        photo_ids = (
-            s.execute(
-                select(func.coalesce(Photo.telegram_file_id, Photo.file_id))
-                .where(Photo.tasting_id == tid)
-                .order_by(Photo.id.asc())
-                .limit(MAX_PHOTOS)
-            )
-            .scalars()
-            .all()
-        )
-
-        is_quick = getattr(t, "entry_mode", "full") == "quick"
-
+    t, infusions_data, photo_ids, is_quick, photo_count = details
     if is_quick:
         card_text = build_quick_card_text(t, photo_count=photo_count or 0)
         actions_markup = quick_card_actions_kb(t.id).as_markup()
@@ -4979,7 +5377,8 @@ async def show_main_menu(bot: Bot, chat_id: int):
     caption = (
         "Привет! Новая дегустация, если хочешь записать подробно и по проливам.\n"
         "Быстрая заметка, если нужно быстро зафиксировать аромат, вкус и ощущения.\n"
-        "Найти запись – поиск по созданным записям"
+        "Поиск – поиск по созданным записям.\n"
+        "Мои дегустации – последние заметки с перелистыванием."
     )
     await bot.send_message(chat_id=chat_id, text=caption, reply_markup=main_kb().as_markup())
 
@@ -4996,6 +5395,7 @@ def help_text(is_admin: bool) -> str:
         "/help — помощь",
         "/new — новая дегустация в подробном режиме, с проливами",
         "/quick — быстрая заметка (аромат, вкус, ощущения, оценка, фото)",
+        "/notes — мои дегустации",
         "/find — поиск записей",
         "/cancel — отмена текущего действия",
         "",
@@ -5093,8 +5493,10 @@ async def reply_buttons_router(message: Message, state: FSMContext):
         await new_cmd(message, state)
     elif "Быстрая заметка" in t:
         await quick_new_cmd(message, state)
-    elif "Найти записи" in t:
+    elif "Поиск" in t:
         await find_cmd(message)
+    elif "Мои дегустации" in t:
+        await notes_cmd(message)
     elif "Последние 5" in t:
         await last_cmd(message)
     elif "Помощь" in t or "О боте" in t:
@@ -5194,6 +5596,8 @@ def setup_handlers(dp: Dispatcher):
     dp.message.register(stats_cmd, Command("stats"))
     dp.message.register(new_cmd, Command("new"))
     dp.message.register(quick_new_cmd, Command("quick"))
+    dp.message.register(notes_cmd, Command("notes"))
+    dp.message.register(notes_cmd, Command("my"))
     dp.message.register(find_cmd, Command("find"))
     dp.message.register(last_cmd, Command("last"))
     dp.message.register(edit_cmd, Command("edit"))
@@ -5258,6 +5662,11 @@ def setup_handlers(dp: Dispatcher):
     dp.callback_query.register(new_cb, F.data == "new")
     dp.callback_query.register(quick_new_cb, F.data == "q:new")
     dp.callback_query.register(find_cb, F.data == "find")
+    dp.callback_query.register(notes_list_cb, F.data.startswith("notes:list"))
+    dp.callback_query.register(notes_prev_next_cb, F.data.startswith("notes:prev:"))
+    dp.callback_query.register(notes_prev_next_cb, F.data.startswith("notes:next:"))
+    dp.callback_query.register(notes_open_cb, F.data.startswith("notes:open:"))
+    dp.callback_query.register(notes_back_cb, F.data == "notes:back")
     dp.callback_query.register(help_cb, F.data == "help")
     dp.callback_query.register(tz_menu_back, F.data == "menu:main")
     dp.callback_query.register(back_main, F.data == "back:main")
@@ -5321,7 +5730,7 @@ def setup_handlers(dp: Dispatcher):
     dp.callback_query.register(quick_cancel, F.data == "q:cancel")
     dp.callback_query.register(
         quick_cancel_router,
-        StateFilter(QuickCancel.confirm),
+        StateFilter("*"),
         F.data.in_({"q:cancel:yes", "q:cancel:no"}),
     )
     dp.callback_query.register(quick_edit_back, F.data.startswith("qedit:back:"))
@@ -5389,6 +5798,7 @@ async def set_bot_commands(bot: Bot):
         BotCommand(command="help", description="Помощь"),
         BotCommand(command="new", description="Новая дегустация"),
         BotCommand(command="quick", description="Быстрая заметка"),
+        BotCommand(command="notes", description="Мои дегустации"),
         BotCommand(command="find", description="Поиск"),
         BotCommand(command="tz", description="Часовой пояс (UTC-сдвиг)"),
         BotCommand(command="cancel", description="Отмена текущего действия"),

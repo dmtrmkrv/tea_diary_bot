@@ -31,7 +31,7 @@ from app.db.engine import SessionLocal, create_sa_engine, startup_ping
 from app.db.models import Infusion, Photo, Tasting, User
 from app.routers.diagnostics import create_router
 from app.utils.admins import get_admin_ids
-from app.services.stats import get_bot_stats
+from app.services.stats import get_bot_stats, get_user_stats
 from app.services.tastings import create_tasting
 from app.services.users import get_or_create_user, set_user_timezone
 from app.validators import parse_float, parse_int
@@ -5470,19 +5470,27 @@ async def hide_cmd(message: Message):
 
 async def stats_cmd(message: Message):
     uid = getattr(message.from_user, "id", None)
-    if uid not in ADMINS:
-        await message.answer("Эта команда доступна только админу.")
-        return
 
-    stats = await get_bot_stats()
+    user_stats = await get_user_stats(uid)
+    top = ", ".join(user_stats.top_categories) if user_stats.top_categories else "пока нет"
     text = (
-        "📊 Статистика бота\n\n"
-        f"Всего пользователей: {stats.total_users}\n"
-        f"Всего дегустаций: {stats.total_tastings}\n\n"
-        "За последние 7 дней:\n"
-        f"• Дегустаций: {stats.tastings_last_7d}\n"
-        f"• Активных пользователей: {stats.active_users_last_7d}"
+        "📊 Моя статистика\n\n"
+        f"🍵 Дегустаций: {user_stats.total_tastings}\n"
+        f"🏆 Топ категории: {top}\n"
+        f"⭐ Средний рейтинг: {user_stats.average_rating}"
     )
+
+    if uid in ADMINS:
+        bot_stats = await get_bot_stats()
+        text += (
+            "\n\n——————————————\n"
+            "🤖 Статистика бота\n\n"
+            f"👥 Пользователей: {bot_stats.total_users}\n"
+            f"📝 Всего дегустаций: {bot_stats.total_tastings}\n\n"
+            "За последние 7 дней:\n"
+            f"• Дегустаций: {bot_stats.tastings_last_7d}\n"
+            f"• Активных пользователей: {bot_stats.active_users_last_7d}"
+        )
 
     await message.answer(text)
 
@@ -5801,6 +5809,7 @@ async def set_bot_commands(bot: Bot):
         BotCommand(command="notes", description="Мои дегустации"),
         BotCommand(command="find", description="Поиск"),
         BotCommand(command="tz", description="Часовой пояс (UTC-сдвиг)"),
+        BotCommand(command="stats", description="Моя статистика"),
         BotCommand(command="cancel", description="Отмена текущего действия"),
     ]
     await bot.set_my_commands(commands)

@@ -4,11 +4,50 @@ from __future__ import annotations
 
 import datetime
 from dataclasses import dataclass
+from typing import List
 
 from sqlalchemy import func, select
 
 from app.db.engine import SessionLocal
 from app.db.models import Tasting, User
+
+
+@dataclass
+class UserStats:
+    total_tastings: int
+    top_categories: List[str]
+    average_rating: float
+
+
+async def get_user_stats(user_id: int) -> UserStats:
+    """Возвращает личную статистику пользователя."""
+
+    with SessionLocal() as session:
+        total_tastings = session.execute(
+            select(func.count()).where(Tasting.user_id == user_id)
+        ).scalar_one()
+
+        top_rows = session.execute(
+            select(Tasting.category, func.count().label("cnt"))
+            .where(Tasting.user_id == user_id)
+            .group_by(Tasting.category)
+            .order_by(func.count().desc())
+            .limit(3)
+        ).all()
+        top_categories = [row.category for row in top_rows]
+
+        avg = session.execute(
+            select(func.avg(Tasting.rating)).where(
+                Tasting.user_id == user_id, Tasting.rating > 0
+            )
+        ).scalar_one()
+        average_rating = round(float(avg), 1) if avg is not None else 0.0
+
+    return UserStats(
+        total_tastings=total_tastings,
+        top_categories=top_categories,
+        average_rating=average_rating,
+    )
 
 
 @dataclass

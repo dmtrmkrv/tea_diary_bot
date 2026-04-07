@@ -407,6 +407,14 @@ def skip_kb(tag: str) -> InlineKeyboardBuilder:
     return kb
 
 
+def back_skip_kb(tag: str) -> InlineKeyboardBuilder:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="⬅️ Назад", callback_data="nt:back")
+    kb.button(text="Пропустить", callback_data=f"skip:{tag}")
+    kb.adjust(2)
+    return kb
+
+
 def kb_inf_seconds() -> InlineKeyboardMarkup:
     return skip_kb("infsec").as_markup()
 
@@ -417,6 +425,38 @@ def time_kb() -> InlineKeyboardBuilder:
     kb.button(text="Пропустить", callback_data="skip:tasted_at")
     kb.adjust(1, 1)
     return kb
+
+
+def time_with_back_kb() -> InlineKeyboardBuilder:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="⬅️ Назад", callback_data="nt:back")
+    kb.button(text="🕒 Текущее время", callback_data="time:now")
+    kb.button(text="Пропустить", callback_data="skip:tasted_at")
+    kb.adjust(1)
+    return kb
+
+
+def category_with_back_kb() -> InlineKeyboardBuilder:
+    kb = InlineKeyboardBuilder()
+    for c in CATEGORIES:
+        kb.button(text=c, callback_data=f"cat:{c}")
+    kb.button(text="⬅️ Назад", callback_data="nt:back")
+    kb.adjust(2)
+    return kb
+
+
+def aroma_dry_kb(selected: List[str]) -> InlineKeyboardMarkup:
+    kb = toggle_list_kb(DESCRIPTORS, selected, "ad", include_other=True)
+    kb.button(text="⬅️ Назад", callback_data="nt:back")
+    kb.adjust(2)
+    return kb.as_markup()
+
+
+def aroma_warmed_kb(selected: List[str]) -> InlineKeyboardMarkup:
+    kb = toggle_list_kb(DESCRIPTORS, selected, "aw", include_other=True)
+    kb.button(text="⬅️ Назад", callback_data="nt:back")
+    kb.adjust(2)
+    return kb.as_markup()
 
 
 def yesno_more_infusions_kb() -> InlineKeyboardBuilder:
@@ -895,12 +935,18 @@ def parse_grams_value(raw: str) -> float:
     )
 
 
+async def ask_name_prompt(
+    target: Union[Message, CallbackQuery], state: FSMContext
+) -> None:
+    await ask_next(target, state, "🍵 [1/10] Название чая?")
+    await state.set_state(NewTasting.name)
+
+
 async def ask_year_prompt(
     target: Union[Message, CallbackQuery], state: FSMContext
 ) -> None:
-    prompt = "📅 Укажите год сбора числом. Можно пропустить"
     await state.update_data(numpad_active=False)
-    await ask_next(target, state, prompt, skip_kb("year").as_markup())
+    await ask_next(target, state, "📅 [2/10] Год сбора? Можно пропустить.", back_skip_kb("year").as_markup())
     await state.set_state(NewTasting.year)
 
 
@@ -910,10 +956,17 @@ async def ask_region_prompt(
     await ask_next(
         target,
         state,
-        "🗺️ Регион? Можно пропустить.",
-        skip_kb("region").as_markup(),
+        "🗺️ [3/10] Регион? Можно пропустить.",
+        back_skip_kb("region").as_markup(),
     )
     await state.set_state(NewTasting.region)
+
+
+async def ask_category_prompt(
+    target: Union[Message, CallbackQuery], state: FSMContext
+) -> None:
+    await ask_next(target, state, "🏷️ [4/10] Категория?", category_with_back_kb().as_markup())
+    await state.set_state(NewTasting.category)
 
 
 async def ask_grams_prompt(
@@ -923,8 +976,8 @@ async def ask_grams_prompt(
     await ask_next(
         target,
         state,
-        "⚖️ Граммовка? Можно пропустить.",
-        skip_kb("grams").as_markup(),
+        "⚖️ [5/10] Граммовка? Можно пропустить.",
+        back_skip_kb("grams").as_markup(),
     )
     await state.set_state(NewTasting.grams)
 
@@ -936,8 +989,8 @@ async def ask_temp_prompt(
     await ask_next(
         target,
         state,
-        "🌡️ Температура, °C? Можно пропустить.",
-        skip_kb("temp").as_markup(),
+        "🌡️ [6/10] Температура, °C? Можно пропустить.",
+        back_skip_kb("temp").as_markup(),
     )
     await state.set_state(NewTasting.temp_c)
 
@@ -947,11 +1000,23 @@ async def ask_tasted_at_prompt(
 ) -> None:
     now_hm = get_user_now_hm(uid)
     text = (
-        f"⏰ Время дегустации? Сейчас {now_hm}. "
+        f"⏰ [7/10] Время дегустации? Сейчас {now_hm}. "
         "Введи ЧЧ:ММ, нажми «🕒 Текущее время» или пропусти."
     )
-    await ask_next(target, state, text, time_kb().as_markup())
+    await ask_next(target, state, text, time_with_back_kb().as_markup())
     await state.set_state(NewTasting.tasted_at)
+
+
+async def ask_gear_prompt(
+    target: Union[Message, CallbackQuery], state: FSMContext
+) -> None:
+    await ask_next(
+        target,
+        state,
+        "🍶 [8/10] Посуда? Можно пропустить.",
+        back_skip_kb("gear").as_markup(),
+    )
+    await state.set_state(NewTasting.gear)
 
 
 async def skip_year_value(message: Message, state: FSMContext) -> None:
@@ -1817,7 +1882,7 @@ async def new_cmd(message: Message, state: FSMContext):
     await flush_user_albums(uid, state, process=False)
     get_or_create_user(uid, message.from_user.username)
     await start_new(state, uid)
-    await ask_next(message, state, "🍵 Название чая?")
+    await ask_name_prompt(message, state)
 
 
 async def new_cb(call: CallbackQuery, state: FSMContext):
@@ -1828,7 +1893,7 @@ async def new_cb(call: CallbackQuery, state: FSMContext):
     get_or_create_user(uid, call.from_user.username)
     await start_new(state, uid)
     await close_inline(call)
-    await ask_next(call, state, "🍵 Название чая?")
+    await ask_name_prompt(call, state)
     await call.answer()
 
 
@@ -1861,8 +1926,7 @@ async def year_in(message: Message, state: FSMContext):
 async def region_skip(call: CallbackQuery, state: FSMContext):
     await state.update_data(region=None)
     await close_inline(call, "Регион: пропущено")
-    await ask_next(call, state, "🏷️ Категория?", category_kb().as_markup())
-    await state.set_state(NewTasting.category)
+    await ask_category_prompt(call, state)
     await call.answer()
 
 
@@ -1871,8 +1935,7 @@ async def region_in(message: Message, state: FSMContext):
     await state.update_data(region=region if region else None)
     if region:
         await ack(message, f"Регион: {region}")
-    await ask_next(message, state, "🏷️ Категория?", category_kb().as_markup())
-    await state.set_state(NewTasting.category)
+    await ask_category_prompt(message, state)
 
 
 async def cat_pick(call: CallbackQuery, state: FSMContext):
@@ -1948,26 +2011,14 @@ async def time_now(call: CallbackQuery, state: FSMContext):
     now_hm = get_user_now_hm(call.from_user.id)
     await state.update_data(tasted_at=now_hm)
     await close_inline(call, f"Время дегустации: {now_hm}")
-    await ask_next(
-        call,
-        state,
-        "🍶 Посудa дегустации? Можно пропустить.",
-        skip_kb("gear").as_markup(),
-    )
-    await state.set_state(NewTasting.gear)
+    await ask_gear_prompt(call, state)
     await call.answer("Установлено текущее время")
 
 
 async def tasted_at_skip(call: CallbackQuery, state: FSMContext):
     await state.update_data(tasted_at=None)
     await close_inline(call, "Время дегустации: пропущено")
-    await ask_next(
-        call,
-        state,
-        "🍶 Посудa дегустации? Можно пропустить.",
-        skip_kb("gear").as_markup(),
-    )
-    await state.set_state(NewTasting.gear)
+    await ask_gear_prompt(call, state)
     await call.answer("Пропущено")
 
 
@@ -1977,13 +2028,7 @@ async def tasted_at_in(message: Message, state: FSMContext):
     await state.update_data(tasted_at=ta)
     if text_val:
         await ack(message, f"Время дегустации: {text_val}")
-    await ask_next(
-        message,
-        state,
-        "🍶 Посудa дегустации? Можно пропустить.",
-        skip_kb("gear").as_markup(),
-    )
-    await state.set_state(NewTasting.gear)
+    await ask_gear_prompt(message, state)
 
 
 async def gear_skip(call: CallbackQuery, state: FSMContext):
@@ -2005,24 +2050,22 @@ async def gear_in(message: Message, state: FSMContext):
 
 async def ask_aroma_dry_msg(message: Message, state: FSMContext):
     await state.update_data(aroma_dry_sel=[])
-    kb = toggle_list_kb(DESCRIPTORS, [], "ad", include_other=True)
     await ask_next(
         message,
         state,
-        "🌬️ Аромат сухого листа: выбери дескрипторы и нажми «Готово», или «Другое».",
-        kb.as_markup(),
+        "🌬️ [9/10] Аромат сухого листа: выбери дескрипторы и нажми «Готово», или «Другое».",
+        aroma_dry_kb([]),
     )
     await state.set_state(NewTasting.aroma_dry)
 
 
 async def ask_aroma_dry_call(call: CallbackQuery, state: FSMContext):
     await state.update_data(aroma_dry_sel=[])
-    kb = toggle_list_kb(DESCRIPTORS, [], "ad", include_other=True)
     await ask_next(
         call,
         state,
-        "🌬️ Аромат сухого листа: выбери дескрипторы и нажми «Готово», или «Другое».",
-        kb.as_markup(),
+        "🌬️ [9/10] Аромат сухого листа: выбери дескрипторы и нажми «Готово», или «Другое».",
+        aroma_dry_kb([]),
     )
     await state.set_state(NewTasting.aroma_dry)
 
@@ -2037,14 +2080,13 @@ async def aroma_dry_toggle(call: CallbackQuery, state: FSMContext):
             aroma_dry=value,
             awaiting_custom_ad=False,
         )
-        kb = toggle_list_kb(DESCRIPTORS, [], "aw", include_other=True)
         summary = value if value else "не выбрано"
         await close_inline(call, f"Аромат сухого листа: {summary}")
         await ask_next(
             call,
             state,
-            "🌬️ Аромат прогретого/промытого листа: выбери и нажми «Готово».",
-            kb.as_markup(),
+            "🌬️ [10/10] Аромат прогретого/промытого листа: выбери и нажми «Готово».",
+            aroma_warmed_kb([]),
         )
         await state.set_state(NewTasting.aroma_warmed)
         await call.answer()
@@ -2062,9 +2104,8 @@ async def aroma_dry_toggle(call: CallbackQuery, state: FSMContext):
     else:
         selected.append(item)
     await state.update_data(aroma_dry_sel=selected)
-    kb = toggle_list_kb(DESCRIPTORS, selected, "ad", include_other=True)
     try:
-        await call.message.edit_reply_markup(reply_markup=kb.as_markup())
+        await call.message.edit_reply_markup(reply_markup=aroma_dry_kb(selected))
     except TelegramBadRequest:
         pass
     await call.answer()
@@ -2084,12 +2125,11 @@ async def aroma_dry_custom(message: Message, state: FSMContext):
     )
     summary = ", ".join(selected) if selected else "не выбрано"
     await ack(message, f"Аромат сухого листа: {summary}")
-    kb = toggle_list_kb(DESCRIPTORS, [], "aw", include_other=True)
     await ask_next(
         message,
         state,
-        "🌬️ Аромат прогретого/промытого листа: выбери и нажми «Готово».",
-        kb.as_markup(),
+        "🌬️ [10/10] Аромат прогретого/промытого листа: выбери и нажми «Готово».",
+        aroma_warmed_kb([]),
     )
     await state.set_state(NewTasting.aroma_warmed)
 
@@ -2121,9 +2161,8 @@ async def aroma_warmed_toggle(call: CallbackQuery, state: FSMContext):
     else:
         selected.append(item)
     await state.update_data(aroma_warmed_sel=selected)
-    kb = toggle_list_kb(DESCRIPTORS, selected, "aw", include_other=True)
     try:
-        await call.message.edit_reply_markup(reply_markup=kb.as_markup())
+        await call.message.edit_reply_markup(reply_markup=aroma_warmed_kb(selected))
     except TelegramBadRequest:
         pass
     await call.answer()
@@ -2913,6 +2952,38 @@ async def prompt_cancel_confirmation(
         await ui(target, CANCEL_CONFIRM_TEXT, reply_markup=markup)
 
 
+async def nt_back(call: CallbackQuery, state: FSMContext):
+    current_state = await state.get_state()
+    if current_state == NewTasting.year.state:
+        await state.update_data(year=None)
+        await ask_name_prompt(call, state)
+    elif current_state == NewTasting.region.state:
+        await state.update_data(region=None)
+        await ask_year_prompt(call, state)
+    elif current_state == NewTasting.category.state:
+        await state.update_data(category=None, awaiting_custom_cat=False)
+        await ask_region_prompt(call, state)
+    elif current_state == NewTasting.grams.state:
+        await state.update_data(grams=None)
+        await ask_category_prompt(call, state)
+    elif current_state == NewTasting.temp_c.state:
+        await state.update_data(temp_c=None)
+        await ask_grams_prompt(call, state)
+    elif current_state == NewTasting.tasted_at.state:
+        await state.update_data(tasted_at=None)
+        await ask_temp_prompt(call, state)
+    elif current_state == NewTasting.gear.state:
+        await state.update_data(gear=None)
+        await ask_tasted_at_prompt(call, state, call.from_user.id)
+    elif current_state == NewTasting.aroma_dry.state:
+        await state.update_data(aroma_dry=None, aroma_dry_sel=[])
+        await ask_gear_prompt(call, state)
+    elif current_state == NewTasting.aroma_warmed.state:
+        await state.update_data(aroma_warmed=None, aroma_warmed_sel=[])
+        await ask_aroma_dry_call(call, state)
+    await call.answer()
+
+
 async def resend_new_prompt(target: Union[Message, CallbackQuery], state: FSMContext) -> bool:
     data = await state.get_data()
     target_state = data.get("cancel_return_state") or await state.get_state()
@@ -2920,23 +2991,16 @@ async def resend_new_prompt(target: Union[Message, CallbackQuery], state: FSMCon
         return False
 
     prompt_map: dict[str, Callable[[], Awaitable[None]]] = {
-        NewTasting.name.state: lambda: ask_next(target, state, "🍵 Название чая?"),
+        NewTasting.name.state: lambda: ask_name_prompt(target, state),
         NewTasting.year.state: lambda: ask_year_prompt(target, state),
         NewTasting.region.state: lambda: ask_region_prompt(target, state),
-        NewTasting.category.state: lambda: ask_next(
-            target, state, "🏷️ Категория?", category_kb().as_markup()
-        ),
+        NewTasting.category.state: lambda: ask_category_prompt(target, state),
         NewTasting.grams.state: lambda: ask_grams_prompt(target, state),
         NewTasting.temp_c.state: lambda: ask_temp_prompt(target, state),
         NewTasting.tasted_at.state: lambda: ask_tasted_at_prompt(
             target, state, target.from_user.id  # type: ignore[arg-type]
         ),
-        NewTasting.gear.state: lambda: ask_next(
-            target,
-            state,
-            "🍶 Посудa дегустации? Можно пропустить.",
-            skip_kb("gear").as_markup(),
-        ),
+        NewTasting.gear.state: lambda: ask_gear_prompt(target, state),
         NewTasting.aroma_dry.state: lambda: (
             ask_aroma_dry_call(target, state)
             if isinstance(target, CallbackQuery)
@@ -2945,8 +3009,8 @@ async def resend_new_prompt(target: Union[Message, CallbackQuery], state: FSMCon
         NewTasting.aroma_warmed.state: lambda: ask_next(
             target,
             state,
-            "🌬️ Аромат прогретого/промытого листа: выбери и нажми «Готово».",
-            toggle_list_kb(DESCRIPTORS, [], "aw", include_other=True).as_markup(),
+            "🌬️ [10/10] Аромат прогретого/промытого листа: выбери и нажми «Готово».",
+            aroma_warmed_kb([]),
         ),
         InfusionState.seconds.state: lambda: prompt_infusion_seconds(target, state),
         InfusionState.color.state: lambda: proceed_to_infusion_color(target, state),
@@ -5681,6 +5745,7 @@ def setup_handlers(dp: Dispatcher):
     dp.callback_query.register(nav_home, F.data == "nav:home")
     dp.callback_query.register(nav_home, F.data == "to_menu")
 
+    dp.callback_query.register(nt_back, F.data == "nt:back")
     dp.callback_query.register(cat_pick, F.data.startswith("cat:"))
     dp.callback_query.register(s_cat_pick, F.data.startswith("scat:"))
 

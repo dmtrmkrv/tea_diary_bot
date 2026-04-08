@@ -825,6 +825,14 @@ async def ack(message: Message, text: str):
         await message.answer(f"✅ {text}")
 
 
+async def nt_ack(message: Message, state: FSMContext, text: str):
+    sent = await message.answer(f"✅ {text}")
+    data = await state.get_data()
+    msgs = list(data.get("nt_step_msgs", []) or [])
+    msgs.append(sent.message_id)
+    await state.update_data(nt_step_msgs=msgs)
+
+
 async def send_live_question(
     message_or_bot: Union[CallbackQuery, Message, Bot],
     chat_id: int,
@@ -1871,6 +1879,7 @@ async def start_new(state: FSMContext, uid: int):
         new_photos=[],
         live_q_id=None,
         numpad_active=False,
+        nt_step_msgs=[],
     )
     await state.set_state(NewTasting.name)
 
@@ -1901,7 +1910,7 @@ async def name_in(message: Message, state: FSMContext):
     title = (message.text or "").strip()
     await state.update_data(name=title)
     if title:
-        await ack(message, f"Название: {title}")
+        await nt_ack(message, state, f"Название: {title}")
     await ask_year_prompt(message, state)
 
 
@@ -1919,7 +1928,7 @@ async def year_in(message: Message, state: FSMContext):
         return
 
     await state.update_data(year=value, numpad_active=False)
-    await ack(message, f"Год: {value}")
+    await nt_ack(message, state, f"Год: {value}")
     await ask_region_prompt(message, state)
 
 
@@ -1934,7 +1943,7 @@ async def region_in(message: Message, state: FSMContext):
     region = message.text.strip()
     await state.update_data(region=region if region else None)
     if region:
-        await ack(message, f"Регион: {region}")
+        await nt_ack(message, state, f"Регион: {region}")
     await ask_category_prompt(message, state)
 
 
@@ -1985,7 +1994,7 @@ async def grams_in(message: Message, state: FSMContext):
         return
 
     await state.update_data(grams=value, numpad_active=False)
-    await ack(message, f"Граммовка: {value:g} г")
+    await nt_ack(message, state, f"Граммовка: {value:g} г")
     await ask_temp_prompt(message, state)
 
 
@@ -2003,7 +2012,7 @@ async def temp_in(message: Message, state: FSMContext):
         return
 
     await state.update_data(temp_c=value, numpad_active=False)
-    await ack(message, f"Температура: {value} °C")
+    await nt_ack(message, state, f"Температура: {value} °C")
     await ask_tasted_at_prompt(message, state, message.from_user.id)
 
 
@@ -2027,7 +2036,7 @@ async def tasted_at_in(message: Message, state: FSMContext):
     ta = text_val[:5] if ":" in text_val else None
     await state.update_data(tasted_at=ta)
     if text_val:
-        await ack(message, f"Время дегустации: {text_val}")
+        await nt_ack(message, state, f"Время дегустации: {text_val}")
     await ask_gear_prompt(message, state)
 
 
@@ -2042,7 +2051,7 @@ async def gear_in(message: Message, state: FSMContext):
     text_val = (message.text or "").strip()
     await state.update_data(gear=text_val)
     if text_val:
-        await ack(message, f"Посуда: {text_val}")
+        await nt_ack(message, state, f"Посуда: {text_val}")
     await ask_aroma_dry_msg(message, state)
 
 
@@ -2124,7 +2133,7 @@ async def aroma_dry_custom(message: Message, state: FSMContext):
         awaiting_custom_ad=False,
     )
     summary = ", ".join(selected) if selected else "не выбрано"
-    await ack(message, f"Аромат сухого листа: {summary}")
+    await nt_ack(message, state, f"Аромат сухого листа: {summary}")
     await ask_next(
         message,
         state,
@@ -2182,7 +2191,7 @@ async def aroma_warmed_custom(message: Message, state: FSMContext):
         awaiting_custom_aw=False,
     )
     summary = value if value else "не выбрано"
-    await ack(message, f"Аромат прогретого листа: {summary}")
+    await nt_ack(message, state, f"Аромат прогретого листа: {summary}")
     await start_infusion_block_msg(message, state)
 
 
@@ -2958,7 +2967,12 @@ async def nt_back(call: CallbackQuery, state: FSMContext):
     if live_q_id:
         with suppress(Exception):
             await call.message.bot.delete_message(call.message.chat.id, live_q_id)
-    await state.update_data(live_q_id=None)
+    msgs = list(data.get("nt_step_msgs", []) or [])
+    if msgs:
+        last_msg_id = msgs.pop()
+        with suppress(Exception):
+            await call.message.bot.delete_message(call.message.chat.id, last_msg_id)
+    await state.update_data(live_q_id=None, nt_step_msgs=msgs)
     current_state = await state.get_state()
     if current_state == NewTasting.year.state:
         await state.update_data(year=None)

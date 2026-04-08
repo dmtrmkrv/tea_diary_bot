@@ -2953,6 +2953,12 @@ async def prompt_cancel_confirmation(
 
 
 async def nt_back(call: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    live_q_id = data.get("live_q_id")
+    if live_q_id:
+        with suppress(Exception):
+            await call.message.bot.delete_message(call.message.chat.id, live_q_id)
+    await state.update_data(live_q_id=None)
     current_state = await state.get_state()
     if current_state == NewTasting.year.state:
         await state.update_data(year=None)

@@ -429,10 +429,10 @@ def time_kb() -> InlineKeyboardBuilder:
 
 def time_with_back_kb() -> InlineKeyboardBuilder:
     kb = InlineKeyboardBuilder()
-    kb.button(text="⬅️ Назад", callback_data="nt:back")
     kb.button(text="🕒 Текущее время", callback_data="time:now")
+    kb.button(text="⬅️ Назад", callback_data="nt:back")
     kb.button(text="Пропустить", callback_data="skip:tasted_at")
-    kb.adjust(1)
+    kb.adjust(1, 2)
     return kb
 
 
@@ -833,6 +833,13 @@ async def nt_ack(message: Message, state: FSMContext, text: str):
     await state.update_data(nt_step_msgs=msgs)
 
 
+async def _nt_save_step(state: FSMContext, msg_id: int):
+    data = await state.get_data()
+    msgs = list(data.get("nt_step_msgs", []) or [])
+    msgs.append(msg_id)
+    await state.update_data(nt_step_msgs=msgs)
+
+
 async def send_live_question(
     message_or_bot: Union[CallbackQuery, Message, Bot],
     chat_id: int,
@@ -1035,6 +1042,9 @@ async def skip_year_value(message: Message, state: FSMContext) -> None:
 
 async def skip_year_callback(call: CallbackQuery, state: FSMContext) -> None:
     await state.update_data(year=None, numpad_active=False)
+    data = await state.get_data()
+    if data.get("live_q_id"):
+        await _nt_save_step(state, data["live_q_id"])
     await close_inline(call, "Год: пропущено")
     await ask_region_prompt(call, state)
     await call.answer("Пропущено")
@@ -1048,6 +1058,9 @@ async def skip_grams_value(message: Message, state: FSMContext) -> None:
 
 async def skip_grams_callback(call: CallbackQuery, state: FSMContext) -> None:
     await state.update_data(grams=None, numpad_active=False)
+    data = await state.get_data()
+    if data.get("live_q_id"):
+        await _nt_save_step(state, data["live_q_id"])
     await close_inline(call, "Граммовка: пропущено")
     await ask_temp_prompt(call, state)
     await call.answer("Пропущено")
@@ -1061,6 +1074,9 @@ async def skip_temp_value(message: Message, state: FSMContext) -> None:
 
 async def skip_temp_callback(call: CallbackQuery, state: FSMContext) -> None:
     await state.update_data(temp_c=None, numpad_active=False)
+    data = await state.get_data()
+    if data.get("live_q_id"):
+        await _nt_save_step(state, data["live_q_id"])
     await close_inline(call, "Температура: пропущено")
     await ask_tasted_at_prompt(call, state, call.from_user.id)
     await call.answer("Пропущено")
@@ -1934,6 +1950,9 @@ async def year_in(message: Message, state: FSMContext):
 
 async def region_skip(call: CallbackQuery, state: FSMContext):
     await state.update_data(region=None)
+    data = await state.get_data()
+    if data.get("live_q_id"):
+        await _nt_save_step(state, data["live_q_id"])
     await close_inline(call, "Регион: пропущено")
     await ask_category_prompt(call, state)
     await call.answer()
@@ -1956,6 +1975,9 @@ async def cat_pick(call: CallbackQuery, state: FSMContext):
         await call.answer()
         return
     await state.update_data(category=val)
+    data = await state.get_data()
+    if data.get("live_q_id"):
+        await _nt_save_step(state, data["live_q_id"])
     await close_inline(call, f"Категория: {val}")
     await ask_optional_grams_edit(call, state)
 
@@ -2019,6 +2041,9 @@ async def temp_in(message: Message, state: FSMContext):
 async def time_now(call: CallbackQuery, state: FSMContext):
     now_hm = get_user_now_hm(call.from_user.id)
     await state.update_data(tasted_at=now_hm)
+    data = await state.get_data()
+    if data.get("live_q_id"):
+        await _nt_save_step(state, data["live_q_id"])
     await close_inline(call, f"Время дегустации: {now_hm}")
     await ask_gear_prompt(call, state)
     await call.answer("Установлено текущее время")
@@ -2026,6 +2051,9 @@ async def time_now(call: CallbackQuery, state: FSMContext):
 
 async def tasted_at_skip(call: CallbackQuery, state: FSMContext):
     await state.update_data(tasted_at=None)
+    data = await state.get_data()
+    if data.get("live_q_id"):
+        await _nt_save_step(state, data["live_q_id"])
     await close_inline(call, "Время дегустации: пропущено")
     await ask_gear_prompt(call, state)
     await call.answer("Пропущено")
@@ -2042,6 +2070,9 @@ async def tasted_at_in(message: Message, state: FSMContext):
 
 async def gear_skip(call: CallbackQuery, state: FSMContext):
     await state.update_data(gear=None)
+    data = await state.get_data()
+    if data.get("live_q_id"):
+        await _nt_save_step(state, data["live_q_id"])
     await close_inline(call, "Посуда: пропущено")
     await ask_aroma_dry_call(call, state)
     await call.answer()

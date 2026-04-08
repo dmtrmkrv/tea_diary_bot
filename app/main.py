@@ -446,15 +446,25 @@ def category_with_back_kb() -> InlineKeyboardBuilder:
 
 
 def aroma_dry_kb(selected: List[str]) -> InlineKeyboardMarkup:
-    kb = toggle_list_kb(DESCRIPTORS, selected, "ad", include_other=True)
+    kb = InlineKeyboardBuilder()
+    for idx, item in enumerate(DESCRIPTORS):
+        mark = "✅ " if item in selected else ""
+        kb.button(text=f"{mark}{item}", callback_data=f"ad:{idx}")
+    kb.button(text="Другое", callback_data="ad:other")
     kb.button(text="⬅️ Назад", callback_data="nt:back")
+    kb.button(text="Готово", callback_data="ad:done")
     kb.adjust(2)
     return kb.as_markup()
 
 
 def aroma_warmed_kb(selected: List[str]) -> InlineKeyboardMarkup:
-    kb = toggle_list_kb(DESCRIPTORS, selected, "aw", include_other=True)
+    kb = InlineKeyboardBuilder()
+    for idx, item in enumerate(DESCRIPTORS):
+        mark = "✅ " if item in selected else ""
+        kb.button(text=f"{mark}{item}", callback_data=f"aw:{idx}")
+    kb.button(text="Другое", callback_data="aw:other")
     kb.button(text="⬅️ Назад", callback_data="nt:back")
+    kb.button(text="Готово", callback_data="aw:done")
     kb.adjust(2)
     return kb.as_markup()
 
@@ -2122,6 +2132,9 @@ async def aroma_dry_toggle(call: CallbackQuery, state: FSMContext):
         )
         summary = value if value else "не выбрано"
         await close_inline(call, f"Аромат сухого листа: {summary}")
+        data = await state.get_data()
+        if data.get("live_q_id"):
+            await _nt_save_step(state, data["live_q_id"])
         await ask_next(
             call,
             state,
@@ -2186,6 +2199,9 @@ async def aroma_warmed_toggle(call: CallbackQuery, state: FSMContext):
         )
         summary = value if value else "не выбрано"
         await close_inline(call, f"Аромат прогретого листа: {summary}")
+        data = await state.get_data()
+        if data.get("live_q_id"):
+            await _nt_save_step(state, data["live_q_id"])
         await start_infusion_block_call(call, state)
         return
     if tail == "other":

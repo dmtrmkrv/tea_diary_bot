@@ -43,6 +43,10 @@ else
   echo "[ENTRYPOINT] SKIP_MIGRATIONS=1 — skipping migrations."
 fi
 
-# 3) Старт бота
+# 3) Старт API
+echo "[ENTRYPOINT] Starting API on port 8000..."
+uvicorn app.api.main:app --host 0.0.0.0 --port 8000 &
+
+# 4) Старт бота
 echo "[ENTRYPOINT] Starting bot..."
 exec python -m app.main

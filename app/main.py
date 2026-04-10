@@ -5975,7 +5975,10 @@ async def main():
 
     dp = Dispatcher()
     setup_handlers(dp)
-    await set_bot_commands(bot)
+    try:
+        await set_bot_commands(bot)
+    except Exception as e:
+        logger.warning("Failed to set bot commands: %s", e)
 
     logging.info("Start polling")
     await dp.start_polling(

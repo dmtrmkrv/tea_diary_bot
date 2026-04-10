@@ -2,6 +2,11 @@ import traceback
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from app.api.routers import tastings, users
+from app.db.engine import create_sa_engine, engine as sa_engine
+from app.config import get_db_url
+
+# Инициализируем движок сразу при импорте модуля
+create_sa_engine(get_db_url())
 
 app = FastAPI(
     title="TeaNotes API",

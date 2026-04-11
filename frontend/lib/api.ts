@@ -1,5 +1,5 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'https://dmtrmkrv-tea-diary-bot-03bd.twc1.net';
-const DEV_USER_ID = process.env.NEXT_PUBLIC_DEV_USER_ID || process.env.DEV_USER_ID || '';
+const API_URL = process.env.API_URL || 'https://dmtrmkrv-tea-diary-bot-03bd.twc1.net';
+const DEV_USER_ID = process.env.DEV_USER_ID || '';
 
 async function apiFetch(path: string) {
   const res = await fetch(`${API_URL}${path}`, {

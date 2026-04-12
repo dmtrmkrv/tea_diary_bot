@@ -1,17 +1,21 @@
-const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'https://dmtrmkrv-tea-diary-bot-03bd.twc1.net';
+const API_URL = process.env.API_URL || 'https://dmtrmkrv-tea-diary-bot-03bd.twc1.net';
 
-function getToken(): string {
-  if (typeof document === 'undefined') return '';
-  const match = document.cookie.match(/token=([^;]+)/);
-  return match ? match[1] : '';
+async function getServerToken(): Promise<string> {
+  try {
+    const { cookies } = await import('next/headers');
+    const cookieStore = await cookies();
+    return cookieStore.get('token')?.value || '';
+  } catch {
+    return '';
+  }
 }
 
-async function apiFetch(path: string, token?: string) {
-  const headers: Record<string, string> = {};
+async function apiFetch(path: string) {
+  const token = await getServerToken();
 
-  const t = token || getToken();
-  if (t) {
-    headers['Authorization'] = `Bearer ${t}`;
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
   const res = await fetch(`${API_URL}${path}`, {

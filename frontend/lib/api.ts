@@ -1,12 +1,22 @@
-const API_URL = process.env.API_URL || 'https://dmtrmkrv-tea-diary-bot-03bd.twc1.net';
-const DEV_USER_ID = process.env.DEV_USER_ID || '';
+const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'https://dmtrmkrv-tea-diary-bot-03bd.twc1.net';
 
-async function apiFetch(path: string) {
+function getToken(): string {
+  if (typeof document === 'undefined') return '';
+  const match = document.cookie.match(/token=([^;]+)/);
+  return match ? match[1] : '';
+}
+
+async function apiFetch(path: string, token?: string) {
+  const headers: Record<string, string> = {};
+
+  const t = token || getToken();
+  if (t) {
+    headers['Authorization'] = `Bearer ${t}`;
+  }
+
   const res = await fetch(`${API_URL}${path}`, {
-    headers: {
-      'x-telegram-user-id': DEV_USER_ID,
-    },
-    next: { revalidate: 60 },
+    headers,
+    next: { revalidate: 0 },
   });
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json();

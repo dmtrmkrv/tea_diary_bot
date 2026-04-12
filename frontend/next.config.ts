@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: '**.timeweb.cloud',
       },
+      {
+        protocol: 'https',
+        hostname: 's3.twcstorage.ru',
+      },
     ],
   },
 };

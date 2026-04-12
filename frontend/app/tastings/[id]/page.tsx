@@ -2,6 +2,14 @@ import { getTasting } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel';
+import Image from 'next/image';
 import Link from 'next/link';
 
 export default async function TastingPage({ params }: { params: Promise<{ id: string }> }) {
@@ -14,7 +22,7 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
         ← Назад
       </Link>
 
-      <div className="mb-6">
+      <div className="mb-4">
         <div className="flex items-start justify-between gap-2">
           <h1 className="text-2xl font-semibold">{t.name}</h1>
           <span className="text-lg font-semibold shrink-0">⭐ {t.rating}/10</span>
@@ -26,6 +34,31 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
           {t.entry_mode === 'quick' && <Badge variant="outline">⚡ быстрая</Badge>}
         </div>
       </div>
+
+      {t.photo_urls && t.photo_urls.length > 0 && (
+        <Carousel className="w-full my-4">
+          <CarouselContent>
+            {t.photo_urls.map((url: string, i: number) => (
+              <CarouselItem key={i}>
+                <div className="relative w-full h-80">
+                  <Image
+                    src={url}
+                    alt={`Фото ${i + 1}`}
+                    fill
+                    className="rounded-lg object-cover"
+                  />
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          {t.photo_urls.length > 1 && (
+            <>
+              <CarouselPrevious />
+              <CarouselNext />
+            </>
+          )}
+        </Carousel>
+      )}
 
       <Separator className="my-4" />
 

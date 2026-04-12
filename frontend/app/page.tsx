@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { getTastings } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

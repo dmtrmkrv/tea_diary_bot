@@ -24,6 +24,7 @@ interface TelegramUser {
 
 const BOT_USERNAME = process.env.NEXT_PUBLIC_BOT_USERNAME || '';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+const botUrl = `https://t.me/${BOT_USERNAME}?start=login`;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -63,6 +64,17 @@ export default function LoginPage() {
         <h1 className="text-2xl font-semibold mb-2">Чайный дневник</h1>
         <p className="text-muted-foreground mb-8">Войди через Telegram чтобы увидеть свои дегустации</p>
         <div id="telegram-login" />
+        <div className="mt-6">
+          <p className="text-xs text-muted-foreground mb-3">Если кнопка выше не работает:</p>
+          <a
+            href={botUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border text-sm hover:bg-accent transition-colors"
+          >
+            🍵 Войти через бот TeaNotesBot
+          </a>
+        </div>
       </div>
     </main>
   );

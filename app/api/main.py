@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routers import tastings, users
+from app.api.routers import tastings, users, collection
 from app.api import auth_router
 from app.db.engine import create_sa_engine
 from app.config import get_db_url
@@ -26,6 +26,7 @@ app.add_middleware(
 app.include_router(tastings.router)
 app.include_router(users.router)
 app.include_router(auth_router.router)
+app.include_router(collection.router)
 
 @app.get("/health")
 def health():

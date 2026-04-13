@@ -91,6 +91,7 @@ class Tasting(Base):
     rating: Mapped[int] = mapped_column(Integer, default=0)
     summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     seq_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    tea_item_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("tea_items.id", ondelete="SET NULL"), nullable=True)
 
     infusions: Mapped[List["Infusion"]] = relationship(
         back_populates="tasting", cascade="all, delete-orphan"
@@ -148,6 +149,35 @@ class Photo(Base):
     telegram_file_unique_id: Mapped[Optional[str]] = mapped_column(
         Text, nullable=True
     )
+
+
+class TeaItem(Base):
+    __tablename__ = "tea_items"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    category: Mapped[Optional[str]] = mapped_column(String(60), nullable=True)
+    year: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    region: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    vendor: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    cover_object_key: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
+
+class Teaware(Base):
+    __tablename__ = "teaware"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    type: Mapped[Optional[str]] = mapped_column(String(60), nullable=True)
+    volume_ml: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    material: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    cover_object_key: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow, nullable=False)
 
 
 class LoginCode(Base):

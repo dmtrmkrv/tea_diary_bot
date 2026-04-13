@@ -1,11 +1,19 @@
+import datetime
 import hashlib
 import hmac
+import secrets
 import time
 from typing import Optional
+
 import jwt
 import os
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from sqlalchemy import select
+
+from app.db.engine import SessionLocal
+from app.db.models import LoginCode
+from app.services.users import get_or_create_user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -66,4 +74,56 @@ def telegram_auth(data: TelegramAuthData):
         raise HTTPException(status_code=401, detail="Неверная подпись Telegram")
 
     token = create_jwt_token(data.id, data.username)
+    return {"access_token": token, "token_type": "bearer"}
+
+
+def generate_login_code(telegram_id: int) -> str:
+    """Создаём одноразовый код и сохраняем в БД."""
+    code = secrets.token_hex(4).upper()  # 8 символов, например A3F9B21C
+    with SessionLocal() as session:
+        with session.begin():
+            # Удаляем старые неиспользованные коды этого пользователя
+            session.query(LoginCode).filter(
+                LoginCode.telegram_id == telegram_id,
+                LoginCode.used == False,
+            ).delete()
+            session.add(LoginCode(
+                code=code,
+                telegram_id=telegram_id,
+                created_at=datetime.datetime.utcnow(),
+                used=False,
+            ))
+    return code
+
+
+class CodeAuthData(BaseModel):
+    code: str
+
+
+@router.post("/code")
+def code_auth(data: CodeAuthData):
+    """Авторизация по одноразовому коду от бота."""
+    code = data.code.strip().upper()
+    with SessionLocal() as session:
+        with session.begin():
+            entry = session.execute(
+                select(LoginCode).where(
+                    LoginCode.code == code,
+                    LoginCode.used == False,
+                )
+            ).scalar_one_or_none()
+
+            if not entry:
+                raise HTTPException(status_code=401, detail="Неверный или устаревший код")
+
+            # Проверяем что код не старше 5 минут
+            age = (datetime.datetime.utcnow() - entry.created_at).total_seconds()
+            if age > 300:
+                raise HTTPException(status_code=401, detail="Код истёк")
+
+            entry.used = True
+            telegram_id = entry.telegram_id
+
+    user = get_or_create_user(telegram_id)
+    token = create_jwt_token(telegram_id, user.username)
     return {"access_token": token, "token_type": "bearer"}

@@ -148,3 +148,15 @@ class Photo(Base):
     telegram_file_unique_id: Mapped[Optional[str]] = mapped_column(
         Text, nullable=True
     )
+
+
+class LoginCode(Base):
+    __tablename__ = "login_codes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    code: Mapped[str] = mapped_column(String(8), nullable=False, unique=True, index=True)
+    telegram_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow, nullable=False
+    )
+    used: Mapped[bool] = mapped_column(default=False, nullable=False)

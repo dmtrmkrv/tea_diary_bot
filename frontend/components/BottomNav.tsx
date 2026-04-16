@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Coffee, Layers, PlusCircle, User } from 'lucide-react';
+import { BowlSteam, Stack, User } from '@phosphor-icons/react';
+import { PlusCircle } from 'lucide-react';
 
 const links = [
-  { href: '/',           label: 'Дегустации', Icon: Coffee      },
-  { href: '/collection', label: 'Коллекция',  Icon: Layers      },
-  { href: '/new',        label: 'Добавить',   Icon: PlusCircle  },
-  { href: '/profile',    label: 'Профиль',    Icon: User        },
+  { href: '/',           label: 'Дегустации', Icon: BowlSteam  },
+  { href: '/collection', label: 'Коллекция',  Icon: Stack      },
+  { href: '/new',        label: 'Добавить',   Icon: PlusCircle },
+  { href: '/profile',    label: 'Профиль',    Icon: User       },
 ];
 
 export default function BottomNav() {
@@ -43,7 +44,7 @@ export default function BottomNav() {
                 strokeWidth={1.5}
               />
               <span
-                className={`font-[family-name:var(--font-geist-sans)] text-[12px] font-medium leading-[16px] w-full text-center ${
+                className={`font-[family-name:var(--font-inter)] text-[12px] font-medium leading-[16px] w-full text-center ${
                   isActive ? 'text-[#1c1917]' : 'text-[#a8a29e]'
                 }`}
               >

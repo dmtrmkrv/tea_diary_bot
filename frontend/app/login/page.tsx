@@ -90,10 +90,10 @@ export default function LoginPage() {
       <div className="relative flex flex-col items-center px-4 pb-[162px] text-white text-center">
         {/* Текст: ширина 358px, gap 16px — по Figma */}
         <div className="w-full max-w-[358px] flex flex-col gap-[16px]">
-          <h1 className="font-[family-name:var(--font-geist-sans)] text-[32px] font-semibold leading-[32px] tracking-[-1px]">
+          <h1 className="font-[family-name:var(--font-inter)] text-[32px] font-semibold leading-[32px] tracking-[-1px]">
             Приложение{' '}<br />для любителей чая
           </h1>
-          <p className="font-[family-name:var(--font-geist-sans)] text-[18px] font-normal leading-[27px] text-white/80">
+          <p className="font-[family-name:var(--font-inter)] text-[18px] font-normal leading-[27px] text-white/80">
             Веди свою коллекцию сортов и посуды,{' '}<br />записывай дегустации
           </p>
         </div>

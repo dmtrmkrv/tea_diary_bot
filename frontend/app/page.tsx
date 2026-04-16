@@ -27,7 +27,7 @@ export default async function Home() {
     <main className="min-h-screen bg-[#e7e5e4]">
       <div className="max-w-2xl mx-auto px-4">
         {/* Заголовок — top: 46px по Figma */}
-        <h1 className="font-[family-name:var(--font-geist-sans)] text-[32px] font-semibold leading-[32px] tracking-[-1px] text-black pt-[46px]">
+        <h1 className="font-[family-name:var(--font-inter)] text-[32px] font-semibold leading-[32px] tracking-[-1px] text-black pt-[46px]">
           Мои дегустации
         </h1>
 
@@ -80,7 +80,7 @@ export default async function Home() {
 
                 {/* Текст и бейджи */}
                 <div className="flex flex-col gap-2 px-4">
-                  <p className="font-[family-name:var(--font-geist-sans)] text-[16px] font-semibold leading-[24px] text-black">
+                  <p className="font-[family-name:var(--font-inter)] text-[16px] font-semibold leading-[24px] text-black">
                     {t.name}
                   </p>
                   <div className="flex flex-wrap gap-1 items-center">

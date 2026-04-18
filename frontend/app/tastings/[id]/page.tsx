@@ -1,110 +1,220 @@
 export const dynamic = 'force-dynamic';
 
-import { getTasting } from '@/lib/api';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from '@/components/ui/carousel';
-import Image from 'next/image';
 import Link from 'next/link';
+import {
+  ArrowLeftIcon,
+  ShareNetworkIcon,
+  ScalesIcon,
+  ThermometerIcon,
+  LeafIcon,
+  BowlSteamIcon,
+  DropHalfBottomIcon,
+  CaretRightIcon,
+  StarIcon,
+  LightningIcon,
+} from '@phosphor-icons/react/dist/ssr';
+import { getTasting } from '@/lib/api';
+import CategoryBadge from '@/components/CategoryBadge';
+import NotesSection from '@/components/NotesSection';
+import InfusionsAccordion from '@/components/InfusionsAccordion';
+import TastingActions from '@/components/TastingActions';
+import PhotoCarousel from '@/components/PhotoCarousel';
+
+function formatDatetime(dateStr: string | null): string {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const date = new Intl.DateTimeFormat('ru-RU', {
+    day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+  }).format(d);
+  const h = d.getUTCHours(), m = d.getUTCMinutes();
+  if (h === 0 && m === 0) return date;
+  return `${date}, ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+function DataRow({
+  icon,
+  label,
+  value,
+  wide,
+  border,
+  rightBorder,
+  amber,
+  extra,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+  wide?: boolean;
+  border?: boolean;
+  rightBorder?: boolean;
+  amber?: boolean;
+  extra?: React.ReactNode;
+}) {
+  return (
+    <div className={[
+      'flex gap-2 items-start pb-2',
+      wide ? 'col-span-2' : '',
+      border ? 'border-t border-[#e7e5e4] pt-4' : '',
+      rightBorder ? 'border-r border-[#e7e5e4]' : '',
+    ].join(' ')}>
+      <span className="shrink-0 text-[#a8a29e] mt-0.5">{icon}</span>
+      <div className="flex-1 min-w-0 flex items-start gap-1">
+        <div className="flex-1 min-w-0">
+          <p className="text-[12px] font-medium leading-[16px] text-[#a8a29e] whitespace-nowrap">{label}</p>
+          <p className={`text-[14px] leading-[20px] ${amber ? 'text-[#d97706]' : 'text-[#1c1917]'}`}>{value}</p>
+        </div>
+        {extra}
+      </div>
+    </div>
+  );
+}
 
 export default async function TastingPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const t = await getTasting(Number(id));
 
+  const datetime = formatDatetime(t.created_at ?? null);
+  const effects = t.effects_csv ? t.effects_csv.split(',').map((s: string) => s.trim()).join(' · ') : null;
+
   return (
-    <main className="max-w-2xl mx-auto px-4 py-8">
-      <Link href="/" className="text-sm text-muted-foreground hover:underline mb-6 block">
-        ← Назад
-      </Link>
+    <main className="min-h-screen bg-[#e7e5e4]">
+      <div className="flex flex-col gap-5 px-4 pt-12">
 
-      <div className="mb-4">
-        <div className="flex items-start justify-between gap-2">
-          <h1 className="text-2xl font-semibold">{t.name}</h1>
-          <span className="text-lg font-semibold shrink-0">⭐ {t.rating}/10</span>
+        {/* Header buttons */}
+        <div className="flex items-center justify-between">
+          <Link
+            href="/"
+            className="bg-[#f5f5f5] flex gap-2 items-center h-9 px-3 py-2 rounded-lg text-[14px] font-medium text-[#78716c]"
+          >
+            <ArrowLeftIcon size={16} />
+            Назад
+          </Link>
+          <div className="flex gap-2">
+            <button className="bg-[#f5f5f5] flex items-center justify-center h-9 w-9 rounded-lg text-[#78716c]">
+              <ShareNetworkIcon size={16} />
+            </button>
+            <TastingActions tastingId={t.id} />
+          </div>
         </div>
-        <div className="flex flex-wrap gap-1.5 mt-3">
-          <Badge variant="secondary">{t.category}</Badge>
-          {t.year && <Badge variant="outline">{t.year}</Badge>}
-          {t.region && <Badge variant="outline">{t.region}</Badge>}
-          {t.entry_mode === 'quick' && <Badge variant="outline">⚡ быстрая</Badge>}
+
+        {/* Title group */}
+        <div className="flex flex-col gap-2">
+          {/* Date + rating/quick badges */}
+          <div className="flex items-center justify-between">
+            <p className="text-[12px] font-medium leading-[16px] text-[#78716c]">
+              {datetime}
+            </p>
+            <div className="flex gap-1 items-center">
+              {t.entry_mode === 'quick' && (
+                <span className="border border-[#f59e0b] rounded-full px-1 py-0.5 flex items-center justify-center min-w-[20px] min-h-[20px]">
+                  <LightningIcon size={16} className="text-[#f59e0b]" />
+                </span>
+              )}
+              {t.rating != null && (
+                <span className="border border-[#f59e0b] rounded-full px-2 py-0.5 flex items-center gap-1 min-h-[20px]">
+                  <StarIcon size={16} className="text-[#f59e0b]" />
+                  <span className="text-[12px] font-medium text-[#f59e0b] leading-[16px]">{t.rating}/10</span>
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Title */}
+          <h1 className="text-[24px] font-semibold leading-[1.2] tracking-[-1px] text-[#292524]">
+            {t.name}
+          </h1>
+
+          {/* Badges */}
+          <div className="flex flex-wrap gap-1">
+            {t.category && <CategoryBadge category={t.category} />}
+            {t.year && (
+              <span className="border border-[#d4d4d4] bg-[rgba(255,255,255,0.5)] rounded-full px-2 py-0.5 text-[12px] font-semibold leading-[16px] text-[#0a0a0a]">
+                {t.year}
+              </span>
+            )}
+            {t.region && (
+              <span className="border border-[#d4d4d4] bg-[rgba(255,255,255,0.5)] rounded-full px-2 py-0.5 text-[12px] font-semibold leading-[16px] text-[#0a0a0a]">
+                {t.region}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
+      {/* Image carousel */}
       {t.photo_urls && t.photo_urls.length > 0 && (
-        <Carousel className="w-full my-4">
-          <CarouselContent>
-            {t.photo_urls.map((url: string, i: number) => (
-              <CarouselItem key={i}>
-                <div className="relative w-full h-80">
-                  <Image
-                    src={url}
-                    alt={`Фото ${i + 1}`}
-                    fill
-                    className="rounded-lg object-cover"
-                  />
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          {t.photo_urls.length > 1 && (
-            <>
-              <CarouselPrevious />
-              <CarouselNext />
-            </>
-          )}
-        </Carousel>
+        <div className="px-4 mt-5">
+          <PhotoCarousel urls={t.photo_urls} alt={t.name} />
+        </div>
       )}
 
-      <Separator className="my-4" />
+      {/* Main data card + infusions */}
+      <div className="flex flex-col gap-4 px-4 mt-5 pb-8">
 
-      <div className="grid grid-cols-2 gap-3 text-sm mb-6">
-        {t.grams && <div><span className="text-muted-foreground">Граммовка</span><p>{t.grams} г</p></div>}
-        {t.temp_c && <div><span className="text-muted-foreground">Температура</span><p>{t.temp_c} °C</p></div>}
-        {t.gear && <div><span className="text-muted-foreground">Посуда</span><p>{t.gear}</p></div>}
-        {t.aroma_dry && <div><span className="text-muted-foreground">Аромат сухой</span><p>{t.aroma_dry}</p></div>}
-        {t.aroma_warmed && <div><span className="text-muted-foreground">Аромат прогретый</span><p>{t.aroma_warmed}</p></div>}
-        {t.effects_csv && <div><span className="text-muted-foreground">Ощущения</span><p>{t.effects_csv.replace(/,/g, ' · ')}</p></div>}
+        {/* Main data card */}
+        <div className="bg-white rounded-2xl shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.1)] p-4 grid grid-cols-2 gap-x-2 gap-y-2">
+          <DataRow
+            icon={<ScalesIcon size={24} />}
+            label="Граммовка"
+            value={t.grams != null ? `${t.grams} гр` : '–'}
+            rightBorder
+          />
+          <DataRow
+            icon={<ThermometerIcon size={24} />}
+            label="Температура"
+            value={t.temp_c != null ? `${t.temp_c} °C` : '–'}
+          />
+          <DataRow
+            icon={<DropHalfBottomIcon size={24} />}
+            label="Посуда"
+            value={t.gear ?? '–'}
+            wide
+            border
+            amber={!!t.gear}
+            extra={t.gear ? <CaretRightIcon size={24} className="text-[#a8a29e] shrink-0 mt-0.5" /> : undefined}
+          />
+          <DataRow
+            icon={<LeafIcon size={24} />}
+            label="Аромат сухой"
+            value={t.aroma_dry ?? '–'}
+            wide
+            border
+          />
+          <DataRow
+            icon={<BowlSteamIcon size={24} />}
+            label="Аромат прогретый"
+            value={t.aroma_warmed ?? '–'}
+            wide
+            border
+          />
+          <DataRow
+            icon={<DropHalfBottomIcon size={24} />}
+            label="Ощущения"
+            value={effects ?? '–'}
+            wide
+            border
+          />
+
+          {/* Notes row */}
+          <div className="col-span-2 border-t border-[#e7e5e4] pt-4 flex gap-2 items-start">
+            <span className="shrink-0 text-[#a8a29e] mt-0.5">
+              <DropHalfBottomIcon size={24} />
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="text-[12px] font-medium leading-[16px] text-[#a8a29e] mb-0.5">Заметка</p>
+              {t.summary
+                ? <NotesSection text={t.summary} />
+                : <p className="text-[14px] leading-[20px] text-[#1c1917]">–</p>
+              }
+            </div>
+          </div>
+        </div>
+
+        {/* Infusions */}
+        {t.infusions && t.infusions.length > 0 && (
+          <InfusionsAccordion infusions={t.infusions} />
+        )}
       </div>
-
-      {t.summary && (
-        <>
-          <Separator className="my-4" />
-          <div className="text-sm">
-            <p className="text-muted-foreground mb-1">Заметка</p>
-            <p>{t.summary}</p>
-          </div>
-        </>
-      )}
-
-      {t.infusions && t.infusions.length > 0 && (
-        <>
-          <Separator className="my-4" />
-          <h2 className="text-base font-medium mb-3">Проливы</h2>
-          <div className="flex flex-col gap-3">
-            {t.infusions.map((inf: any) => (
-              <Card key={inf.n}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Пролив #{inf.n}</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm grid grid-cols-2 gap-2">
-                  {inf.seconds && <div><span className="text-muted-foreground">Время</span><p>{inf.seconds} сек</p></div>}
-                  {inf.liquor_color && <div><span className="text-muted-foreground">Цвет</span><p>{inf.liquor_color}</p></div>}
-                  {inf.taste && <div><span className="text-muted-foreground">Вкус</span><p>{inf.taste}</p></div>}
-                  {inf.body && <div><span className="text-muted-foreground">Тело</span><p>{inf.body}</p></div>}
-                  {inf.aftertaste && <div><span className="text-muted-foreground">Послевкусие</span><p>{inf.aftertaste}</p></div>}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </>
-      )}
     </main>
   );
 }

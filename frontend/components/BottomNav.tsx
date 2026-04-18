@@ -20,7 +20,7 @@ export default function BottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex h-[68px] w-[calc(100%-32px)] max-w-[374px] items-center overflow-hidden rounded-full border border-[#d6d3d1] bg-[rgba(255,255,255,0.8)] backdrop-blur-md p-1">
+    <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex h-[68px] w-[calc(100%-32px)] max-w-[374px] items-center overflow-hidden rounded-full border border-[#d6d3d1] bg-[rgba(255,255,255,0.8)] backdrop-blur-md p-1">
       {links.map((link) => {
         const isActive = link.href === '/'
           ? pathname === '/'

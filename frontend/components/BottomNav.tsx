@@ -1,52 +1,91 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BowlSteamIcon, StackIcon, UserIcon } from '@phosphor-icons/react';
-import { PlusCircle } from 'lucide-react';
+import {
+  BowlSteamIcon,
+  StackIcon,
+  UserIcon,
+  PlusCircleIcon,
+  XCircleIcon,
+} from '@phosphor-icons/react';
 
-const links = [
+const navLinks = [
   { href: '/',           label: 'Дегустации', Icon: BowlSteamIcon },
   { href: '/collection', label: 'Коллекция',  Icon: StackIcon     },
-  { href: '/new',        label: 'Добавить',   Icon: PlusCircle    },
   { href: '/profile',    label: 'Профиль',    Icon: UserIcon      },
+];
+
+const addLinks = [
+  { label: 'Дегустацию', href: '/new'         },
+  { label: 'Посуду',     href: '/teaware/new' },
+  { label: 'Чай',        href: '/teas/new'    },
 ];
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
 
-  if (pathname === '/login' || pathname.startsWith('/auth')) {
-    return null;
-  }
+  if (pathname === '/login' || pathname.startsWith('/auth')) return null;
 
   return (
-    <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex h-[68px] w-[calc(100%-32px)] max-w-[374px] items-center overflow-hidden rounded-full border border-[#d6d3d1] bg-[rgba(255,255,255,0.8)] backdrop-blur-md p-1">
-      {links.map((link) => {
-        const isActive = link.href === '/'
-          ? pathname === '/'
-          : pathname.startsWith(link.href);
+    <>
+      {open && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40"
+          onClick={() => setOpen(false)}
+        />
+      )}
 
-        return (
-          <Link
-            key={link.href}
-            href={link.href}
-            className={`flex flex-1 flex-col items-center justify-center h-full rounded-full transition-colors ${
-              isActive ? 'bg-[rgba(255,255,255,0.6)]' : ''
-            }`}
-          >
-            <link.Icon
-              size={24}
-              className={isActive ? 'text-[#1c1917]' : 'text-[#a8a29e]'}
-              strokeWidth={1.5}
-            />
-            <span className={`text-[10px] font-semibold leading-[16px] ${
-              isActive ? 'text-[#1c1917]' : 'text-[#a8a29e]'
-            }`}>
-              {link.label}
-            </span>
-          </Link>
-        );
-      })}
-    </nav>
+      {open && (
+        <div className="fixed bottom-[92px] right-4 z-50 flex flex-col items-end gap-2">
+          {addLinks.map(({ label, href }) => (
+            <Link
+              key={href}
+              href={href}
+              onClick={() => setOpen(false)}
+              className="flex h-12 items-center justify-center rounded-full border border-[#d6d3d1] bg-white/40 backdrop-blur-md px-5 text-[16px] font-medium text-white"
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
+      )}
+
+      <nav className="fixed bottom-4 left-4 right-4 z-50 flex gap-2">
+        <div className="flex flex-1 h-[68px] items-center rounded-full border border-[#d6d3d1] bg-white/40 backdrop-blur-md p-1 overflow-hidden">
+          {navLinks.map(({ href, label, Icon }) => {
+            const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`flex flex-1 flex-col items-center justify-center h-full rounded-full transition-colors ${
+                  isActive ? 'bg-white/60' : ''
+                }`}
+              >
+                <Icon size={24} className={isActive ? 'text-[#b45309]' : 'text-[#57534e]'} />
+                <span className={`text-[10px] font-semibold leading-[16px] ${
+                  isActive ? 'text-[#b45309]' : 'text-[#57534e]'
+                }`}>
+                  {label}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+
+        <button
+          onClick={() => setOpen(v => !v)}
+          className="flex h-[68px] w-[70px] shrink-0 items-center justify-center rounded-full border border-[#d6d3d1] bg-white/40 backdrop-blur-md"
+        >
+          {open
+            ? <XCircleIcon size={40} className="text-[#57534e]" />
+            : <PlusCircleIcon size={40} className="text-[#57534e]" />
+          }
+        </button>
+      </nav>
+    </>
   );
 }

@@ -39,7 +39,7 @@ export default function BottomNav() {
       )}
 
       {open && (
-        <div className="fixed bottom-[92px] right-4 z-50 flex flex-col items-end gap-2">
+        <div className="fixed bottom-[92px] left-1/2 -translate-x-1/2 w-[calc(100%-16px)] max-w-[414px] z-50 flex flex-col items-end gap-2">
           {addLinks.map(({ label, href }) => (
             <Link
               key={href}
@@ -53,7 +53,7 @@ export default function BottomNav() {
         </div>
       )}
 
-      <nav className="fixed bottom-4 left-4 right-4 z-50 flex gap-2">
+      <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex gap-2 w-[calc(100%-16px)] min-w-[320px] max-w-[414px]">
         <div className="flex flex-1 h-[68px] items-center rounded-full border border-[#d6d3d1] bg-white/40 backdrop-blur-md p-1 overflow-hidden">
           {navLinks.map(({ href, label, Icon }) => {
             const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href);
@@ -81,8 +81,8 @@ export default function BottomNav() {
           className="flex h-[68px] w-[70px] shrink-0 items-center justify-center rounded-full border border-[#d6d3d1] bg-white/40 backdrop-blur-md"
         >
           {open
-            ? <XCircleIcon size={40} className="text-[#57534e]" />
-            : <PlusCircleIcon size={40} className="text-[#57534e]" />
+            ? <XCircleIcon size={40} weight="light" className="text-[#57534e]" />
+            : <PlusCircleIcon size={40} weight="light" className="text-[#57534e]" />
           }
         </button>
       </nav>

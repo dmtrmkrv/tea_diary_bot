@@ -1,3 +1,4 @@
+import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -36,6 +37,7 @@ class TastingOut(BaseModel):
     effects_csv: Optional[str]
     summary: Optional[str]
     entry_mode: str
+    created_at: Optional[datetime.datetime] = None
     cover_url: Optional[str] = None
     class Config:
         from_attributes = True

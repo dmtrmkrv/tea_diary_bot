@@ -20,8 +20,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru" className={`${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">
-        <div className="pb-20">
+      <body className="min-h-full flex flex-col bg-[#e7e5e4]">
+        <div className="pb-28">
           {children}
         </div>
         <BottomNav />

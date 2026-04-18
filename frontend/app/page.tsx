@@ -17,7 +17,45 @@ interface Tasting {
   temp_c: number | null;
   effects_csv: string | null;
   entry_mode: string;
+  created_at: string | null;
   cover_url: string | null;
+}
+
+function formatDatetime(isoString: string | null): string | null {
+  if (!isoString) return null;
+  const iso = isoString.endsWith('Z') ? isoString : isoString + 'Z';
+  const date = new Date(iso);
+  const datePart = new Intl.DateTimeFormat('ru-RU', {
+    day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+  }).format(date);
+  const h = date.getUTCHours(), m = date.getUTCMinutes();
+  if (h === 0 && m === 0) return datePart;
+  return `${datePart}, ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+function StarIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <path d="M7.239 2.34c.3-.921 1.603-.921 1.902 0l.856 2.634a1 1 0 00.951.69h2.77c.969 0 1.371 1.24.588 1.81l-2.24 1.627a1 1 0 00-.364 1.118l.856 2.634c.3.921-.755 1.688-1.54 1.118l-2.24-1.627a1 1 0 00-1.175 0l-2.24 1.627c-.784.57-1.838-.197-1.539-1.118l.856-2.634a1 1 0 00-.364-1.118L1.694 7.474c-.783-.57-.38-1.81.588-1.81h2.77a1 1 0 00.951-.69l.856-2.634z"/>
+    </svg>
+  );
+}
+
+function LightningIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9.04 1.037A1 1 0 019.6 2v4h3.2a1 1 0 01.82 1.573l-5.6 8A1 1 0 016.4 15v-4H3.2a1 1 0 01-.82-1.573l5.6-8a1 1 0 011.06-.39z"/>
+    </svg>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="7" cy="7" r="5"/>
+      <path d="M12 12l2.5 2.5" strokeLinecap="round"/>
+    </svg>
+  );
 }
 
 export default async function Home() {
@@ -26,80 +64,99 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-[#e7e5e4]">
       <div className="max-w-2xl mx-auto px-4">
-        {/* Заголовок — top: 46px по Figma */}
-        <h1 className="font-[family-name:var(--font-inter)] text-[32px] font-semibold leading-[32px] tracking-[-1px] text-black pt-[46px]">
-          Мои дегустации
-        </h1>
+        {/* Заголовок */}
+        <div className="flex items-center justify-between pt-[48px]">
+          <h1 className="font-[family-name:var(--font-inter)] text-[32px] font-semibold leading-[32px] tracking-[-1px] text-[#0a0a0a]">
+            Мои дегустации
+          </h1>
+          <button className="flex items-center justify-center w-9 h-9 bg-[#f5f5f5] rounded-lg text-[#0a0a0a]">
+            <SearchIcon />
+          </button>
+        </div>
 
-        {/* Счётчик — top: 90px по Figma */}
-        <div className="mt-3">
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[#78716c] text-[#fafafa] text-[12px] font-semibold leading-[16px]">
+        {/* Счётчик */}
+        <div className="mt-2">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[#a8a29e] text-[#fafafa] text-[12px] font-semibold leading-[16px]">
             {tastings.length} записей
           </span>
         </div>
 
-        {/* Список карточек — top: 134px, gap: 8px по Figma */}
-        <div className="flex flex-col gap-2 mt-6 pb-8">
-          {tastings.map((t) => (
-            <Link key={t.id} href={`/tastings/${t.id}`}>
-              <article className="bg-[#fafaf9] rounded-lg overflow-hidden flex flex-col gap-4 pb-4">
-                {/* Изображение — высота 166px по Figma */}
-                <div className="relative h-[166px] overflow-hidden shrink-0 w-full">
-                  {t.cover_url ? (
-                    <Image
-                      src={t.cover_url}
-                      alt={t.name}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-[#e7e5e4]" />
-                  )}
+        {/* Список карточек */}
+        <div className="flex flex-col gap-3 mt-4 pb-8">
+          {tastings.map((t) => {
+            const datetime = formatDatetime(t.created_at);
+            const isQuick = t.entry_mode === 'quick';
+            const hasRating = t.rating > 0;
 
-                  {/* Рейтинг — чип в правом верхнем углу */}
-                  {t.rating > 0 && (
-                    <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-white/90 rounded-lg px-2 py-1 min-h-[29px]">
-                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" fill="#0a0a0a"/>
-                      </svg>
-                      <span className="text-[12px] font-semibold leading-[16px] text-[#0a0a0a] whitespace-nowrap">
-                        {t.rating}/10
-                      </span>
+            return (
+              <Link key={t.id} href={`/tastings/${t.id}`}>
+                <article className="bg-[#fafaf9] rounded-lg overflow-hidden shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)]">
+
+                  {/* Фото — только если есть */}
+                  {t.cover_url && (
+                    <div className="relative h-[176px] w-full shrink-0">
+                      <Image src={t.cover_url} alt={t.name} fill className="object-cover" />
                     </div>
                   )}
 
-                  {/* Метка быстрой заметки */}
-                  {t.entry_mode === 'quick' && (
-                    <div className="absolute top-2 left-2 bg-white/90 rounded-lg px-2 py-1 min-h-[29px] flex items-center">
-                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" fill="#0a0a0a"/>
-                      </svg>
-                    </div>
-                  )}
-                </div>
+                  {/* Контент */}
+                  <div className="flex flex-col gap-2 px-4 py-4">
 
-                {/* Текст и бейджи */}
-                <div className="flex flex-col gap-2 px-4">
-                  <p className="font-[family-name:var(--font-inter)] text-[16px] font-semibold leading-[24px] text-black">
-                    {t.name}
-                  </p>
-                  <div className="flex flex-wrap gap-1 items-center">
-                    <CategoryBadge category={t.category} />
-                    {t.year && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full border border-[#d4d4d4] text-[12px] font-semibold leading-[16px] text-[#0a0a0a]">
-                        {t.year}
-                      </span>
+                    {/* Строка: дата + рейтинг/быстрая заметка */}
+                    {(datetime || isQuick || hasRating) && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#78716c] text-[12px] font-medium leading-[16px] whitespace-nowrap">
+                          {datetime}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          {isQuick && (
+                            <div className="flex items-center justify-center min-h-[20px] min-w-[20px] px-1 py-0.5 rounded-full border border-[#f59e0b] text-[#f59e0b]">
+                              <LightningIcon />
+                            </div>
+                          )}
+                          {hasRating && (
+                            <div className="flex items-center gap-1 min-h-[20px] px-2 py-0.5 rounded-full border border-[#f59e0b] text-[#f59e0b]">
+                              <StarIcon />
+                              <span className="text-[12px] font-medium leading-[16px] whitespace-nowrap">
+                                {t.rating}/10
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     )}
-                    {t.region && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full border border-[#d4d4d4] text-[12px] font-semibold leading-[16px] text-[#0a0a0a]">
-                        {t.region}
-                      </span>
+
+                    {/* Название */}
+                    <p className="font-[family-name:var(--font-inter)] text-[16px] font-semibold leading-[24px] text-[#0a0a0a]">
+                      {t.name}
+                    </p>
+
+                    {/* Бейджи */}
+                    {(t.year || t.region) && (
+                      <div className="flex flex-wrap gap-1 items-center">
+                        <CategoryBadge category={t.category} />
+                        {t.year && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full border border-[#d4d4d4] bg-[rgba(255,255,255,0.5)] text-[12px] font-semibold leading-[16px] text-[#0a0a0a]">
+                            {t.year}
+                          </span>
+                        )}
+                        {t.region && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full border border-[#d4d4d4] bg-[rgba(255,255,255,0.5)] text-[12px] font-semibold leading-[16px] text-[#0a0a0a]">
+                            {t.region}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {!t.year && !t.region && t.category && (
+                      <div className="flex flex-wrap gap-1 items-center">
+                        <CategoryBadge category={t.category} />
+                      </div>
                     )}
                   </div>
-                </div>
-              </article>
-            </Link>
-          ))}
+                </article>
+              </Link>
+            );
+          })}
 
           {tastings.length === 0 && (
             <p className="text-[#78716c] text-[14px] text-center py-12">

@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { XIcon, LeafIcon, BowlSteamIcon, CaretRightIcon } from '@phosphor-icons/react';
-import { toast } from 'sonner';
 import CategoryBadge from '@/components/CategoryBadge';
 import { getTeaItemTastings, type TeaItem, type TastingShort } from '@/lib/apiClient';
 
@@ -25,6 +25,7 @@ export default function TeaDetailSheet({
   item: TeaItem | null;
   onClose: () => void;
 }) {
+  const router = useRouter();
   const [pageState, setPageState] = useState<{ itemId: number; page: number }>({
     itemId: 0,
     page: 1,
@@ -189,7 +190,9 @@ export default function TeaDetailSheet({
           </button>
           <button
             type="button"
-            onClick={() => toast('Скоро будет доступно')}
+            onClick={() => {
+              if (item) router.push(`/new?tea_item_id=${item.id}`);
+            }}
             className="flex-[2] h-10 rounded-full bg-[#b45309] text-[14px] font-medium text-white"
           >
             Новая дегустация

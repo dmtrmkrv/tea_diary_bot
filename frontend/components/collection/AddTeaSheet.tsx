@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { XIcon, ImageSquareIcon } from '@phosphor-icons/react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { createTeaItem, uploadTeaItemPhoto } from '@/lib/apiClient';
+import { createTeaItem, uploadTeaItemPhoto, type TeaItem } from '@/lib/apiClient';
 
 const CATEGORIES: { name: string; border: string; text: string }[] = [
   { name: 'Белый',     border: 'border-[#fef3c7]', text: 'text-[#1c1917]' },
@@ -23,13 +23,20 @@ export default function AddTeaSheet({
   open,
   onClose,
   onSaved,
+  initialName,
 }: {
   open: boolean;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (item: TeaItem) => void;
+  initialName?: string;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [name, setName] = useState('');
+  const [name, setName] = useState(initialName ?? '');
+  const [lastInitial, setLastInitial] = useState(initialName);
+  if (initialName !== lastInitial) {
+    setLastInitial(initialName);
+    setName(initialName ?? '');
+  }
   const [category, setCategory] = useState<string | null>(null);
   const [year, setYear] = useState('');
   const [region, setRegion] = useState('');
@@ -102,7 +109,7 @@ export default function AddTeaSheet({
         await uploadTeaItemPhoto(created.id, photoFile);
       }
       reset();
-      onSaved();
+      onSaved(created);
     } catch {
       setSubmitting(false);
     }

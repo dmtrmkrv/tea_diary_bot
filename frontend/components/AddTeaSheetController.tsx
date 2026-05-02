@@ -18,7 +18,8 @@ function Inner() {
     router.replace(qs ? `${pathname}?${qs}` : pathname);
   }
 
-  function onSaved() {
+  function onSaved(_item: unknown) {
+    void _item;
     close();
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('tea:added'));

@@ -85,3 +85,47 @@ export async function uploadTeaItemPhoto(itemId: number, file: File): Promise<Te
     body: fd,
   });
 }
+
+export type InfusionInput = {
+  n: number;
+  seconds?: number | null;
+  liquor_color?: string | null;
+  taste?: string | null;
+  special_notes?: string | null;
+  body?: string | null;
+  aftertaste?: string | null;
+};
+
+export type TastingCreateInput = {
+  name: string;
+  tea_item_id?: number | null;
+  teaware_id?: number | null;
+  grams?: number | null;
+  temp_c?: number | null;
+  aroma_dry?: string | null;
+  aroma_warmed?: string | null;
+  aroma_after?: string | null;
+  effects_csv?: string | null;
+  scenarios_csv?: string | null;
+  rating?: number;
+  summary?: string | null;
+  entry_mode?: string;
+  infusions?: InfusionInput[];
+};
+
+export type TastingCreatedOut = { id: number };
+
+export function createTasting(data: TastingCreateInput) {
+  return apiCall<TastingCreatedOut & Record<string, unknown>>('/tastings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function uploadTastingPhotos(tastingId: number, files: File[]): Promise<void> {
+  if (files.length === 0) return;
+  const fd = new FormData();
+  for (const f of files) fd.append('files', f);
+  await apiCall(`/tastings/${tastingId}/photos`, { method: 'POST', body: fd });
+}

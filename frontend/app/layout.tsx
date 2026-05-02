@@ -1,7 +1,10 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
+import AddTeaSheetController from "@/components/AddTeaSheetController";
+import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -24,7 +27,11 @@ export default function RootLayout({
         <div className="pb-[88px]">
           {children}
         </div>
-        <BottomNav />
+        <Suspense fallback={null}>
+          <BottomNav />
+        </Suspense>
+        <AddTeaSheetController />
+        <Toaster position="top-center" />
       </body>
     </html>
   );

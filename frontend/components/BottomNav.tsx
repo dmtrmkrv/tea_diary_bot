@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   BowlSteamIcon,
   StackIcon,
@@ -17,17 +17,30 @@ const navLinks = [
   { href: '/profile',    label: 'Профиль',    Icon: UserIcon      },
 ];
 
-const addLinks = [
-  { label: 'Дегустацию', href: '/new'         },
-  { label: 'Посуду',     href: '/teaware/new' },
-  { label: 'Чай',        href: '/teas/new'    },
+type AddAction =
+  | { kind: 'link'; label: string; href: string }
+  | { kind: 'sheet'; label: string; sheet: 'tea' };
+
+const addActions: AddAction[] = [
+  { kind: 'link',  label: 'Дегустацию', href: '/new'         },
+  { kind: 'link',  label: 'Посуду',     href: '/teaware/new' },
+  { kind: 'sheet', label: 'Чай',        sheet: 'tea'         },
 ];
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
 
   if (pathname === '/login' || pathname.startsWith('/auth')) return null;
+
+  function openSheet(name: 'tea') {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('add', name);
+    router.push(`${pathname}?${params.toString()}`);
+    setOpen(false);
+  }
 
   return (
     <>
@@ -40,16 +53,21 @@ export default function BottomNav() {
 
       {open && (
         <div className="fixed bottom-[92px] left-1/2 -translate-x-1/2 w-[calc(100%-16px)] max-w-[414px] z-50 flex flex-col items-end gap-2">
-          {addLinks.map(({ label, href }) => (
-            <Link
-              key={href}
-              href={href}
-              onClick={() => setOpen(false)}
-              className="flex h-12 items-center justify-center rounded-full border border-[#d6d3d1] bg-white/40 backdrop-blur-md px-5 text-[16px] font-medium text-white"
-            >
-              {label}
-            </Link>
-          ))}
+          {addActions.map((a) => {
+            const cls = "flex h-12 items-center justify-center rounded-full border border-[#d6d3d1] bg-white/40 backdrop-blur-md px-5 text-[16px] font-medium text-white";
+            if (a.kind === 'link') {
+              return (
+                <Link key={a.label} href={a.href} onClick={() => setOpen(false)} className={cls}>
+                  {a.label}
+                </Link>
+              );
+            }
+            return (
+              <button key={a.label} type="button" onClick={() => openSheet(a.sheet)} className={cls}>
+                {a.label}
+              </button>
+            );
+          })}
         </div>
       )}
 

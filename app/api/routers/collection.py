@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional, List
@@ -7,8 +7,8 @@ import datetime
 
 from app.api.deps import get_db
 from app.api.auth import get_current_user_id
-from app.db.models import TeaItem, Teaware
-from app.services.storage import get_presigned_url
+from app.db.models import TeaItem, Teaware, Tasting
+from app.services.storage import get_presigned_url, save_tea_item_photo_bytes
 
 router = APIRouter(prefix="/collection", tags=["collection"])
 
@@ -24,6 +24,7 @@ class TeaItemOut(BaseModel):
     vendor: Optional[str]
     notes: Optional[str]
     cover_url: Optional[str] = None
+    tasting_count: int = 0
     created_at: datetime.datetime
     class Config:
         from_attributes = True
@@ -36,6 +37,11 @@ class TeaItemCreate(BaseModel):
     region: Optional[str] = None
     vendor: Optional[str] = None
     notes: Optional[str] = None
+
+
+class TeaItemListOut(BaseModel):
+    items: List[TeaItemOut]
+    total: int
 
 
 class TeawareOut(BaseModel):
@@ -59,29 +65,67 @@ class TeawareCreate(BaseModel):
     notes: Optional[str] = None
 
 
+class TeawareListOut(BaseModel):
+    items: List[TeawareOut]
+    total: int
+
+
+class TastingShortOut(BaseModel):
+    id: int
+    name: str
+    created_at: datetime.datetime
+    class Config:
+        from_attributes = True
+
+
+class TastingsListOut(BaseModel):
+    items: List[TastingShortOut]
+    total: int
+
+
 # ---- Чай ----
 
-@router.get("/tea", response_model=List[TeaItemOut])
+@router.get("/tea", response_model=TeaItemListOut)
 def list_tea(
+    limit: int = Query(10, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id),
 ):
+    total = db.execute(
+        select(func.count(TeaItem.id)).where(TeaItem.user_id == user_id)
+    ).scalar_one()
+
     items = db.execute(
         select(TeaItem)
         .where(TeaItem.user_id == user_id)
         .order_by(TeaItem.created_at.desc())
+        .limit(limit)
+        .offset(offset)
     ).scalars().all()
 
-    result = []
+    item_ids = [it.id for it in items]
+    counts: dict[int, int] = {}
+    if item_ids:
+        rows = db.execute(
+            select(Tasting.tea_item_id, func.count(Tasting.id))
+            .where(Tasting.user_id == user_id, Tasting.tea_item_id.in_(item_ids))
+            .group_by(Tasting.tea_item_id)
+        ).all()
+        counts = {row[0]: row[1] for row in rows}
+
+    result: List[TeaItemOut] = []
     for item in items:
         out = TeaItemOut.model_validate(item)
+        out.tasting_count = counts.get(item.id, 0)
         if item.cover_object_key:
             try:
                 out.cover_url = get_presigned_url(item.cover_object_key)
             except Exception:
                 pass
         result.append(out)
-    return result
+
+    return TeaItemListOut(items=result, total=total)
 
 
 @router.post("/tea", response_model=TeaItemOut)
@@ -101,6 +145,70 @@ def create_tea(
     return TeaItemOut.model_validate(item)
 
 
+@router.post("/tea/{item_id}/photo", response_model=TeaItemOut)
+async def upload_tea_photo(
+    item_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),
+):
+    item = db.get(TeaItem, item_id)
+    if not item or item.user_id != user_id:
+        raise HTTPException(status_code=404, detail="Не найдено")
+
+    body = await file.read()
+    if not body:
+        raise HTTPException(status_code=400, detail="Пустой файл")
+
+    saved = save_tea_item_photo_bytes(
+        user_id=user_id,
+        tea_item_id=item.id,
+        body=body,
+        filename_hint=file.filename or "photo.jpg",
+    )
+    item.cover_object_key = saved.object_key
+    db.commit()
+    db.refresh(item)
+
+    out = TeaItemOut.model_validate(item)
+    if item.cover_object_key:
+        try:
+            out.cover_url = get_presigned_url(item.cover_object_key)
+        except Exception:
+            pass
+    return out
+
+
+@router.get("/tea/{item_id}/tastings", response_model=TastingsListOut)
+def list_tea_tastings(
+    item_id: int,
+    limit: int = Query(3, ge=1, le=50),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),
+):
+    item = db.get(TeaItem, item_id)
+    if not item or item.user_id != user_id:
+        raise HTTPException(status_code=404, detail="Не найдено")
+
+    total = db.execute(
+        select(func.count(Tasting.id)).where(
+            Tasting.user_id == user_id, Tasting.tea_item_id == item_id
+        )
+    ).scalar_one()
+
+    rows = db.execute(
+        select(Tasting)
+        .where(Tasting.user_id == user_id, Tasting.tea_item_id == item_id)
+        .order_by(Tasting.created_at.desc())
+        .limit(limit)
+        .offset(offset)
+    ).scalars().all()
+
+    items = [TastingShortOut.model_validate(t) for t in rows]
+    return TastingsListOut(items=items, total=total)
+
+
 @router.delete("/tea/{item_id}")
 def delete_tea(
     item_id: int,
@@ -117,18 +225,26 @@ def delete_tea(
 
 # ---- Посуда ----
 
-@router.get("/teaware", response_model=List[TeawareOut])
+@router.get("/teaware", response_model=TeawareListOut)
 def list_teaware(
+    limit: int = Query(10, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id),
 ):
+    total = db.execute(
+        select(func.count(Teaware.id)).where(Teaware.user_id == user_id)
+    ).scalar_one()
+
     items = db.execute(
         select(Teaware)
         .where(Teaware.user_id == user_id)
         .order_by(Teaware.created_at.desc())
+        .limit(limit)
+        .offset(offset)
     ).scalars().all()
 
-    result = []
+    result: List[TeawareOut] = []
     for item in items:
         out = TeawareOut.model_validate(item)
         if item.cover_object_key:
@@ -137,7 +253,8 @@ def list_teaware(
             except Exception:
                 pass
         result.append(out)
-    return result
+
+    return TeawareListOut(items=result, total=total)
 
 
 @router.post("/teaware", response_model=TeawareOut)

@@ -92,6 +92,7 @@ class Tasting(Base):
     summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     seq_no: Mapped[int] = mapped_column(Integer, nullable=False)
     tea_item_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("tea_items.id", ondelete="SET NULL"), nullable=True)
+    teaware_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("teaware.id", ondelete="SET NULL"), nullable=True)
 
     infusions: Mapped[List["Infusion"]] = relationship(
         back_populates="tasting", cascade="all, delete-orphan"

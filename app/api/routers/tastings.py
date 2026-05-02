@@ -1,6 +1,6 @@
 import datetime
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional, List
@@ -65,6 +65,11 @@ class TastingDetail(TastingOut):
     photo_urls: List[str] = []
 
 
+class TastingListOut(BaseModel):
+    items: List[TastingOut]
+    total: int
+
+
 class TastingCreate(BaseModel):
     name: str
     tea_item_id: Optional[int] = None
@@ -83,13 +88,17 @@ class TastingCreate(BaseModel):
     infusions: List[InfusionCreate] = []
 
 
-@router.get("", response_model=List[TastingOut])
+@router.get("", response_model=TastingListOut)
 def list_tastings(
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id),
     limit: int = 20,
     offset: int = 0,
 ):
+    total = db.execute(
+        select(func.count(Tasting.id)).where(Tasting.user_id == user_id)
+    ).scalar_one()
+
     rows = db.execute(
         select(Tasting, TeaItem)
         .outerjoin(TeaItem, Tasting.tea_item_id == TeaItem.id)
@@ -128,7 +137,7 @@ def list_tastings(
                     pass
 
         result.append(item)
-    return result
+    return TastingListOut(items=result, total=total)
 
 
 @router.post("", response_model=TastingOut, status_code=201)

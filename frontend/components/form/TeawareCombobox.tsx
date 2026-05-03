@@ -32,7 +32,7 @@ export default function TeawareCombobox({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
-        className="w-full h-10 px-4 rounded-full border border-[#e5e5e5] bg-white flex items-center gap-3 text-left"
+        className="w-full h-10 px-2 rounded-lg border border-[#e5e5e5] bg-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] flex items-center gap-2 text-left"
       >
         {value ? (
           <span className="flex-1 text-[14px] text-[#0a0a0a] truncate">
@@ -49,7 +49,7 @@ export default function TeawareCombobox({
         <CaretDownIcon size={16} className="text-[#a8a29e] shrink-0" />
       </PopoverTrigger>
       <PopoverContent
-        className="p-0 w-[var(--radix-popover-trigger-width)] max-h-[360px] overflow-hidden"
+        className="p-0 w-[var(--anchor-width)] max-h-[min(360px,calc(100dvh-120px))] overflow-hidden"
         align="start"
         sideOffset={4}
       >

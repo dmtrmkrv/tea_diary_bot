@@ -127,6 +127,15 @@ function NewTastingInner() {
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const [submitting, setSubmitting] = useState(false);
+  const lastInfusionRef = useRef<HTMLDivElement | null>(null);
+  const prevInfusionCount = useRef(0);
+
+  useEffect(() => {
+    if (infusions.length > prevInfusionCount.current) {
+      lastInfusionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    prevInfusionCount.current = infusions.length;
+  }, [infusions.length]);
 
   useEffect(() => {
     if (!initialTeaItemId) return;
@@ -315,7 +324,8 @@ function NewTastingInner() {
           </Card>
 
           {infusions.map((inf, idx) => (
-            <Card key={inf.uid}>
+            <div key={inf.uid} ref={idx === infusions.length - 1 ? lastInfusionRef : null}>
+            <Card>
               <div className="flex items-center justify-between px-4 py-3">
                 <button
                   type="button"
@@ -395,6 +405,7 @@ function NewTastingInner() {
                 </div>
               )}
             </Card>
+            </div>
           ))}
 
           <button

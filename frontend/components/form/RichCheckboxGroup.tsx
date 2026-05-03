@@ -22,6 +22,30 @@ export function richCheckboxToCsv(s: RichCheckboxState): string {
   return parts.join(', ');
 }
 
+function CheckboxIndicator({ active }: { active: boolean }) {
+  return (
+    <span className="relative shrink-0 size-4">
+      <span
+        className={`absolute left-px top-px w-[14px] h-[14px] rounded-[4px] border flex items-center justify-center shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] transition-colors ${
+          active ? 'bg-[#b45309] border-[#b45309]' : 'bg-white border-[#d4d4d4]'
+        }`}
+      >
+        {active && (
+          <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+            <path
+              d="M1 3.5L3.2 5.5L8 1"
+              stroke="white"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        )}
+      </span>
+    </span>
+  );
+}
+
 export default function RichCheckboxGroup({
   options,
   value,
@@ -63,20 +87,14 @@ export default function RichCheckboxGroup({
               key={opt}
               type="button"
               onClick={() => toggle(opt)}
-              className={`flex items-center justify-between gap-2 h-9 px-3 rounded-full border text-[14px] font-medium transition-colors ${
-                active
-                  ? 'bg-[#b45309] text-white border-[#b45309]'
-                  : 'bg-white text-[#1c1917] border-[#d4d4d4]'
+              className={`flex items-center gap-3 px-3 py-3 rounded-lg border text-left shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] transition-colors ${
+                active ? 'bg-white border-[#b45309]' : 'bg-white border-[#e5e5e5]'
               }`}
             >
-              <span className="truncate">{opt}</span>
-              <span
-                className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-                  active ? 'border-white bg-white' : 'border-[#d4d4d4] bg-white'
-                }`}
-              >
-                {active && <span className="w-2 h-2 rounded-sm bg-[#b45309]" />}
+              <span className={`flex-1 text-[14px] leading-5 ${active ? 'text-[#1c1917]' : 'text-[#404040]'}`}>
+                {opt}
               </span>
+              <CheckboxIndicator active={active} />
             </button>
           );
         })}
@@ -87,22 +105,14 @@ export default function RichCheckboxGroup({
           <button
             type="button"
             onClick={toggleOther}
-            className={`flex items-center justify-between gap-2 h-9 px-3 rounded-full border text-[14px] font-medium ${
-              value.otherEnabled
-                ? 'bg-[#b45309] text-white border-[#b45309]'
-                : 'bg-white text-[#1c1917] border-[#d4d4d4]'
+            className={`flex items-center gap-3 px-3 py-3 rounded-lg border text-left shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] transition-colors ${
+              value.otherEnabled ? 'bg-white border-[#b45309]' : 'bg-white border-[#e5e5e5]'
             }`}
           >
-            <span>Другое</span>
-            <span
-              className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-                value.otherEnabled
-                  ? 'border-white bg-white'
-                  : 'border-[#d4d4d4] bg-white'
-              }`}
-            >
-              {value.otherEnabled && <span className="w-2 h-2 rounded-sm bg-[#b45309]" />}
+            <span className={`flex-1 text-[14px] leading-5 ${value.otherEnabled ? 'text-[#1c1917]' : 'text-[#404040]'}`}>
+              Другое
             </span>
+            <CheckboxIndicator active={value.otherEnabled} />
           </button>
           {value.otherEnabled && (
             <Textarea

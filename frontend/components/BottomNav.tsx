@@ -33,7 +33,7 @@ export default function BottomNav() {
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
 
-  if (pathname === '/login' || pathname.startsWith('/auth')) return null;
+  if (pathname === '/login' || pathname.startsWith('/auth') || pathname === '/new') return null;
 
   function openSheet(name: 'tea') {
     const params = new URLSearchParams(searchParams.toString());

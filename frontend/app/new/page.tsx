@@ -113,7 +113,6 @@ function NewTastingInner() {
 
   const [aromaDry, setAromaDry] = useState<RichCheckboxState>({ ...emptyRichCheckboxState });
   const [aromaWarmed, setAromaWarmed] = useState<RichCheckboxState>({ ...emptyRichCheckboxState });
-  const [aromaAfter, setAromaAfter] = useState<RichCheckboxState>({ ...emptyRichCheckboxState });
 
   const [infusions, setInfusions] = useState<Infusion[]>([]);
   const nextInfusionUid = useRef(1);
@@ -206,7 +205,6 @@ function NewTastingInner() {
         temp_c: tempC ? Number(tempC) : null,
         aroma_dry: richCheckboxToCsv(aromaDry) || null,
         aroma_warmed: richCheckboxToCsv(aromaWarmed) || null,
-        aroma_after: richCheckboxToCsv(aromaAfter) || null,
         effects_csv: richCheckboxToCsv(effects) || null,
         scenarios_csv: richCheckboxToCsv(scenarios) || null,
         rating,
@@ -309,27 +307,15 @@ function NewTastingInner() {
                   />
                 </AccordionContent>
               </AccordionItem>
-              <AccordionItem value="aroma-warmed" className="border-b last:border-b-0">
+              <AccordionItem value="aroma-warmed" className="border-b-0">
                 <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                  Аромат прогретого листа
+                  Аромат прогретого/промытого листа
                 </AccordionTrigger>
                 <AccordionContent className="px-4 pb-4">
                   <RichCheckboxGroup
                     options={AROMA_OPTIONS}
                     value={aromaWarmed}
                     onChange={setAromaWarmed}
-                  />
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="aroma-after" className="border-b-0">
-                <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                  Аромат после промыва
-                </AccordionTrigger>
-                <AccordionContent className="px-4 pb-4">
-                  <RichCheckboxGroup
-                    options={AROMA_OPTIONS}
-                    value={aromaAfter}
-                    onChange={setAromaAfter}
                   />
                 </AccordionContent>
               </AccordionItem>

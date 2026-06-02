@@ -1,9 +1,9 @@
 export const dynamic = 'force-dynamic';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   ArrowLeftIcon,
-  ShareNetworkIcon,
   ScalesIcon,
   ThermometerIcon,
   LeafIcon,
@@ -84,17 +84,11 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
         <div className="flex items-center justify-between">
           <Link
             href="/"
-            className="bg-[#f5f5f5] flex gap-2 items-center h-9 px-3 py-2 rounded-lg text-[14px] font-medium text-[#78716c]"
+            className="bg-[#f5f5f5] flex items-center justify-center h-9 w-9 rounded-full text-[#78716c]"
           >
             <ArrowLeftIcon size={16} />
-            Назад
           </Link>
-          <div className="flex gap-2">
-            <button className="bg-[#f5f5f5] flex items-center justify-center h-9 w-9 rounded-lg text-[#78716c]">
-              <ShareNetworkIcon size={16} />
-            </button>
-            <TastingActions tastingId={t.id} />
-          </div>
+          <TastingActions tastingId={t.id} />
         </div>
 
         {/* Title group */}
@@ -153,61 +147,92 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
 
         {/* Main data card */}
         <div className="bg-white rounded-2xl shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.1)] p-4 grid grid-cols-2 gap-x-2 gap-y-2">
+
+          {/* Tea item row */}
+          {t.tea_item_name && (
+            <div className="col-span-2 border-b border-[#e7e5e4] pb-2 flex items-center justify-between">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="w-8 h-8 shrink-0 rounded-lg overflow-hidden bg-[#f5f5f4] relative border border-black/10">
+                  {t.tea_item_cover_url
+                    ? <Image src={t.tea_item_cover_url} alt={t.tea_item_name} fill className="object-cover" />
+                    : <span className="absolute inset-0 flex items-center justify-center"><LeafIcon size={14} className="text-[#a8a29e]" /></span>
+                  }
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14px] text-[#0a0a0a] truncate leading-5">{t.tea_item_name}</p>
+                  {(t.tea_item_category || t.tea_item_year || t.tea_item_region) && (
+                    <p className="text-[11px] text-[#737373] truncate leading-4">
+                      {[t.tea_item_category, t.tea_item_year, t.tea_item_region].filter(Boolean).join(' · ')}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <CaretRightIcon size={24} className="text-[#a8a29e] shrink-0" />
+            </div>
+          )}
+
           <DataRow
             icon={<ScalesIcon size={24} />}
             label="Граммовка"
-            value={t.grams != null ? `${t.grams} гр` : '–'}
+            value={t.grams != null ? `${t.grams} гр` : null}
             rightBorder
           />
           <DataRow
             icon={<ThermometerIcon size={24} />}
             label="Температура"
-            value={t.temp_c != null ? `${t.temp_c} °C` : '–'}
+            value={t.temp_c != null ? `${t.temp_c} °C` : null}
           />
-          <DataRow
-            icon={<DropHalfBottomIcon size={24} />}
-            label="Посуда"
-            value={t.gear ?? '–'}
-            wide
-            border
-            amber={!!t.gear}
-            extra={t.gear ? <CaretRightIcon size={24} className="text-[#a8a29e] shrink-0 mt-0.5" /> : undefined}
-          />
-          <DataRow
-            icon={<LeafIcon size={24} />}
-            label="Аромат сухой"
-            value={t.aroma_dry ?? '–'}
-            wide
-            border
-          />
-          <DataRow
-            icon={<BowlSteamIcon size={24} />}
-            label="Аромат прогретый"
-            value={t.aroma_warmed ?? '–'}
-            wide
-            border
-          />
-          <DataRow
-            icon={<DropHalfBottomIcon size={24} />}
-            label="Ощущения"
-            value={effects ?? '–'}
-            wide
-            border
-          />
+          {t.gear && (
+            <DataRow
+              icon={<DropHalfBottomIcon size={24} />}
+              label="Посуда"
+              value={t.gear}
+              wide
+              border
+              amber
+              extra={<CaretRightIcon size={24} className="text-[#a8a29e] shrink-0 mt-0.5" />}
+            />
+          )}
+          {t.aroma_dry && (
+            <DataRow
+              icon={<LeafIcon size={24} />}
+              label="Аромат сухого листа"
+              value={t.aroma_dry}
+              wide
+              border
+            />
+          )}
+          {t.aroma_warmed && (
+            <DataRow
+              icon={<BowlSteamIcon size={24} />}
+              label="Аромат прогретого/промытого листа"
+              value={t.aroma_warmed}
+              wide
+              border
+            />
+          )}
+          {effects && (
+            <DataRow
+              icon={<DropHalfBottomIcon size={24} />}
+              label="Ощущения"
+              value={effects}
+              wide
+              border
+            />
+          )}
 
           {/* Notes row */}
-          <div className="col-span-2 border-t border-[#e7e5e4] pt-4 flex gap-2 items-start">
-            <span className="shrink-0 text-[#a8a29e] mt-0.5">
-              <DropHalfBottomIcon size={24} />
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="text-[12px] font-medium leading-[16px] text-[#a8a29e] mb-0.5">Заметка</p>
-              {t.summary
-                ? <NotesSection text={t.summary} />
-                : <p className="text-[14px] leading-[20px] text-[#1c1917]">–</p>
-              }
+          {t.summary && (
+            <div className="col-span-2 border-t border-[#e7e5e4] pt-4 flex gap-2 items-start">
+              <span className="shrink-0 text-[#a8a29e] mt-0.5">
+                <DropHalfBottomIcon size={24} />
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-medium leading-[16px] text-[#a8a29e] mb-0.5">Заметка</p>
+                <NotesSection text={t.summary} />
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Infusions */}

@@ -8,6 +8,7 @@ interface Infusion {
   seconds?: number | null;
   liquor_color?: string | null;
   taste?: string | null;
+  special_notes?: string | null;
   body?: string | null;
   aftertaste?: string | null;
 }
@@ -57,27 +58,42 @@ function InfusionContent({ inf }: { inf: Infusion }) {
         label="Цвет настоя"
         value={inf.liquor_color}
       />
-      <DataCell
-        icon={<DropHalfBottomIcon size={24} />}
-        label="Вкус"
-        value={inf.taste}
-        wide
-        border
-      />
-      <DataCell
-        icon={<LeafIcon size={24} />}
-        label="Тело"
-        value={inf.body}
-        wide
-        border
-      />
-      <DataCell
-        icon={<BowlSteamIcon size={24} />}
-        label="Послевкусие"
-        value={inf.aftertaste}
-        wide
-        border
-      />
+      {inf.taste && (
+        <DataCell
+          icon={<DropHalfBottomIcon size={24} />}
+          label="Вкус"
+          value={inf.taste}
+          wide
+          border
+        />
+      )}
+      {inf.special_notes && (
+        <DataCell
+          icon={<LeafIcon size={24} />}
+          label="Особенные ноты пролива"
+          value={inf.special_notes}
+          wide
+          border
+        />
+      )}
+      {inf.body && (
+        <DataCell
+          icon={<LeafIcon size={24} />}
+          label="Тело"
+          value={inf.body}
+          wide
+          border
+        />
+      )}
+      {inf.aftertaste && (
+        <DataCell
+          icon={<BowlSteamIcon size={24} />}
+          label="Послевкусие"
+          value={inf.aftertaste}
+          wide
+          border
+        />
+      )}
     </div>
   );
 }

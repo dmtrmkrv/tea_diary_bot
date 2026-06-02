@@ -16,6 +16,7 @@ class InfusionOut(BaseModel):
     seconds: Optional[int]
     liquor_color: Optional[str]
     taste: Optional[str]
+    special_notes: Optional[str] = None
     body: Optional[str]
     aftertaste: Optional[str]
     class Config:
@@ -111,20 +112,6 @@ def list_tastings(
     result = []
     for tasting, tea_item in rows:
         item = TastingOut.model_validate(tasting)
-
-        first_photo = db.execute(
-            select(Photo)
-            .where(Photo.tasting_id == tasting.id)
-            .where(Photo.storage_backend == "s3")
-            .where(Photo.object_key.isnot(None))
-            .limit(1)
-        ).scalar_one_or_none()
-        if first_photo:
-            try:
-                item.cover_url = get_presigned_url(first_photo.object_key)
-            except Exception:
-                pass
-
         if tea_item is not None:
             item.tea_item_name = tea_item.name
             item.tea_item_category = tea_item.category
@@ -135,8 +122,26 @@ def list_tastings(
                     item.tea_item_cover_url = get_presigned_url(tea_item.cover_object_key)
                 except Exception:
                     pass
-
         result.append(item)
+
+    if result:
+        tasting_ids = [item.id for item in result]
+        photos = db.execute(
+            select(Photo)
+            .where(Photo.tasting_id.in_(tasting_ids))
+            .where(Photo.storage_backend == "s3")
+            .where(Photo.object_key.isnot(None))
+            .order_by(Photo.tasting_id, Photo.id)
+        ).scalars().all()
+        cover_map: dict[int, str] = {}
+        for p in photos:
+            if p.tasting_id not in cover_map:
+                try:
+                    cover_map[p.tasting_id] = get_presigned_url(p.object_key)
+                except Exception:
+                    pass
+        for item in result:
+            item.cover_url = cover_map.get(item.id)
     return TastingListOut(items=result, total=total)
 
 

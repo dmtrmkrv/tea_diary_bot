@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { XIcon, LeafIcon, CaretRightIcon } from '@phosphor-icons/react';
 import { getTeaItemTastings, type TeaItem, type TastingShort } from '@/lib/apiClient';
@@ -123,11 +124,11 @@ export default function TeaItemSheet({
             ) : (
               <div className="flex flex-col gap-2">
                 {tastings.map(t => (
-                  <button
+                  <Link
                     key={t.id}
-                    type="button"
-                    onClick={() => { onClose(); router.push(`/tastings/${t.id}`); }}
-                    className="bg-[#f5f5f4] flex gap-3 items-center pl-2 pr-4 py-2 rounded-2xl shadow-[0px_1px_2px_rgba(0,0,0,0.05),0px_1px_1px_rgba(0,0,0,0.05)] text-left"
+                    href={`/tastings/${t.id}`}
+                    onClick={onClose}
+                    className="bg-[#f5f5f4] flex gap-3 items-center pl-2 pr-4 py-2 rounded-2xl shadow-[0px_1px_2px_rgba(0,0,0,0.05),0px_1px_1px_rgba(0,0,0,0.05)]"
                   >
                     <div className="w-[50px] h-[50px] shrink-0 rounded-[10px] overflow-hidden bg-[#e7e5e4] relative border border-black/10">
                       {t.cover_url ? (
@@ -145,7 +146,7 @@ export default function TeaItemSheet({
                       <p className="text-[14px] font-semibold text-[#0a0a0a] truncate leading-5">{t.name}</p>
                     </div>
                     <CaretRightIcon size={24} className="text-[#a8a29e] shrink-0" />
-                  </button>
+                  </Link>
                 ))}
               </div>
             )}

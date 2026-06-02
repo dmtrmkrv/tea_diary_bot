@@ -7,6 +7,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { LeafIcon, StackIcon, PlusIcon } from '@phosphor-icons/react';
 import TeaCard from '@/components/collection/TeaCard';
 import TeaDetailSheet from '@/components/collection/TeaDetailSheet';
+import PaginationButtons from '@/components/PaginationButtons';
 import { getTeaCollection, getTeawareCollection, type TeaItem } from '@/lib/apiClient';
 
 const PAGE_SIZE = 10;
@@ -145,29 +146,11 @@ function CollectionInner() {
               ))}
             </div>
 
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-4">
-                <button
-                  type="button"
-                  disabled={page === 1}
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  className="px-3 h-8 text-[14px] text-[#57534e] disabled:opacity-40"
-                >
-                  Назад
-                </button>
-                <span className="text-[14px] text-[#1c1917] px-2">
-                  {page} / {totalPages}
-                </span>
-                <button
-                  type="button"
-                  disabled={page === totalPages}
-                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                  className="px-3 h-8 text-[14px] text-[#57534e] disabled:opacity-40"
-                >
-                  Вперёд
-                </button>
-              </div>
-            )}
+            <PaginationButtons
+              current={page}
+              total={totalPages}
+              onPageChange={setPage}
+            />
           </>
         )}
       </div>

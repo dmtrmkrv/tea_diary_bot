@@ -139,16 +139,18 @@ export default function AddTeaSheet({
           <span className="w-9 h-1 rounded-full bg-[#d6d3d1]" />
         </div>
 
-        <div className="flex items-center justify-between px-4 pt-2 pb-3">
-          <h2 className="text-[18px] font-semibold text-[#1c1917]">Новый чай</h2>
+        <div className="flex items-end justify-between px-4 pt-4 pb-4 shrink-0">
+          <h2 className="text-[20px] font-semibold text-[#0a0a0a]">Новый чай</h2>
           <button
             type="button"
             onClick={handleClose}
-            className="w-8 h-8 rounded-full bg-[#1c1917] flex items-center justify-center"
+            className="w-6 h-6 rounded-full bg-[rgba(0,0,0,0.8)] flex items-center justify-center shrink-0"
           >
-            <XIcon size={16} className="text-white" weight="bold" />
+            <XIcon size={11} className="text-white" weight="bold" />
           </button>
         </div>
+
+        <div className="h-px bg-[#e8e5e3] shrink-0" />
 
         <div className="flex-1 overflow-y-auto px-4 pb-4 flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
@@ -173,13 +175,13 @@ export default function AddTeaSheet({
                     key={c.name}
                     type="button"
                     onClick={() => setCategory(active ? null : c.name)}
-                    className={`flex items-center justify-between gap-1 h-9 px-3 rounded-full border-2 ${c.border} ${c.text} text-[14px] font-medium transition-colors`}
+                    className={`flex items-start justify-between gap-3 px-3 py-3 rounded-[10px] border-2 bg-[#fafafa] ${c.border} transition-colors`}
                   >
-                    <span className="truncate">{c.name}</span>
+                    <span className={`text-[14px] leading-5 text-left ${c.text}`}>{c.name}</span>
                     <span
-                      className={`w-3 h-3 rounded-full border ${c.border} flex items-center justify-center shrink-0`}
+                      className={`w-4 h-4 rounded-full border-2 ${c.border} flex items-center justify-center shrink-0 mt-0.5`}
                     >
-                      {active && <span className="w-1.5 h-1.5 rounded-full bg-current" />}
+                      {active && <span className="w-2 h-2 rounded-full bg-current" />}
                     </span>
                   </button>
                 );
@@ -187,8 +189,8 @@ export default function AddTeaSheet({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
+          <div className="flex gap-2 items-start">
+            <div className="flex flex-col gap-1.5 w-[114px] shrink-0">
               <Label htmlFor="tea-year" className="text-[14px] font-medium text-[#1c1917]">
                 Год сбора
               </Label>
@@ -204,7 +206,7 @@ export default function AddTeaSheet({
                 <p className="text-[12px] leading-[16px] text-[#dc2626]">только цифры</p>
               )}
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5 flex-1 min-w-0">
               <Label htmlFor="tea-region" className="text-[14px] font-medium text-[#1c1917]">
                 Регион
               </Label>

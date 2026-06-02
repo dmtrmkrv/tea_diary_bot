@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { XIcon, LeafIcon, BowlSteamIcon, CaretRightIcon } from '@phosphor-icons/react';
 import CategoryBadge from '@/components/CategoryBadge';
@@ -126,8 +127,10 @@ export default function TeaDetailSheet({
             <>
               <div className="flex flex-col gap-2">
                 {tastings.map((t) => (
-                  <div
+                  <Link
                     key={t.id}
+                    href={`/tastings/${t.id}`}
+                    onClick={onClose}
                     className="bg-[#f5f5f4] rounded-xl px-3 py-2 flex items-center gap-2"
                   >
                     <div className="flex-1 min-w-0">
@@ -139,7 +142,7 @@ export default function TeaDetailSheet({
                       </p>
                     </div>
                     <CaretRightIcon size={20} className="text-[#a8a29e] shrink-0" />
-                  </div>
+                  </Link>
                 ))}
               </div>
 

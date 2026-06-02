@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { DotsThree } from '@phosphor-icons/react';
+import { DotsThreeOutlineIcon } from '@phosphor-icons/react';
 
 export default function TastingActions({ tastingId }: { tastingId: number }) {
   const [open, setOpen] = useState(false);
@@ -19,10 +19,10 @@ export default function TastingActions({ tastingId }: { tastingId: number }) {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(v => !v)}
-        className="bg-[#f5f5f5] flex items-center justify-center h-9 w-9 rounded-lg text-[#78716c]"
+        className="bg-[#f5f5f5] flex items-center justify-center h-9 w-9 rounded-full text-[#78716c]"
         aria-label="Действия"
       >
-        <DotsThree size={16} weight="bold" />
+        <DotsThreeOutlineIcon size={16} weight="fill" />
       </button>
       {open && (
         <div className="absolute right-0 top-10 bg-white rounded-lg shadow-lg z-50 overflow-hidden min-w-[160px]">

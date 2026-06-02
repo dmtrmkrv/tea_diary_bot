@@ -118,20 +118,22 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
             {t.name}
           </h1>
 
-          {/* Badges */}
-          <div className="flex flex-wrap gap-1">
-            {t.category && <CategoryBadge category={t.category} />}
-            {t.year && (
-              <span className="border border-[#d4d4d4] bg-[rgba(255,255,255,0.5)] rounded-full px-2 py-0.5 text-[12px] font-semibold leading-[16px] text-[#0a0a0a]">
-                {t.year}
-              </span>
-            )}
-            {t.region && (
-              <span className="border border-[#d4d4d4] bg-[rgba(255,255,255,0.5)] rounded-full px-2 py-0.5 text-[12px] font-semibold leading-[16px] text-[#0a0a0a]">
-                {t.region}
-              </span>
-            )}
-          </div>
+          {/* Badges — скрываем если привязан сорт из коллекции (там уже есть тип/год/регион) */}
+          {!t.tea_item_name && (
+            <div className="flex flex-wrap gap-1">
+              {t.category && <CategoryBadge category={t.category} />}
+              {t.year && (
+                <span className="border border-[#d4d4d4] bg-[rgba(255,255,255,0.5)] rounded-full px-2 py-0.5 text-[12px] font-semibold leading-[16px] text-[#0a0a0a]">
+                  {t.year}
+                </span>
+              )}
+              {t.region && (
+                <span className="border border-[#d4d4d4] bg-[rgba(255,255,255,0.5)] rounded-full px-2 py-0.5 text-[12px] font-semibold leading-[16px] text-[#0a0a0a]">
+                  {t.region}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

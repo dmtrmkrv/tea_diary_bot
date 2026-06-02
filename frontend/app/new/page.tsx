@@ -38,6 +38,8 @@ import {
   type TeaItem,
   type Teaware,
 } from '@/lib/apiClient';
+import ConfirmDiscardDialog from '@/components/ConfirmDiscardDialog';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 
 const AROMA_OPTIONS = [
   'Хлебный', 'Кондитерский', 'Ореховый', 'Сухофрукты',
@@ -127,6 +129,11 @@ function NewTastingInner() {
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const [submitting, setSubmitting] = useState(false);
+  const isDirty = name.trim().length > 0 || teaItem !== null || teaware !== null
+    || grams !== '' || tempC !== '' || infusions.length > 0
+    || rating > 0 || summary.trim() !== '' || photos.length > 0;
+  const { confirmClose, discardDialogOpen, onConfirmDiscard, onCancelDiscard } = useUnsavedChanges(isDirty);
+
   const lastInfusionRef = useRef<HTMLDivElement | null>(null);
   const prevInfusionCount = useRef(0);
 
@@ -233,12 +240,18 @@ function NewTastingInner() {
   const canSave = name.trim().length > 0 && !submitting;
 
   return (
+    <>
+    <ConfirmDiscardDialog
+      open={discardDialogOpen}
+      onConfirm={onConfirmDiscard}
+      onCancel={onCancelDiscard}
+    />
     <main className="min-h-screen bg-[#e7e5e4]">
       <div className="max-w-2xl mx-auto px-4 pt-6 pb-32">
         <div className="flex items-center gap-3 mb-4">
           <button
             type="button"
-            onClick={() => router.push('/')}
+            onClick={() => confirmClose(() => router.push('/'))}
             className="w-9 h-9 rounded-full bg-[#f5f5f5] flex items-center justify-center"
           >
             <ArrowLeftIcon size={16} className="text-[#0a0a0a]" />
@@ -508,7 +521,7 @@ function NewTastingInner() {
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#e7e5e4] px-4 py-3 flex gap-2 z-40">
         <button
           type="button"
-          onClick={() => router.push('/')}
+          onClick={() => confirmClose(() => router.push('/'))}
           className="flex-1 h-10 rounded-full bg-[#f5f5f4] text-[14px] font-medium text-[#1c1917]"
         >
           Отменить
@@ -523,6 +536,7 @@ function NewTastingInner() {
         </button>
       </div>
     </main>
+    </>
   );
 }
 

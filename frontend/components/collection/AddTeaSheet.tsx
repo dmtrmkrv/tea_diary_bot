@@ -6,6 +6,8 @@ import { XIcon, ImageSquareIcon } from '@phosphor-icons/react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { createTeaItem, uploadTeaItemPhoto, type TeaItem } from '@/lib/apiClient';
+import ConfirmDiscardDialog from '@/components/ConfirmDiscardDialog';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 
 const CATEGORIES: { name: string; border: string; text: string }[] = [
   { name: 'Белый',     border: 'border-[#fef3c7]', text: 'text-[#1c1917]' },
@@ -46,6 +48,9 @@ export default function AddTeaSheet({
   const [photoLoading, setPhotoLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const isDirty = name.trim().length > 0 || category !== null || year !== '' || region !== '' || photoFile !== null;
+  const { confirmClose, discardDialogOpen, onConfirmDiscard, onCancelDiscard } = useUnsavedChanges(isDirty);
+
   function reset() {
     setName('');
     setCategory(null);
@@ -59,8 +64,7 @@ export default function AddTeaSheet({
   }
 
   function handleClose() {
-    reset();
-    onClose();
+    confirmClose(() => { reset(); onClose(); });
   }
 
   function handleYearChange(v: string) {
@@ -121,6 +125,11 @@ export default function AddTeaSheet({
 
   return (
     <>
+      <ConfirmDiscardDialog
+        open={discardDialogOpen}
+        onConfirm={onConfirmDiscard}
+        onCancel={onCancelDiscard}
+      />
       <div
         className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
         onClick={handleClose}

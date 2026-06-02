@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { LeafIcon, CaretRightIcon } from '@phosphor-icons/react';
-import TeaItemSheet from './TeaItemSheet';
+import TeaDetailSheet from './TeaDetailSheet';
 import type { TeaItem } from '@/lib/apiClient';
 
 export default function TeaItemTrigger({ item }: { item: TeaItem }) {
@@ -35,7 +35,7 @@ export default function TeaItemTrigger({ item }: { item: TeaItem }) {
         <CaretRightIcon size={24} className="text-[#a8a29e] shrink-0" />
       </button>
 
-      {open && <TeaItemSheet item={item} onClose={() => setOpen(false)} />}
+      {open && <TeaDetailSheet item={item} onClose={() => setOpen(false)} />}
     </>
   );
 }

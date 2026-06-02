@@ -1,7 +1,6 @@
 export const dynamic = 'force-dynamic';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import {
   ArrowLeftIcon,
   ScalesIcon,
@@ -19,6 +18,7 @@ import NotesSection from '@/components/NotesSection';
 import InfusionsAccordion from '@/components/InfusionsAccordion';
 import TastingActions from '@/components/TastingActions';
 import PhotoCarousel from '@/components/PhotoCarousel';
+import TeaItemTrigger from '@/components/collection/TeaItemTrigger';
 
 function formatDatetime(dateStr: string | null): string {
   if (!dateStr) return '';
@@ -150,27 +150,20 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
         {/* Main data card */}
         <div className="bg-white rounded-2xl shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.1)] p-4 grid grid-cols-2 gap-x-2 gap-y-2">
 
-          {/* Tea item row */}
-          {t.tea_item_name && (
-            <div className="col-span-2 border-b border-[#e7e5e4] pb-2 flex items-center justify-between">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="w-8 h-8 shrink-0 rounded-lg overflow-hidden bg-[#f5f5f4] relative border border-black/10">
-                  {t.tea_item_cover_url
-                    ? <Image src={t.tea_item_cover_url} alt={t.tea_item_name} fill className="object-cover" />
-                    : <span className="absolute inset-0 flex items-center justify-center"><LeafIcon size={14} className="text-[#a8a29e]" /></span>
-                  }
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[14px] text-[#0a0a0a] truncate leading-5">{t.tea_item_name}</p>
-                  {(t.tea_item_category || t.tea_item_year || t.tea_item_region) && (
-                    <p className="text-[11px] text-[#737373] truncate leading-4">
-                      {[t.tea_item_category, t.tea_item_year, t.tea_item_region].filter(Boolean).join(' · ')}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <CaretRightIcon size={24} className="text-[#a8a29e] shrink-0" />
-            </div>
+          {/* Tea item row — кликабельная, открывает TeaItemSheet */}
+          {t.tea_item_name && t.tea_item_id && (
+            <TeaItemTrigger item={{
+              id: t.tea_item_id,
+              name: t.tea_item_name,
+              category: t.tea_item_category ?? null,
+              year: t.tea_item_year ?? null,
+              region: t.tea_item_region ?? null,
+              cover_url: t.tea_item_cover_url ?? null,
+              notes: null,
+              vendor: null,
+              tasting_count: 0,
+              created_at: '',
+            }} />
           )}
 
           <DataRow

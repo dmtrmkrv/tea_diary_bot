@@ -7,7 +7,7 @@ import datetime
 
 from app.api.deps import get_db
 from app.api.auth import get_current_user_id
-from app.db.models import TeaItem, Teaware, Tasting
+from app.db.models import TeaItem, Teaware, Tasting, Photo
 from app.services.storage import get_presigned_url, save_tea_item_photo_bytes
 
 router = APIRouter(prefix="/collection", tags=["collection"])
@@ -74,6 +74,7 @@ class TastingShortOut(BaseModel):
     id: int
     name: str
     created_at: datetime.datetime
+    cover_url: Optional[str] = None
     class Config:
         from_attributes = True
 
@@ -206,6 +207,26 @@ def list_tea_tastings(
     ).scalars().all()
 
     items = [TastingShortOut.model_validate(t) for t in rows]
+
+    if items:
+        tasting_ids = [t.id for t in items]
+        photos = db.execute(
+            select(Photo)
+            .where(Photo.tasting_id.in_(tasting_ids))
+            .where(Photo.storage_backend == "s3")
+            .where(Photo.object_key.isnot(None))
+            .order_by(Photo.tasting_id, Photo.id)
+        ).scalars().all()
+        cover_map: dict[int, str] = {}
+        for p in photos:
+            if p.tasting_id not in cover_map:
+                try:
+                    cover_map[p.tasting_id] = get_presigned_url(p.object_key)
+                except Exception:
+                    pass
+        for item in items:
+            item.cover_url = cover_map.get(item.id)
+
     return TastingsListOut(items=items, total=total)
 
 

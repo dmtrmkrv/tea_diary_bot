@@ -130,8 +130,8 @@ export default function TeaItemSheet({
                     className="bg-[#f5f5f4] flex gap-3 items-center pl-2 pr-4 py-2 rounded-2xl shadow-[0px_1px_2px_rgba(0,0,0,0.05),0px_1px_1px_rgba(0,0,0,0.05)] text-left"
                   >
                     <div className="w-[50px] h-[50px] shrink-0 rounded-[10px] overflow-hidden bg-[#e7e5e4] relative border border-black/10">
-                      {(t as any).photo_url ? (
-                        <Image src={(t as any).photo_url} alt={t.name} fill className="object-cover" />
+                      {t.cover_url ? (
+                        <Image src={t.cover_url} alt={t.name} fill className="object-cover" />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center">
                           <LeafIcon size={18} className="text-[#a8a29e]" />

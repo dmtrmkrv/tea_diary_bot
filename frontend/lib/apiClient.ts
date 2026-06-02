@@ -35,7 +35,7 @@ export type TeaItem = {
 
 export type TeaItemList = { items: TeaItem[]; total: number };
 
-export type TastingShort = { id: number; name: string; created_at: string };
+export type TastingShort = { id: number; name: string; created_at: string; cover_url?: string | null };
 export type TastingsList = { items: TastingShort[]; total: number };
 
 export type Teaware = {

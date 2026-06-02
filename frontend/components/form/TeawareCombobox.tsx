@@ -58,7 +58,6 @@ export default function TeawareCombobox({
           <div className="flex items-center gap-2 h-8">
             <MagnifyingGlassIcon size={16} className="text-[#a8a29e]" />
             <input
-              autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Найти или добавить посуду"

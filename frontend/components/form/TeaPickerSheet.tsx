@@ -67,7 +67,6 @@ export default function TeaPickerSheet({
           <div className="flex items-center gap-2 h-10 px-2 rounded-lg border border-[#e5e5e5] bg-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]">
             <MagnifyingGlassIcon size={16} className="text-[#a8a29e] shrink-0" />
             <input
-              autoFocus
               value={query}
               onChange={e => setQuery(e.target.value)}
               placeholder="Поиск по коллекции"

@@ -128,3 +128,10 @@
     @apply font-sans;
   }
 }
+
+/* Prevent iOS Safari auto-zoom on input focus (triggered when font-size < 16px) */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+textarea,
+select {
+  font-size: 16px !important;
+}

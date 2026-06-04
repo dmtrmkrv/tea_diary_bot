@@ -47,6 +47,10 @@ fi
 echo "[ENTRYPOINT] Starting API on port 8000..."
 uvicorn app.api.main:app --host 0.0.0.0 --port 8000 &
 
-# 4) Старт бота
+# 4) Старт бота (можно отключить через DISABLE_BOT=1)
+if [[ "${DISABLE_BOT:-0}" == "1" ]]; then
+  echo "[ENTRYPOINT] DISABLE_BOT=1 — bot disabled, keeping container alive."
+  exec tail -f /dev/null
+fi
 echo "[ENTRYPOINT] Starting bot..."
 exec python -m app.main

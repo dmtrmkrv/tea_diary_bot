@@ -106,14 +106,6 @@ export default function LoginPage() {
             />
           </div>
 
-          <a
-            href={botUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full flex items-center justify-center min-h-[40px] px-[24px] py-[10px] rounded-lg bg-[#f5f5f5] text-[#171717] text-[14px] font-medium leading-[20px] hover:bg-white transition-colors"
-          >
-            Войти через бота TeaNotesBot
-          </a>
         </div>
       </div>
     </main>

@@ -20,7 +20,7 @@ export default function TeaCard({ item, onClick }: { item: TeaItem; onClick: () 
       onClick={onClick}
       className="w-full bg-card rounded-2xl shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_0px_rgba(0,0,0,0.1)] p-2 flex gap-3 items-center text-left"
     >
-      <div className="w-[76px] h-[76px] shrink-0 rounded-xl overflow-hidden bg-placeholder-tea-bg relative flex items-center justify-center">
+      <div className="w-[76px] h-[76px] shrink-0 rounded-xl overflow-hidden bg-placeholder-tea-bg border border-placeholder-tea-border relative flex items-center justify-center">
         {item.cover_url ? (
           <Image src={item.cover_url} alt={item.name} fill className="object-cover" />
         ) : (

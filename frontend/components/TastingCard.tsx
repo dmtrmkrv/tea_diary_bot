@@ -59,7 +59,7 @@ function TeaItemRow({ item }: { item: TastingItem }) {
 
   return (
     <div className="flex items-center gap-2 mt-1">
-      <div className="w-8 h-8 shrink-0 rounded-md overflow-hidden bg-placeholder-tea-bg relative flex items-center justify-center">
+      <div className="w-8 h-8 shrink-0 rounded-md overflow-hidden bg-placeholder-tea-bg border border-placeholder-tea-border relative flex items-center justify-center">
         {item.tea_item_cover_url ? (
           <Image src={item.tea_item_cover_url} alt={item.tea_item_name ?? ''} fill className="object-cover" />
         ) : (

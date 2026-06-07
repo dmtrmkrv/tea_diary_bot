@@ -111,7 +111,7 @@
   /* --- Badge: rating (★ pill) --- */
   --badge-rating-border: #f59e0b;
   --badge-rating-bg: #ffffff;
-  --badge-rating-text: #b45309;
+  --badge-rating-text: #f59e0b;  /* amber-500, matches border (Figma sync pending) */
 
   /* --- Badge: neutral (counters) --- */
   --badge-neutral-bg: #a8a29e;
@@ -124,7 +124,7 @@
 
   /* --- Badge: quick (⚡) --- */
   --badge-quick-bg: #ffffff;
-  --badge-quick-text: #b45309;
+  --badge-quick-text: #f59e0b;  /* amber-500, matches badge-rating border (Figma sync pending) */
 
   /* --- Radius (kept from previous globals; base = 0.625rem = 10px) --- */
   --radius: 0.625rem;
@@ -252,7 +252,7 @@
   /* --- Badge: rating --- */
   --badge-rating-border: #fbbf24;
   --badge-rating-bg: #292524;
-  --badge-rating-text: #fcd34d;
+  --badge-rating-text: #fbbf24;  /* amber-400, matches border (Figma sync pending) */
 
   /* --- Badge: neutral --- */
   --badge-neutral-bg: #57534e;
@@ -265,7 +265,7 @@
 
   /* --- Badge: quick --- */
   --badge-quick-bg: #292524;
-  --badge-quick-text: #fcd34d;
+  --badge-quick-text: #fbbf24;  /* amber-400, matches badge-rating border (Figma sync pending) */
 
   /* ============================================================
    * shadcn aliases — Dark.

@@ -32,13 +32,13 @@ function DataCell({
     <div className={[
       'flex gap-2 items-start pb-2',
       wide ? 'col-span-2' : '',
-      border ? 'border-t border-[#e7e5e4] pt-4' : '',
-      rightBorder ? 'border-r border-[#e7e5e4]' : '',
+      border ? 'border-t border-border-default pt-4' : '',
+      rightBorder ? 'border-r border-border-default' : '',
     ].join(' ')}>
-      <span className="shrink-0 text-[#a8a29e] mt-0.5">{icon}</span>
+      <span className="shrink-0 text-muted-foreground mt-0.5">{icon}</span>
       <div className="flex-1 min-w-0">
-        <p className="text-[12px] font-medium leading-[16px] text-[#a8a29e] whitespace-nowrap">{label}</p>
-        <p className="text-[14px] leading-[20px] text-[#1c1917]">{value ?? '–'}</p>
+        <p className="text-[12px] font-medium leading-[16px] text-muted-foreground whitespace-nowrap">{label}</p>
+        <p className="text-[14px] leading-[20px] text-foreground">{value ?? '–'}</p>
       </div>
     </div>
   );
@@ -110,7 +110,7 @@ export default function InfusionsAccordion({ infusions }: { infusions: Infusion[
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.1)] overflow-hidden">
+    <div className="bg-card rounded-2xl shadow-md overflow-hidden">
       {infusions.map((inf, idx) => {
         const open = openSet.has(inf.n);
         const isLast = idx === infusions.length - 1;
@@ -120,13 +120,13 @@ export default function InfusionsAccordion({ infusions }: { infusions: Infusion[
               onClick={() => toggle(inf.n)}
               className="w-full flex items-center justify-between px-4 py-4 text-left"
             >
-              <span className="text-[14px] font-semibold text-[#0a0a0a]">Пролив {inf.n}</span>
+              <span className="text-[14px] font-semibold text-foreground">Пролив {inf.n}</span>
               {open
-                ? <CaretUpIcon size={16} className="text-[#a8a29e]" />
-                : <CaretDownIcon size={16} className="text-[#a8a29e]" />
+                ? <CaretUpIcon size={16} className="text-muted-foreground" />
+                : <CaretDownIcon size={16} className="text-muted-foreground" />
               }
             </button>
-            {!isLast && !open && <div className="h-px bg-[#e5e5e5]" />}
+            {!isLast && !open && <div className="h-px bg-border-default" />}
             {open && <InfusionContent inf={inf} />}
           </div>
         );

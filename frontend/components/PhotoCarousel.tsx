@@ -43,7 +43,7 @@ export default function PhotoCarousel({ urls, alt }: { urls: string[]; alt: stri
               key={i}
               onClick={() => setCurrent(i)}
               className={`rounded-full transition-all ${
-                i === current ? 'w-4 h-1.5 bg-[#1c1917]' : 'w-1.5 h-1.5 bg-[#d6d3d1]'
+                i === current ? 'w-4 h-1.5 bg-foreground' : 'w-1.5 h-1.5 bg-border-strong'
               }`}
             />
           ))}

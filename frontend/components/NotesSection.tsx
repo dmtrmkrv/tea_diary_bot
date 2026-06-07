@@ -10,13 +10,13 @@ export default function NotesSection({ text }: { text: string }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-[14px] leading-[20px] text-[#1c1917]">
+      <p className="text-[14px] leading-[20px] text-foreground">
         {long && !expanded ? text.slice(0, LIMIT) + '…' : text}
       </p>
       {long && (
         <button
           onClick={() => setExpanded(v => !v)}
-          className="flex items-center gap-1 text-[12px] font-medium text-[#b45309] self-start"
+          className="flex items-center gap-1 text-[12px] font-medium text-primary self-start"
         >
           {expanded ? 'Скрыть ↑' : 'Показать еще >'}
         </button>

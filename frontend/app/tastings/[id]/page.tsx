@@ -54,14 +54,14 @@ function DataRow({
     <div className={[
       'flex gap-2 items-start pb-2',
       wide ? 'col-span-2' : '',
-      border ? 'border-t border-[#e7e5e4] pt-4' : '',
-      rightBorder ? 'border-r border-[#e7e5e4]' : '',
+      border ? 'border-t border-border-default pt-4' : '',
+      rightBorder ? 'border-r border-border-default' : '',
     ].join(' ')}>
-      <span className="shrink-0 text-[#a8a29e] mt-0.5">{icon}</span>
+      <span className="shrink-0 text-muted-foreground mt-0.5">{icon}</span>
       <div className="flex-1 min-w-0 flex items-start gap-1">
         <div className="flex-1 min-w-0">
-          <p className="text-[12px] font-medium leading-[16px] text-[#a8a29e] whitespace-nowrap">{label}</p>
-          <p className={`text-[14px] leading-[20px] ${amber ? 'text-[#d97706]' : 'text-[#1c1917]'}`}>{value}</p>
+          <p className="text-[12px] font-medium leading-[16px] text-muted-foreground whitespace-nowrap">{label}</p>
+          <p className={`text-[14px] leading-[20px] ${amber ? 'text-accent-muted' : 'text-foreground'}`}>{value}</p>
         </div>
         {extra}
       </div>
@@ -77,14 +77,14 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
   const effects = t.effects_csv ? t.effects_csv.split(',').map((s: string) => s.trim()).join(' · ') : null;
 
   return (
-    <main className="min-h-screen bg-[#e7e5e4]">
+    <main className="min-h-screen bg-background">
       <div className="flex flex-col gap-5 px-4 pt-12">
 
         {/* Header buttons */}
         <div className="flex items-center justify-between">
           <Link
             href="/"
-            className="bg-[#f5f5f5] flex items-center justify-center h-9 w-9 rounded-full text-[#78716c]"
+            className="bg-muted flex items-center justify-center h-9 w-9 rounded-full text-muted-foreground"
           >
             <ArrowLeftIcon size={16} />
           </Link>
@@ -95,26 +95,26 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
         <div className="flex flex-col gap-2">
           {/* Date + rating/quick badges */}
           <div className="flex items-center justify-between">
-            <p className="text-[12px] font-medium leading-[16px] text-[#78716c]">
+            <p className="text-[12px] font-medium leading-[16px] text-muted-foreground">
               {datetime}
             </p>
             <div className="flex gap-1 items-center">
               {t.entry_mode === 'quick' && (
-                <span className="border border-[#f59e0b] rounded-full px-1 py-0.5 flex items-center justify-center min-w-[20px] min-h-[20px]">
-                  <LightningIcon size={16} className="text-[#f59e0b]" />
+                <span className="border border-badge-rating-border rounded-full px-1 py-0.5 flex items-center justify-center min-w-[20px] min-h-[20px]">
+                  <LightningIcon size={16} className="text-badge-quick-text" />
                 </span>
               )}
               {t.rating != null && (
-                <span className="border border-[#f59e0b] rounded-full px-2 py-0.5 flex items-center gap-1 min-h-[20px]">
-                  <StarIcon size={16} className="text-[#f59e0b]" />
-                  <span className="text-[12px] font-medium text-[#f59e0b] leading-[16px]">{t.rating}/10</span>
+                <span className="border border-badge-rating-border rounded-full px-2 py-0.5 flex items-center gap-1 min-h-[20px]">
+                  <StarIcon size={16} className="text-badge-rating-text" />
+                  <span className="text-[12px] font-medium text-badge-rating-text leading-[16px]">{t.rating}/10</span>
                 </span>
               )}
             </div>
           </div>
 
           {/* Title */}
-          <h1 className="text-[24px] font-semibold leading-[1.2] tracking-[-1px] text-[#292524]">
+          <h1 className="text-[24px] font-semibold leading-[1.2] tracking-[-1px] text-foreground">
             {t.name}
           </h1>
 
@@ -123,12 +123,12 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
             <div className="flex flex-wrap gap-1">
               {t.category && <CategoryBadge category={t.category} />}
               {t.year && (
-                <span className="border border-[#d4d4d4] bg-[rgba(255,255,255,0.5)] rounded-full px-2 py-0.5 text-[12px] font-semibold leading-[16px] text-[#0a0a0a]">
+                <span className="border border-badge-tag-border bg-badge-tag-bg rounded-full px-2 py-0.5 text-[12px] font-semibold leading-[16px] text-badge-tag-text">
                   {t.year}
                 </span>
               )}
               {t.region && (
-                <span className="border border-[#d4d4d4] bg-[rgba(255,255,255,0.5)] rounded-full px-2 py-0.5 text-[12px] font-semibold leading-[16px] text-[#0a0a0a]">
+                <span className="border border-badge-tag-border bg-badge-tag-bg rounded-full px-2 py-0.5 text-[12px] font-semibold leading-[16px] text-badge-tag-text">
                   {t.region}
                 </span>
               )}
@@ -148,7 +148,7 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
       <div className="flex flex-col gap-4 px-4 mt-5 pb-8">
 
         {/* Main data card */}
-        <div className="bg-white rounded-2xl shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.1),0px_2px_4px_-2px_rgba(0,0,0,0.1)] p-4 grid grid-cols-2 gap-x-2 gap-y-2">
+        <div className="bg-card rounded-2xl shadow-md p-4 grid grid-cols-2 gap-x-2 gap-y-2">
 
           {/* Tea item row — кликабельная, открывает TeaItemSheet */}
           {t.tea_item_name && t.tea_item_id && (
@@ -185,7 +185,7 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
               wide
               border
               amber
-              extra={<CaretRightIcon size={24} className="text-[#a8a29e] shrink-0 mt-0.5" />}
+              extra={<CaretRightIcon size={24} className="text-muted-foreground shrink-0 mt-0.5" />}
             />
           )}
           {t.aroma_dry && (
@@ -218,12 +218,12 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
 
           {/* Notes row */}
           {t.summary && (
-            <div className="col-span-2 border-t border-[#e7e5e4] pt-4 flex gap-2 items-start">
-              <span className="shrink-0 text-[#a8a29e] mt-0.5">
+            <div className="col-span-2 border-t border-border-default pt-4 flex gap-2 items-start">
+              <span className="shrink-0 text-muted-foreground mt-0.5">
                 <DropHalfBottomIcon size={24} />
               </span>
               <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-medium leading-[16px] text-[#a8a29e] mb-0.5">Заметка</p>
+                <p className="text-[12px] font-medium leading-[16px] text-muted-foreground mb-0.5">Заметка</p>
                 <NotesSection text={t.summary} />
               </div>
             </div>

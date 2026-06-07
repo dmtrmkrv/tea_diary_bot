@@ -59,19 +59,19 @@ function TeaItemRow({ item }: { item: TastingItem }) {
 
   return (
     <div className="flex items-center gap-2 mt-1">
-      <div className="w-8 h-8 shrink-0 rounded-md overflow-hidden bg-[#f5f5f4] relative flex items-center justify-center">
+      <div className="w-8 h-8 shrink-0 rounded-md overflow-hidden bg-placeholder-tea-bg relative flex items-center justify-center">
         {item.tea_item_cover_url ? (
           <Image src={item.tea_item_cover_url} alt={item.tea_item_name ?? ''} fill className="object-cover" />
         ) : (
-          <LeafIcon size={16} className="text-[#a8a29e]" />
+          <LeafIcon size={16} className="text-placeholder-tea-icon" />
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[12px] leading-[16px] font-semibold text-[#1c1917] truncate">
+        <p className="text-[12px] leading-[16px] font-semibold text-foreground truncate">
           {item.tea_item_name}
         </p>
         {meta && (
-          <p className="text-[12px] leading-[16px] text-[#78716c] truncate">{meta}</p>
+          <p className="text-[12px] leading-[16px] text-muted-foreground truncate">{meta}</p>
         )}
       </div>
     </div>
@@ -84,12 +84,12 @@ function BadgeRow({ item }: { item: TastingItem }) {
     <div className="flex flex-wrap gap-1 items-center">
       {item.category && <CategoryBadge category={item.category} />}
       {item.year != null && (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full border border-[#d4d4d4] bg-white/50 text-[12px] font-semibold leading-[16px] text-[#0a0a0a]">
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full border border-badge-tag-border bg-badge-tag-bg text-[12px] font-semibold leading-[16px] text-badge-tag-text">
           {item.year}
         </span>
       )}
       {item.region && (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full border border-[#d4d4d4] bg-white/50 text-[12px] font-semibold leading-[16px] text-[#0a0a0a]">
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full border border-badge-tag-border bg-badge-tag-bg text-[12px] font-semibold leading-[16px] text-badge-tag-text">
           {item.region}
         </span>
       )}
@@ -105,7 +105,7 @@ export default function TastingCard({ item }: { item: TastingItem }) {
 
   return (
     <Link href={`/tastings/${item.id}`}>
-      <article className="bg-[#fafaf9] rounded-2xl overflow-hidden shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)]">
+      <article className="bg-card rounded-2xl overflow-hidden shadow-lg">
         {item.cover_url && (
           <div className="relative h-[176px] w-full">
             <Image src={item.cover_url} alt={item.name} fill className="object-cover" />
@@ -115,17 +115,17 @@ export default function TastingCard({ item }: { item: TastingItem }) {
         <div className="flex flex-col gap-2 px-4 py-4">
           {(datetime || isQuick || hasRating) && (
             <div className="flex items-center justify-between">
-              <span className="text-[#78716c] text-[12px] font-medium leading-[16px] whitespace-nowrap">
+              <span className="text-muted-foreground text-[12px] font-medium leading-[16px] whitespace-nowrap">
                 {datetime}
               </span>
               <div className="flex items-center gap-1">
                 {isQuick && (
-                  <div className="flex items-center justify-center min-h-[20px] min-w-[20px] px-1 py-0.5 rounded-full border border-[#f59e0b] text-[#f59e0b]">
+                  <div className="flex items-center justify-center min-h-[20px] min-w-[20px] px-1 py-0.5 rounded-full border border-badge-rating-border text-badge-quick-text">
                     <LightningIcon />
                   </div>
                 )}
                 {hasRating && (
-                  <div className="flex items-center gap-1 min-h-[20px] px-2 py-0.5 rounded-full border border-[#f59e0b] text-[#f59e0b]">
+                  <div className="flex items-center gap-1 min-h-[20px] px-2 py-0.5 rounded-full border border-badge-rating-border text-badge-rating-text">
                     <StarIcon />
                     <span className="text-[12px] font-medium leading-[16px] whitespace-nowrap">
                       {item.rating}/10
@@ -136,7 +136,7 @@ export default function TastingCard({ item }: { item: TastingItem }) {
             </div>
           )}
 
-          <p className="text-[16px] font-semibold leading-[24px] text-[#0a0a0a]">
+          <p className="text-[16px] font-semibold leading-[24px] text-foreground">
             {item.name}
           </p>
 

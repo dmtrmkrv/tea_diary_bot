@@ -18,33 +18,33 @@ export default function TeaCard({ item, onClick }: { item: TeaItem; onClick: () 
     <button
       type="button"
       onClick={onClick}
-      className="w-full bg-white rounded-2xl shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_0px_rgba(0,0,0,0.1)] p-2 flex gap-3 items-center text-left"
+      className="w-full bg-card rounded-2xl shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_0px_rgba(0,0,0,0.1)] p-2 flex gap-3 items-center text-left"
     >
-      <div className="w-[76px] h-[76px] shrink-0 rounded-xl overflow-hidden bg-[#f5f5f4] relative flex items-center justify-center">
+      <div className="w-[76px] h-[76px] shrink-0 rounded-xl overflow-hidden bg-placeholder-tea-bg relative flex items-center justify-center">
         {item.cover_url ? (
           <Image src={item.cover_url} alt={item.name} fill className="object-cover" />
         ) : (
-          <LeafIcon size={32} className="text-[#a8a29e]" />
+          <LeafIcon size={32} className="text-placeholder-tea-icon" />
         )}
       </div>
       <div className="flex-1 min-w-0 flex flex-col gap-1">
-        <p className="text-[14px] leading-[20px] font-semibold text-[#1c1917] truncate">
+        <p className="text-[14px] leading-[20px] font-semibold text-foreground truncate">
           {item.name}
         </p>
         <div className="flex flex-wrap gap-1">
           {item.category && <CategoryBadge category={item.category} />}
           {item.year != null && (
-            <span className="border border-[#d4d4d4] bg-white/50 rounded-full px-2 py-0.5 text-[12px] font-semibold leading-[16px] text-[#0a0a0a]">
+            <span className="border border-badge-tag-border bg-badge-tag-bg rounded-full px-2 py-0.5 text-[12px] font-semibold leading-[16px] text-badge-tag-text">
               {item.year}
             </span>
           )}
           {item.region && (
-            <span className="border border-[#d4d4d4] bg-white/50 rounded-full px-2 py-0.5 text-[12px] font-semibold leading-[16px] text-[#0a0a0a]">
+            <span className="border border-badge-tag-border bg-badge-tag-bg rounded-full px-2 py-0.5 text-[12px] font-semibold leading-[16px] text-badge-tag-text">
               {item.region}
             </span>
           )}
         </div>
-        <p className="text-[12px] leading-[16px] text-[#78716c]">
+        <p className="text-[12px] leading-[16px] text-muted-foreground">
           {pluralizeTastings(item.tasting_count)}
         </p>
       </div>

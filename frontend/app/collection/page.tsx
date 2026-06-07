@@ -66,9 +66,9 @@ function CollectionInner() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
-    <main className="min-h-screen bg-[#e7e5e4]">
+    <main className="min-h-screen bg-background">
       <div className="px-4 pt-12 flex flex-col gap-4">
-        <h1 className="text-[32px] leading-[32px] font-semibold tracking-[-1px] text-[#0a0a0a]">
+        <h1 className="text-[32px] leading-[32px] font-semibold tracking-[-1px] text-foreground">
           Моя коллекция
         </h1>
 
@@ -77,7 +77,7 @@ function CollectionInner() {
             type="button"
             onClick={() => setTab('tea')}
             className={`flex-1 h-8 rounded-full flex items-center justify-center gap-2 text-[14px] font-medium transition-colors ${
-              tab === 'tea' ? 'bg-white shadow-sm text-[#0a0a0a]' : 'text-[#0a0a0a]'
+              tab === 'tea' ? 'bg-card shadow-sm text-foreground' : 'text-foreground'
             }`}
           >
             Чай
@@ -89,7 +89,7 @@ function CollectionInner() {
             type="button"
             onClick={() => setTab('teaware')}
             className={`flex-1 h-8 rounded-full flex items-center justify-center gap-2 text-[14px] font-medium transition-colors ${
-              tab === 'teaware' ? 'bg-white shadow-sm text-[#0a0a0a]' : 'text-[#0a0a0a]'
+              tab === 'teaware' ? 'bg-card shadow-sm text-foreground' : 'text-foreground'
             }`}
           >
             Посуда
@@ -103,23 +103,23 @@ function CollectionInner() {
       <div className="px-4 mt-4 pb-4">
         {tab === 'teaware' ? (
           <div className="flex flex-col items-center gap-3 pt-16 pb-8 px-4 text-center">
-            <span className="w-[90px] h-[90px] rounded-full bg-[#fafaf9] flex items-center justify-center">
-              <StackIcon size={40} className="text-[#a8a29e]" />
+            <span className="w-[90px] h-[90px] rounded-full bg-card flex items-center justify-center">
+              <StackIcon size={40} className="text-placeholder-tea-icon" />
             </span>
-            <p className="text-[20px] font-semibold text-[#57534e]">Скоро будет</p>
-            <p className="text-[14px] text-[#78716c]">Раздел посуды в разработке</p>
+            <p className="text-[20px] font-semibold text-text-secondary">Скоро будет</p>
+            <p className="text-[14px] text-muted-foreground">Раздел посуды в разработке</p>
           </div>
         ) : loading ? (
-          <p className="text-center text-[14px] text-[#78716c] pt-8">Загрузка…</p>
+          <p className="text-center text-[14px] text-muted-foreground pt-8">Загрузка…</p>
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center gap-8 pt-16 pb-8 px-4 text-center">
             <div className="flex flex-col items-center gap-4">
-              <span className="w-[90px] h-[90px] rounded-full bg-[#fafaf9] flex items-center justify-center">
-                <LeafIcon size={40} className="text-[#a8a29e]" />
+              <span className="w-[90px] h-[90px] rounded-full bg-card flex items-center justify-center">
+                <LeafIcon size={40} className="text-placeholder-tea-icon" />
               </span>
               <div className="flex flex-col gap-3">
-                <p className="text-[20px] font-semibold text-[#57534e]">Коллекция пустая</p>
-                <p className="text-[14px] text-[#78716c]">
+                <p className="text-[20px] font-semibold text-text-secondary">Коллекция пустая</p>
+                <p className="text-[14px] text-muted-foreground">
                   Добавь первый сорт чая,<br />
                   чтобы привязывать его к дегустациям
                 </p>
@@ -128,7 +128,7 @@ function CollectionInner() {
             <button
               type="button"
               onClick={openAddSheet}
-              className="flex items-center gap-2 h-10 px-6 rounded-full bg-[#b45309] text-white text-[14px] font-medium"
+              className="flex items-center gap-2 h-10 px-6 rounded-full bg-primary text-primary-foreground text-[14px] font-medium"
             >
               <PlusIcon size={16} weight="bold" />
               Добавить чай

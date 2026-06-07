@@ -28,19 +28,19 @@ export default async function Home({
   const totalPages = Math.max(1, Math.ceil(data.total / PAGE_SIZE));
 
   return (
-    <main className="min-h-screen bg-[#e7e5e4]">
+    <main className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-4">
         <div className="flex items-center justify-between pt-12">
-          <h1 className="text-[32px] font-semibold leading-[32px] tracking-[-1px] text-[#0a0a0a]">
+          <h1 className="text-[32px] font-semibold leading-[32px] tracking-[-1px] text-foreground">
             Мои дегустации
           </h1>
-          <button className="flex items-center justify-center w-9 h-9 bg-[#f5f5f5] rounded-lg text-[#0a0a0a]">
+          <button className="flex items-center justify-center w-9 h-9 bg-muted rounded-lg text-foreground">
             <SearchIcon />
           </button>
         </div>
 
         <div className="mt-2">
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[#a8a29e] text-[#fafafa] text-[12px] font-semibold leading-[16px]">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-badge-neutral-bg text-badge-neutral-text text-[12px] font-semibold leading-[16px]">
             {data.total} записей
           </span>
         </div>
@@ -51,7 +51,7 @@ export default async function Home({
           ))}
 
           {data.items.length === 0 && (
-            <p className="text-[#78716c] text-[14px] text-center py-12">
+            <p className="text-muted-foreground text-[14px] text-center py-12">
               Пока нет записей
             </p>
           )}

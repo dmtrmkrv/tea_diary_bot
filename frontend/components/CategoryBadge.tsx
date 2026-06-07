@@ -1,21 +1,21 @@
 const CATEGORY_COLORS: Record<string, string> = {
-  'Белый':     'bg-[#fef3c7] text-[#1c1917]',
-  'Желтый':    'bg-[#fde68a] text-[#1c1917]',
-  'Жёлтый':   'bg-[#fde68a] text-[#1c1917]',
-  'Зелёный':   'bg-[#bbf7d0] text-[#1c1917]',
-  'Зеленый':   'bg-[#bbf7d0] text-[#1c1917]',
-  'Красный':   'bg-[#c2410c] text-white',
-  'Улун':      'bg-[#0e7490] text-white',
-  'Шу Пуэр':  'bg-[#713f12] text-white',
-  'Шу пуэр':  'bg-[#713f12] text-white',
-  'Шен Пуэр': 'bg-[#fb923c] text-[#1c1917]',
-  'Шен пуэр': 'bg-[#fb923c] text-[#1c1917]',
-  'Хэй Ча':   'bg-[#44403c] text-white',
-  'Хэй ча':   'bg-[#44403c] text-white',
-  'Другое':   'bg-[#e7e5e4] text-[#1c1917]',
+  'Белый':    'bg-[var(--badge-category-white-bg)] text-[var(--badge-category-white-text)]',
+  'Желтый':   'bg-[var(--badge-category-yellow-bg)] text-[var(--badge-category-yellow-text)]',
+  'Жёлтый':   'bg-[var(--badge-category-yellow-bg)] text-[var(--badge-category-yellow-text)]',
+  'Зелёный':  'bg-[var(--badge-category-green-bg)] text-[var(--badge-category-green-text)]',
+  'Зеленый':  'bg-[var(--badge-category-green-bg)] text-[var(--badge-category-green-text)]',
+  'Красный':  'bg-[var(--badge-category-red-bg)] text-[var(--badge-category-red-text)]',
+  'Улун':     'bg-[var(--badge-category-oolong-bg)] text-[var(--badge-category-oolong-text)]',
+  'Шу Пуэр':  'bg-[var(--badge-category-shu-bg)] text-[var(--badge-category-shu-text)]',
+  'Шу пуэр':  'bg-[var(--badge-category-shu-bg)] text-[var(--badge-category-shu-text)]',
+  'Шен Пуэр': 'bg-[var(--badge-category-sheng-bg)] text-[var(--badge-category-sheng-text)]',
+  'Шен пуэр': 'bg-[var(--badge-category-sheng-bg)] text-[var(--badge-category-sheng-text)]',
+  'Хэй Ча':   'bg-[var(--badge-category-heicha-bg)] text-[var(--badge-category-heicha-text)]',
+  'Хэй ча':   'bg-[var(--badge-category-heicha-bg)] text-[var(--badge-category-heicha-text)]',
+  'Другое':   'bg-[var(--badge-category-default-bg)] text-[var(--badge-category-default-text)]',
 };
 
-const DEFAULT_COLORS = 'bg-[#e7e5e4] text-[#1c1917]';
+const DEFAULT_COLORS = 'bg-[var(--badge-category-default-bg)] text-[var(--badge-category-default-text)]';
 
 interface Props {
   category: string;

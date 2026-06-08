@@ -77,7 +77,7 @@ function CollectionInner() {
             type="button"
             onClick={() => setTab('tea')}
             className={`flex-1 h-8 rounded-full flex items-center justify-center gap-2 text-[14px] font-medium transition-colors ${
-              tab === 'tea' ? 'bg-card shadow-sm text-foreground' : 'text-foreground'
+              tab === 'tea' ? 'bg-surface-elevated shadow-xs text-foreground' : 'text-foreground'
             }`}
           >
             Чай
@@ -89,7 +89,7 @@ function CollectionInner() {
             type="button"
             onClick={() => setTab('teaware')}
             className={`flex-1 h-8 rounded-full flex items-center justify-center gap-2 text-[14px] font-medium transition-colors ${
-              tab === 'teaware' ? 'bg-card shadow-sm text-foreground' : 'text-foreground'
+              tab === 'teaware' ? 'bg-surface-elevated shadow-xs text-foreground' : 'text-foreground'
             }`}
           >
             Посуда

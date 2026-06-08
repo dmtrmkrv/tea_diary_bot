@@ -72,7 +72,7 @@ export default function TeaDetailSheet({
   return (
     <>
       <div className="fixed inset-0 z-[60] bg-overlay-scrim backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed left-0 right-0 bottom-0 z-[70] bg-surface-elevated rounded-t-3xl flex flex-col max-h-[90vh] overflow-hidden">
+      <div className="fixed left-0 right-0 bottom-0 z-[70] bg-card rounded-t-3xl flex flex-col max-h-[90vh] overflow-hidden">
         <div className="flex justify-center pt-2 pb-1">
           <span className="w-9 h-1 rounded-full bg-border-strong" />
         </div>
@@ -171,8 +171,8 @@ export default function TeaDetailSheet({
               )}
             </>
           ) : (
-            <div className="bg-surface-sunken rounded-2xl py-8 flex flex-col items-center gap-2">
-              <span className="w-12 h-12 rounded-full bg-surface-sunken-strong flex items-center justify-center">
+            <div className="border border-border-default rounded-2xl py-8 flex flex-col items-center gap-2">
+              <span className="w-12 h-12 rounded-full bg-placeholder-tea-bg flex items-center justify-center">
                 <BowlSteamIcon size={24} className="text-muted-foreground" />
               </span>
               <p className="text-[16px] font-semibold text-text-secondary">Дегустаций нет</p>
@@ -183,7 +183,7 @@ export default function TeaDetailSheet({
           )}
         </div>
 
-        <div className="flex gap-2 p-4 border-t border-border-default bg-surface-elevated">
+        <div className="flex gap-2 p-4 border-t border-border-default bg-card">
           <button
             type="button"
             onClick={onClose}

@@ -17,7 +17,7 @@ export default function ConfirmDiscardDialog({
         className="fixed inset-0 z-[80] bg-overlay-scrim backdrop-blur-sm"
         onClick={onCancel}
       />
-      <div className="fixed bottom-0 left-0 right-0 z-[90] bg-surface-elevated rounded-t-3xl px-4 pb-8">
+      <div className="fixed bottom-0 left-0 right-0 z-[90] bg-card rounded-t-3xl px-4 pb-8">
         <div className="flex justify-center pt-2 pb-4">
           <span className="w-9 h-1 rounded-full bg-border-strong" />
         </div>

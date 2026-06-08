@@ -16,15 +16,15 @@
  *   3. @theme inline (below) publishes everything as Tailwind utilities.
  *
  * Naming notes:
- *   - Figma "accent/foreground" (always-dark text on the amber CTA) maps to
- *     shadcn --primary-foreground — they are the same concept. Use
- *     `text-primary-foreground` on CTA buttons.
+ *   - CTA-кнопки используют bg-primary text-primary-foreground.
+ *     --primary-foreground aliases on --text-inverse (Light: #fafaf9 светлый
+ *     текст на amber-700, Dark: #1c1917 тёмный на amber-600). Это соответствует
+ *     Figma макетам, где CTA-текст использует text/inverse, а не статичный
+ *     accent/foreground.
  *   - shadcn --accent / --accent-foreground keep their original shadcn
  *     semantics (secondary tinted surface + readable text on it) and map to
- *     surface/muted + text/primary. Do NOT confuse `text-accent-foreground`
- *     with the Figma accent/foreground token — they mean different things.
- *   - If a dedicated utility for "dark text on amber CTA" is ever needed,
- *     add a separate token like --color-text-on-accent. Not needed now.
+ *     surface/muted + text/primary. Это про tinted-кнопки внутри shadcn-компонентов,
+ *     не путать с Figma accent/foreground.
  * ========================================================================= */
 
 :root {
@@ -154,7 +154,7 @@
   --popover: var(--surface-elevated);
   --popover-foreground: var(--text-primary);
   --primary: var(--accent-default);
-  --primary-foreground: #1c1917;       /* = Figma accent/foreground — always dark text on amber CTA */
+  --primary-foreground: var(--text-inverse);  /* Light: #fafaf9 (светлый текст на amber-700), Dark: #1c1917 (тёмный на amber-600) */
   --secondary: var(--surface-muted);
   --secondary-foreground: var(--text-primary);
   --muted: var(--surface-muted);
@@ -170,7 +170,7 @@
   --sidebar: var(--surface-card);
   --sidebar-foreground: var(--text-primary);
   --sidebar-primary: var(--accent-default);
-  --sidebar-primary-foreground: #1c1917;
+  --sidebar-primary-foreground: var(--text-inverse);
   --sidebar-accent: var(--surface-muted);
   --sidebar-accent-foreground: var(--text-primary);
   --sidebar-border: var(--border-default);
@@ -287,15 +287,11 @@
 
   /* ============================================================
    * shadcn aliases — Dark.
-   * Only the values that aren't already inherited from :root via var().
-   * Since the aliases use var(--surface-*) etc., overriding the semantic
-   * variables above is enough — these aliases auto-update.
-   * Two exceptions: --primary-foreground stays #1c1917 in dark too
-   * (Figma accent/foreground is theme-invariant). --sidebar-primary-foreground
-   * follows the same rule.
+   * All aliases use var(--surface-*) / var(--text-*) etc., so overriding
+   * the semantic variables above is enough — aliases auto-update.
+   * --primary-foreground and --sidebar-primary-foreground both alias on
+   * var(--text-inverse), which is theme-aware (Light: #fafaf9, Dark: #1c1917).
    * ============================================================ */
-  --primary-foreground: #1c1917;
-  --sidebar-primary-foreground: #1c1917;
 }
 
 /* ============================================================================

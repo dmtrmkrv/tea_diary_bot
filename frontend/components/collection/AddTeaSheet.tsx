@@ -135,7 +135,7 @@ export default function AddTeaSheet({
         className="fixed inset-0 z-[60] bg-overlay-scrim backdrop-blur-sm"
         onClick={handleClose}
       />
-      <div className="fixed left-0 right-0 bottom-0 z-[70] bg-surface-elevated rounded-t-3xl flex flex-col max-h-[90vh] overflow-hidden">
+      <div className="fixed left-0 right-0 bottom-0 z-[70] bg-card rounded-t-3xl flex flex-col max-h-[90vh] overflow-hidden">
         <div className="flex justify-center pt-2 pb-1">
           <span className="w-9 h-1 rounded-full bg-border-strong" />
         </div>
@@ -242,7 +242,7 @@ export default function AddTeaSheet({
           </div>
         </div>
 
-        <div className="flex gap-2 p-4 border-t border-border-default bg-surface-elevated">
+        <div className="flex gap-2 p-4 border-t border-border-default bg-card">
           <button
             type="button"
             onClick={handleClose}

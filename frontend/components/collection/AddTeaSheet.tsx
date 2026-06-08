@@ -233,7 +233,7 @@ export default function AddTeaSheet({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full h-10 rounded-full border border-border-default bg-surface-elevated flex items-center justify-center gap-2 text-[14px] font-medium text-foreground"
+                className="w-full h-10 rounded-full border border-border-input bg-surface-input flex items-center justify-center gap-2 text-[14px] font-medium text-foreground shadow-xs outline-none transition-colors focus-visible:border-accent-default focus-visible:ring-[3px] focus-visible:ring-ring-focus"
               >
                 <ImageSquareIcon size={16} />
                 Добавить фото

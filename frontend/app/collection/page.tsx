@@ -72,7 +72,7 @@ function CollectionInner() {
           Моя коллекция
         </h1>
 
-        <div className="bg-black/5 rounded-full p-1 flex gap-1">
+        <div className="bg-surface-sunken rounded-full p-1 flex gap-1">
           <button
             type="button"
             onClick={() => setTab('tea')}
@@ -81,7 +81,7 @@ function CollectionInner() {
             }`}
           >
             Чай
-            <span className="bg-black/15 rounded-[10px] h-4 min-w-4 px-1 text-[12px] font-semibold flex items-center justify-center">
+            <span className="bg-surface-sunken-strong rounded-[10px] h-4 min-w-4 px-1 text-[12px] font-semibold flex items-center justify-center">
               {total}
             </span>
           </button>
@@ -93,7 +93,7 @@ function CollectionInner() {
             }`}
           >
             Посуда
-            <span className="bg-black/15 rounded-[10px] h-4 min-w-4 px-1 text-[12px] font-semibold flex items-center justify-center">
+            <span className="bg-surface-sunken-strong rounded-[10px] h-4 min-w-4 px-1 text-[12px] font-semibold flex items-center justify-center">
               {teawareTotal}
             </span>
           </button>

@@ -37,6 +37,8 @@
   --surface-muted: #f5f5f4;      /* muted surface (secondary accent) */
   --surface-inverse: #1c1917;    /* inverse surface (e.g. dark chip on light) */
   --surface-input: #ffffff;      /* input background */
+  --surface-sunken: rgba(0, 0, 0, 0.10);          /* трек табов, утопленные зоны на app-фоне */
+  --surface-sunken-strong: rgba(0, 0, 0, 0.15);   /* counter-бейджи внутри табов, более контрастное углубление */
 
   /* --- Text --- */
   --text-primary: #1c1917;       /* main text */
@@ -62,6 +64,10 @@
   --accent-disabled: #d6d3d1;    /* CTA disabled (stone-300, not faded amber) */
   --accent-muted: #d97706;       /* secondary accent (amber-600) */
 
+  /* --- Button icon (круглые иконочные кнопки back/more/search на app-фоне) --- */
+  --button-icon-bg: rgba(255, 255, 255, 0.70);    /* glass-стиль, белая полупрозрачная подложка */
+  --button-icon-border: #ffffff;                   /* непрозрачная белая граница */
+
   /* --- Focus ring (used on inputs as soft glow) --- */
   --ring-focus: rgba(180, 83, 9, 0.20);  /* amber-700 @ 20% */
 
@@ -77,7 +83,7 @@
 
   /* --- Bottom nav --- */
   --nav-bg: rgba(255, 255, 255, 0.40);          /* glass bg */
-  --nav-selected-bg: rgba(255, 255, 255, 0.60); /* selected pill */
+  --nav-selected-bg: rgba(255, 255, 255, 0.80); /* selected pill, усилен для лучшего контраста */
   --nav-icon-active: #b45309;
   --nav-text-active: #b45309;
   --nav-icon-inactive: #57534e;
@@ -178,6 +184,8 @@
   --surface-muted: #1c1917;      /* = surface-app, трёхслойная иерархия app/muted → card → elevated */
   --surface-inverse: #fafaf9;
   --surface-input: #1c1917;      /* tonal: input == app bg, visibility via border */
+  --surface-sunken: rgba(255, 255, 255, 0.05);
+  --surface-sunken-strong: rgba(255, 255, 255, 0.10);
 
   /* --- Text --- */
   --text-primary: #fafaf9;
@@ -203,6 +211,10 @@
   --accent-disabled: #44403c;    /* stone-700 */
   --accent-muted: #f59e0b;       /* amber-500 */
 
+  /* --- Button icon --- */
+  --button-icon-bg: rgba(0, 0, 0, 0.70);          /* glass на тёмном фоне */
+  --button-icon-border: rgba(255, 255, 255, 0.15); /* тонкая полупрозрачная белая граница */
+
   /* --- Focus ring --- */
   --ring-focus: rgba(251, 191, 36, 0.30);  /* amber-400 @ 30%, strengthened on dark */
 
@@ -218,7 +230,7 @@
 
   /* --- Bottom nav --- */
   --nav-bg: rgba(0, 0, 0, 0.40);
-  --nav-selected-bg: rgba(0, 0, 0, 0.50);
+  --nav-selected-bg: rgba(255, 255, 255, 0.15); /* в dark меняем направление подсветки: вместо затемнения — лёгкое осветление активного пункта */
   --nav-icon-active: #d97706;
   --nav-text-active: #d97706;
   --nav-icon-inactive: #d6d3d1;
@@ -330,6 +342,8 @@
   --color-surface-muted: var(--surface-muted);
   --color-surface-inverse: var(--surface-inverse);
   --color-surface-input: var(--surface-input);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-sunken-strong: var(--surface-sunken-strong);
 
   /* --- Text --- */
   --color-text-primary: var(--text-primary);
@@ -354,6 +368,10 @@
   --color-accent-pressed: var(--accent-pressed);
   --color-accent-disabled: var(--accent-disabled);
   --color-accent-muted: var(--accent-muted);
+
+  /* --- Button icon --- */
+  --color-button-icon-bg: var(--button-icon-bg);
+  --color-button-icon-border: var(--button-icon-border);
 
   /* --- Ring (used as bg/border color of focus glow) --- */
   --color-ring-focus: var(--ring-focus);

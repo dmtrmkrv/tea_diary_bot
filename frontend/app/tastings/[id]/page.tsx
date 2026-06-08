@@ -84,7 +84,7 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
         <div className="flex items-center justify-between">
           <Link
             href="/"
-            className="bg-muted flex items-center justify-center h-9 w-9 rounded-full text-muted-foreground"
+            className="bg-button-icon-bg border border-button-icon-border flex items-center justify-center h-9 w-9 rounded-full text-foreground"
           >
             <ArrowLeftIcon size={16} />
           </Link>

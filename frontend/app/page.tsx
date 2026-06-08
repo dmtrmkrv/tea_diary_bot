@@ -34,7 +34,7 @@ export default async function Home({
           <h1 className="text-[32px] font-semibold leading-[32px] tracking-[-1px] text-foreground">
             Мои дегустации
           </h1>
-          <button className="flex items-center justify-center w-9 h-9 bg-muted rounded-lg text-foreground">
+          <button className="flex items-center justify-center w-9 h-9 bg-button-icon-bg border border-button-icon-border rounded-lg text-foreground">
             <SearchIcon />
           </button>
         </div>

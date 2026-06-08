@@ -19,7 +19,7 @@ export default function TastingActions({ tastingId }: { tastingId: number }) {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(v => !v)}
-        className="bg-muted flex items-center justify-center h-9 w-9 rounded-full text-muted-foreground"
+        className="bg-button-icon-bg border border-button-icon-border flex items-center justify-center h-9 w-9 rounded-full text-foreground"
         aria-label="Действия"
       >
         <DotsThreeOutlineIcon size={16} weight="fill" />

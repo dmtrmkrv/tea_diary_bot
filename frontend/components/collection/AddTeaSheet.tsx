@@ -131,31 +131,31 @@ export default function AddTeaSheet({
         onCancel={onCancelDiscard}
       />
       <div
-        className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
+        className="fixed inset-0 z-[60] bg-overlay-scrim backdrop-blur-sm"
         onClick={handleClose}
       />
-      <div className="fixed left-0 right-0 bottom-0 z-[70] bg-white rounded-t-3xl flex flex-col max-h-[90vh] overflow-hidden">
+      <div className="fixed left-0 right-0 bottom-0 z-[70] bg-surface-elevated rounded-t-3xl flex flex-col max-h-[90vh] overflow-hidden">
         <div className="flex justify-center pt-2 pb-1">
-          <span className="w-9 h-1 rounded-full bg-[#d6d3d1]" />
+          <span className="w-9 h-1 rounded-full bg-border-strong" />
         </div>
 
         <div className="flex items-end justify-between px-4 pt-4 pb-4 shrink-0">
-          <h2 className="text-[20px] font-semibold text-[#0a0a0a]">Новый чай</h2>
+          <h2 className="text-[20px] font-semibold text-foreground">Новый чай</h2>
           <button
             type="button"
             onClick={handleClose}
-            className="w-6 h-6 rounded-full bg-[rgba(0,0,0,0.8)] flex items-center justify-center shrink-0"
+            className="w-6 h-6 rounded-full bg-overlay-dialog flex items-center justify-center shrink-0"
           >
-            <XIcon size={11} className="text-white" weight="bold" />
+            <XIcon size={11} className="text-text-light" weight="bold" />
           </button>
         </div>
 
-        <div className="h-px bg-[#e8e5e3] shrink-0" />
+        <div className="h-px bg-border-default shrink-0" />
 
         <div className="flex-1 overflow-y-auto px-4 pb-4 flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="tea-name" className="text-[14px] font-medium text-[#1c1917]">
-              Название<span className="text-[#dc2626]">*</span>
+            <Label htmlFor="tea-name" className="text-[14px] font-medium text-foreground">
+              Название<span className="text-destructive">*</span>
             </Label>
             <Input
               id="tea-name"
@@ -166,7 +166,7 @@ export default function AddTeaSheet({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <p className="text-[14px] font-medium text-[#1c1917]">Категория</p>
+            <p className="text-[14px] font-medium text-foreground">Категория</p>
             <div className="grid grid-cols-3 gap-2">
               {CATEGORIES.map((c) => {
                 const active = category === c.name;
@@ -175,7 +175,7 @@ export default function AddTeaSheet({
                     key={c.name}
                     type="button"
                     onClick={() => setCategory(active ? null : c.name)}
-                    className={`flex items-start justify-between gap-3 px-3 py-3 rounded-[10px] border-2 bg-[#fafafa] ${c.border} transition-colors`}
+                    className={`flex items-start justify-between gap-3 px-3 py-3 rounded-[10px] border-2 bg-surface-elevated ${c.border} transition-colors`}
                   >
                     <span className={`text-[14px] leading-5 text-left ${c.text}`}>{c.name}</span>
                     <span
@@ -191,7 +191,7 @@ export default function AddTeaSheet({
 
           <div className="flex gap-2 items-start">
             <div className="flex flex-col gap-1.5 w-[114px] shrink-0">
-              <Label htmlFor="tea-year" className="text-[14px] font-medium text-[#1c1917]">
+              <Label htmlFor="tea-year" className="text-[14px] font-medium text-foreground">
                 Год сбора
               </Label>
               <Input
@@ -203,11 +203,11 @@ export default function AddTeaSheet({
                 aria-invalid={yearError}
               />
               {yearError && (
-                <p className="text-[12px] leading-[16px] text-[#dc2626]">только цифры</p>
+                <p className="text-[12px] leading-[16px] text-destructive">только цифры</p>
               )}
             </div>
             <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-              <Label htmlFor="tea-region" className="text-[14px] font-medium text-[#1c1917]">
+              <Label htmlFor="tea-region" className="text-[14px] font-medium text-foreground">
                 Регион
               </Label>
               <Input
@@ -228,8 +228,8 @@ export default function AddTeaSheet({
               onChange={handlePhotoPick}
             />
             {photoLoading ? (
-              <div className="w-[76px] h-[76px] rounded-xl bg-[#f5f5f4] flex items-center justify-center">
-                <span className="w-5 h-5 rounded-full border-2 border-[#d6d3d1] border-t-[#57534e] animate-spin" />
+              <div className="w-[76px] h-[76px] rounded-xl bg-placeholder-tea-bg flex items-center justify-center">
+                <span className="w-5 h-5 rounded-full border-2 border-border-strong border-t-text-secondary animate-spin" />
               </div>
             ) : photoPreview ? (
               <div className="relative w-[76px] h-[76px] rounded-xl overflow-hidden">
@@ -237,16 +237,16 @@ export default function AddTeaSheet({
                 <button
                   type="button"
                   onClick={removePhoto}
-                  className="absolute top-1 right-1 w-5 h-5 rounded-full bg-[#1c1917] flex items-center justify-center"
+                  className="absolute top-1 right-1 w-5 h-5 rounded-full bg-overlay-dialog flex items-center justify-center"
                 >
-                  <XIcon size={12} className="text-white" weight="bold" />
+                  <XIcon size={12} className="text-text-light" weight="bold" />
                 </button>
               </div>
             ) : (
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full h-10 rounded-full border border-[#e5e5e5] bg-white flex items-center justify-center gap-2 text-[14px] font-medium text-[#1c1917]"
+                className="w-full h-10 rounded-full border border-border-default bg-surface-elevated flex items-center justify-center gap-2 text-[14px] font-medium text-foreground"
               >
                 <ImageSquareIcon size={16} />
                 Добавить фото
@@ -255,11 +255,11 @@ export default function AddTeaSheet({
           </div>
         </div>
 
-        <div className="flex gap-2 p-4 border-t border-[#e7e5e4] bg-white">
+        <div className="flex gap-2 p-4 border-t border-border-default bg-surface-elevated">
           <button
             type="button"
             onClick={handleClose}
-            className="flex-1 h-10 rounded-full bg-[#f5f5f4] text-[14px] font-medium text-[#1c1917]"
+            className="flex-1 h-10 rounded-full bg-surface-sunken text-[14px] font-medium text-foreground"
           >
             Отменить
           </button>
@@ -267,7 +267,7 @@ export default function AddTeaSheet({
             type="button"
             onClick={handleSave}
             disabled={!canSave}
-            className="flex-[2] h-10 rounded-full bg-[#b45309] text-[14px] font-medium text-white disabled:opacity-50"
+            className="flex-[2] h-10 rounded-full bg-primary text-[14px] font-medium text-primary-foreground disabled:opacity-50"
           >
             {submitting ? 'Сохранение…' : 'Сохранить'}
           </button>

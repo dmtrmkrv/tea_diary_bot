@@ -71,58 +71,58 @@ export default function TeaDetailSheet({
 
   return (
     <>
-      <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed left-0 right-0 bottom-0 z-[70] bg-white rounded-t-3xl flex flex-col max-h-[90vh] overflow-hidden">
+      <div className="fixed inset-0 z-[60] bg-overlay-scrim backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed left-0 right-0 bottom-0 z-[70] bg-surface-elevated rounded-t-3xl flex flex-col max-h-[90vh] overflow-hidden">
         <div className="flex justify-center pt-2 pb-1">
-          <span className="w-9 h-1 rounded-full bg-[#d6d3d1]" />
+          <span className="w-9 h-1 rounded-full bg-border-strong" />
         </div>
 
         <div className="relative px-4 pt-2">
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-2 right-4 z-10 w-8 h-8 rounded-full bg-[#1c1917] flex items-center justify-center"
+            className="absolute top-2 right-4 z-10 w-8 h-8 rounded-full bg-overlay-dialog flex items-center justify-center"
           >
-            <XIcon size={16} className="text-white" weight="bold" />
+            <XIcon size={16} className="text-text-light" weight="bold" />
           </button>
 
-          <div className="relative w-full h-[190px] rounded-2xl overflow-hidden bg-[#f5f5f4] flex items-center justify-center">
+          <div className="relative w-full h-[190px] rounded-2xl overflow-hidden bg-placeholder-tea-bg flex items-center justify-center">
             {item.cover_url ? (
               <Image src={item.cover_url} alt={item.name} fill className="object-cover" />
             ) : (
-              <LeafIcon size={64} className="text-[#a8a29e]" />
+              <LeafIcon size={64} className="text-placeholder-tea-icon" />
             )}
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 pt-4 pb-4 flex flex-col gap-3">
-          <h2 className="text-[20px] leading-[24px] font-semibold text-[#1c1917]">
+          <h2 className="text-[20px] leading-[24px] font-semibold text-foreground">
             {item.name}
           </h2>
 
           <div className="flex flex-wrap gap-1">
             {item.category && <CategoryBadge category={item.category} />}
             {item.year != null && (
-              <span className="border border-[#d4d4d4] bg-white/50 rounded-full px-2 py-0.5 text-[12px] font-semibold leading-[16px] text-[#0a0a0a]">
+              <span className="border border-badge-tag-border bg-badge-tag-bg rounded-full px-2 py-0.5 text-[12px] font-semibold leading-[16px] text-badge-tag-text">
                 {item.year}
               </span>
             )}
             {item.region && (
-              <span className="border border-[#d4d4d4] bg-white/50 rounded-full px-2 py-0.5 text-[12px] font-semibold leading-[16px] text-[#0a0a0a]">
+              <span className="border border-badge-tag-border bg-badge-tag-bg rounded-full px-2 py-0.5 text-[12px] font-semibold leading-[16px] text-badge-tag-text">
                 {item.region}
               </span>
             )}
           </div>
 
           <div className="flex items-center gap-2 mt-2">
-            <h3 className="text-[16px] font-semibold text-[#1c1917]">Дегустации</h3>
-            <span className="bg-[#e7e5e4] rounded-full px-2 h-4 flex items-center text-[12px] font-semibold text-[#1c1917]">
+            <h3 className="text-[16px] font-semibold text-foreground">Дегустации</h3>
+            <span className="bg-surface-sunken-strong rounded-full px-2 h-4 flex items-center text-[12px] font-semibold text-foreground">
               {total}
             </span>
           </div>
 
           {loading ? (
-            <p className="text-[14px] text-[#78716c]">Загрузка…</p>
+            <p className="text-[14px] text-muted-foreground">Загрузка…</p>
           ) : hasTastings ? (
             <>
               <div className="flex flex-col gap-2">
@@ -131,17 +131,17 @@ export default function TeaDetailSheet({
                     key={t.id}
                     href={`/tastings/${t.id}`}
                     onClick={onClose}
-                    className="bg-[#f5f5f4] rounded-xl px-3 py-2 flex items-center gap-2"
+                    className="bg-surface-sunken rounded-xl px-3 py-2 flex items-center gap-2"
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-[12px] leading-[16px] text-[#78716c]">
+                      <p className="text-[12px] leading-[16px] text-muted-foreground">
                         {formatDate(t.created_at)}
                       </p>
-                      <p className="text-[14px] leading-[20px] font-medium text-[#1c1917] truncate">
+                      <p className="text-[14px] leading-[20px] font-medium text-foreground truncate">
                         {t.name}
                       </p>
                     </div>
-                    <CaretRightIcon size={20} className="text-[#a8a29e] shrink-0" />
+                    <CaretRightIcon size={20} className="text-muted-foreground shrink-0" />
                   </Link>
                 ))}
               </div>
@@ -152,18 +152,18 @@ export default function TeaDetailSheet({
                     type="button"
                     disabled={page === 1}
                     onClick={() => setPage(p => Math.max(1, p - 1))}
-                    className="px-3 h-8 text-[14px] text-[#57534e] disabled:opacity-40"
+                    className="px-3 h-8 text-[14px] text-text-secondary disabled:opacity-40"
                   >
                     Назад
                   </button>
-                  <span className="text-[14px] text-[#1c1917] px-2">
+                  <span className="text-[14px] text-foreground px-2">
                     {page} / {totalPages}
                   </span>
                   <button
                     type="button"
                     disabled={page === totalPages}
                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                    className="px-3 h-8 text-[14px] text-[#57534e] disabled:opacity-40"
+                    className="px-3 h-8 text-[14px] text-text-secondary disabled:opacity-40"
                   >
                     Вперёд
                   </button>
@@ -171,23 +171,23 @@ export default function TeaDetailSheet({
               )}
             </>
           ) : (
-            <div className="bg-[#f5f5f4] rounded-2xl py-8 flex flex-col items-center gap-2">
-              <span className="w-12 h-12 rounded-full bg-[#e7e5e4] flex items-center justify-center">
-                <BowlSteamIcon size={24} className="text-[#78716c]" />
+            <div className="bg-surface-sunken rounded-2xl py-8 flex flex-col items-center gap-2">
+              <span className="w-12 h-12 rounded-full bg-surface-sunken-strong flex items-center justify-center">
+                <BowlSteamIcon size={24} className="text-muted-foreground" />
               </span>
-              <p className="text-[16px] font-semibold text-[#57534e]">Дегустаций нет</p>
-              <p className="text-[12px] text-[#78716c] text-center px-6">
+              <p className="text-[16px] font-semibold text-text-secondary">Дегустаций нет</p>
+              <p className="text-[12px] text-muted-foreground text-center px-6">
                 Создайте новую дегустацию с этим сортом.
               </p>
             </div>
           )}
         </div>
 
-        <div className="flex gap-2 p-4 border-t border-[#e7e5e4] bg-white">
+        <div className="flex gap-2 p-4 border-t border-border-default bg-surface-elevated">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 h-10 rounded-full bg-[#f5f5f4] text-[14px] font-medium text-[#1c1917]"
+            className="flex-1 h-10 rounded-full bg-surface-sunken text-[14px] font-medium text-foreground"
           >
             Закрыть
           </button>
@@ -196,7 +196,7 @@ export default function TeaDetailSheet({
             onClick={() => {
               if (item) router.push(`/new?tea_item_id=${item.id}`);
             }}
-            className="flex-[2] h-10 rounded-full bg-[#b45309] text-[14px] font-medium text-white"
+            className="flex-[2] h-10 rounded-full bg-primary text-[14px] font-medium text-primary-foreground"
           >
             Новая дегустация
           </button>

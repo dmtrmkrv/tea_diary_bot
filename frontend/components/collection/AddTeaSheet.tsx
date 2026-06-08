@@ -5,20 +5,21 @@ import Image from 'next/image';
 import { XIcon, ImageSquareIcon } from '@phosphor-icons/react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import RichRadioGroup from '@/components/form/RichRadioGroup';
 import { createTeaItem, uploadTeaItemPhoto, type TeaItem } from '@/lib/apiClient';
 import ConfirmDiscardDialog from '@/components/ConfirmDiscardDialog';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 
-const CATEGORIES: { name: string; border: string; text: string }[] = [
-  { name: 'Белый',     border: 'border-[#fef3c7]', text: 'text-[#1c1917]' },
-  { name: 'Желтый',    border: 'border-[#fde68a]', text: 'text-[#1c1917]' },
-  { name: 'Зелёный',   border: 'border-[#bbf7d0]', text: 'text-[#1c1917]' },
-  { name: 'Красный',   border: 'border-[#c2410c]', text: 'text-[#c2410c]' },
-  { name: 'Улун',      border: 'border-[#0e7490]', text: 'text-[#0e7490]' },
-  { name: 'Шу пуэр',   border: 'border-[#713f12]', text: 'text-[#713f12]' },
-  { name: 'Шен пуэр',  border: 'border-[#fb923c]', text: 'text-[#c2410c]' },
-  { name: 'Хэй ча',    border: 'border-[#44403c]', text: 'text-[#44403c]' },
-  { name: 'Другое',    border: 'border-[#d6d3d1]', text: 'text-[#57534e]' },
+const CATEGORIES = [
+  'Белый',
+  'Желтый',
+  'Зелёный',
+  'Красный',
+  'Улун',
+  'Шу пуэр',
+  'Шен пуэр',
+  'Хэй ча',
+  'Другое',
 ];
 
 export default function AddTeaSheet({
@@ -167,26 +168,12 @@ export default function AddTeaSheet({
 
           <div className="flex flex-col gap-1.5">
             <p className="text-[14px] font-medium text-foreground">Категория</p>
-            <div className="grid grid-cols-3 gap-2">
-              {CATEGORIES.map((c) => {
-                const active = category === c.name;
-                return (
-                  <button
-                    key={c.name}
-                    type="button"
-                    onClick={() => setCategory(active ? null : c.name)}
-                    className={`flex items-start justify-between gap-3 px-3 py-3 rounded-[10px] border-2 bg-surface-elevated ${c.border} transition-colors`}
-                  >
-                    <span className={`text-[14px] leading-5 text-left ${c.text}`}>{c.name}</span>
-                    <span
-                      className={`w-4 h-4 rounded-full border-2 ${c.border} flex items-center justify-center shrink-0 mt-0.5`}
-                    >
-                      {active && <span className="w-2 h-2 rounded-full bg-current" />}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+            <RichRadioGroup
+              options={CATEGORIES}
+              value={category}
+              onChange={setCategory}
+              cols={3}
+            />
           </div>
 
           <div className="flex gap-2 items-start">

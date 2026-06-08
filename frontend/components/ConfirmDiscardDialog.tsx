@@ -38,7 +38,7 @@ export default function ConfirmDiscardDialog({
           <button
             type="button"
             onClick={onConfirm}
-            className="w-full h-11 rounded-full border border-border-default bg-surface-elevated text-[15px] font-medium text-destructive"
+            className="w-full h-11 rounded-full bg-button-destructive-bg text-[15px] font-medium text-destructive"
           >
             Закрыть
           </button>

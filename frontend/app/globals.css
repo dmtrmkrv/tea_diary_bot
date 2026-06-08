@@ -68,6 +68,9 @@
   --button-icon-bg: rgba(255, 255, 255, 0.70);    /* glass-стиль, белая полупрозрачная подложка */
   --button-icon-border: #ffffff;                   /* непрозрачная белая граница */
 
+  /* --- Button destructive (soft red fill для деструктивных кнопок в диалогах) --- */
+  --button-destructive-bg: rgba(239, 68, 68, 0.15);  /* red-500 @ 15% */
+
   /* --- Focus ring (used on inputs as soft glow) --- */
   --ring-focus: rgba(180, 83, 9, 0.20);  /* amber-700 @ 20% */
 
@@ -214,6 +217,9 @@
   /* --- Button icon --- */
   --button-icon-bg: rgba(0, 0, 0, 0.70);          /* glass на тёмном фоне */
   --button-icon-border: rgba(255, 255, 255, 0.15); /* тонкая полупрозрачная белая граница */
+
+  /* --- Button destructive --- */
+  --button-destructive-bg: rgba(239, 68, 68, 0.20);  /* red-500 @ 20% — чуть сильнее в dark */
 
   /* --- Focus ring --- */
   --ring-focus: rgba(251, 191, 36, 0.30);  /* amber-400 @ 30%, strengthened on dark */
@@ -372,6 +378,9 @@
   /* --- Button icon --- */
   --color-button-icon-bg: var(--button-icon-bg);
   --color-button-icon-border: var(--button-icon-border);
+
+  /* --- Button destructive --- */
+  --color-button-destructive-bg: var(--button-destructive-bg);
 
   /* --- Ring (used as bg/border color of focus glow) --- */
   --color-ring-focus: var(--ring-focus);

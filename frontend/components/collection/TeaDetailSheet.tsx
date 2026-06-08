@@ -86,7 +86,7 @@ export default function TeaDetailSheet({
             <XIcon size={16} className="text-text-light" weight="bold" />
           </button>
 
-          <div className="relative w-full h-[190px] rounded-2xl overflow-hidden bg-placeholder-tea-bg flex items-center justify-center">
+          <div className="relative w-full h-[190px] rounded-2xl overflow-hidden bg-card flex items-center justify-center">
             {item.cover_url ? (
               <Image src={item.cover_url} alt={item.name} fill className="object-cover" />
             ) : (

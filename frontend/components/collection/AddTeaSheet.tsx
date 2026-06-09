@@ -12,7 +12,7 @@ import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 
 const CATEGORIES = [
   'Белый',
-  'Желтый',
+  'Жёлтый',
   'Зелёный',
   'Красный',
   'Улун',

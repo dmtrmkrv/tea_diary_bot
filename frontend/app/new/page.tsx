@@ -244,17 +244,17 @@ function NewTastingInner() {
       onConfirm={onConfirmDiscard}
       onCancel={onCancelDiscard}
     />
-    <main className="min-h-screen bg-[#e7e5e4]">
+    <main className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-4 pt-6 pb-32">
         <div className="flex items-center gap-3 mb-4">
           <button
             type="button"
             onClick={() => confirmClose(() => router.push('/'))}
-            className="w-9 h-9 rounded-full bg-[#f5f5f5] flex items-center justify-center"
+            className="w-9 h-9 rounded-full bg-button-icon-bg border border-button-icon-border flex items-center justify-center"
           >
-            <ArrowLeftIcon size={16} className="text-[#0a0a0a]" />
+            <ArrowLeftIcon size={16} className="text-foreground" />
           </button>
-          <h1 className="text-[20px] font-semibold text-[#0a0a0a]">Новая дегустация</h1>
+          <h1 className="text-[20px] font-semibold text-foreground">Новая дегустация</h1>
         </div>
 
         <div className="flex flex-col gap-4">
@@ -329,18 +329,18 @@ function NewTastingInner() {
                 <button
                   type="button"
                   onClick={() => updateInfusion(inf.uid, { open: !inf.open })}
-                  className="flex-1 flex items-center justify-between text-[16px] font-semibold text-[#0a0a0a]"
+                  className="flex-1 flex items-center justify-between text-[16px] font-semibold text-foreground"
                 >
                   Пролив {idx + 1}
                   <CaretDownIcon
                     size={16}
-                    className={`text-[#a8a29e] transition-transform ${inf.open ? 'rotate-180' : ''}`}
+                    className={`text-muted-foreground transition-transform ${inf.open ? 'rotate-180' : ''}`}
                   />
                 </button>
                 <button
                   type="button"
                   onClick={() => removeInfusion(inf.uid)}
-                  className="ml-3 text-[#dc2626]"
+                  className="ml-3 text-destructive"
                 >
                   <TrashIcon size={18} />
                 </button>
@@ -410,7 +410,7 @@ function NewTastingInner() {
           <button
             type="button"
             onClick={addInfusion}
-            className="w-full flex items-center justify-center gap-2 h-10 rounded-full bg-white border border-[#e5e5e5] text-[14px] font-medium text-[#1c1917]"
+            className="w-full flex items-center justify-center gap-2 h-10 rounded-full bg-surface-input border border-border-input shadow-xs text-[14px] font-medium text-foreground outline-none transition-colors focus-visible:border-accent-default focus-visible:ring-[3px] focus-visible:ring-ring-focus"
           >
             <PlusIcon size={16} />
             Добавить пролив
@@ -452,7 +452,7 @@ function NewTastingInner() {
 
           <Card>
             <div className="px-4 py-3 flex flex-col gap-3">
-              <p className="text-[14px] font-medium text-[#1c1917] text-center">Оценка</p>
+              <p className="text-[14px] font-medium text-foreground text-center">Оценка</p>
               <RatingPicker value={rating} onChange={setRating} />
             </div>
           </Card>
@@ -479,7 +479,7 @@ function NewTastingInner() {
               type="button"
               onClick={() => photoInputRef.current?.click()}
               disabled={photos.length >= 3}
-              className="w-full h-10 rounded-full bg-white border border-[#e5e5e5] flex items-center justify-center gap-2 text-[14px] font-medium text-[#1c1917] disabled:opacity-50"
+              className="w-full h-10 rounded-full bg-surface-input border border-border-input shadow-xs flex items-center justify-center gap-2 text-[14px] font-medium text-foreground outline-none transition-colors focus-visible:border-accent-default focus-visible:ring-[3px] focus-visible:ring-ring-focus disabled:opacity-50"
             >
               <ImageSquareIcon size={16} />
               Добавить фото (до 3 фото)
@@ -492,9 +492,9 @@ function NewTastingInner() {
                     <button
                       type="button"
                       onClick={() => removePhoto(idx)}
-                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-[#1c1917] flex items-center justify-center"
+                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-overlay-dialog flex items-center justify-center"
                     >
-                      <XIcon size={12} weight="bold" className="text-white" />
+                      <XIcon size={12} weight="bold" className="text-text-light" />
                     </button>
                   </div>
                 ))}
@@ -504,11 +504,11 @@ function NewTastingInner() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#e7e5e4] px-4 py-3 flex gap-2 z-40">
+      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border-default px-4 py-3 flex gap-2 z-40">
         <button
           type="button"
           onClick={() => confirmClose(() => router.push('/'))}
-          className="flex-1 h-10 rounded-full bg-[#f5f5f4] text-[14px] font-medium text-[#1c1917]"
+          className="flex-1 h-10 rounded-full bg-surface-sunken text-[14px] font-medium text-foreground"
         >
           Отменить
         </button>
@@ -516,7 +516,7 @@ function NewTastingInner() {
           type="button"
           onClick={handleSave}
           disabled={!canSave}
-          className="flex-[2] h-10 rounded-full bg-[#b45309] text-white text-[14px] font-medium disabled:opacity-50"
+          className="flex-[2] h-10 rounded-full bg-primary text-primary-foreground text-[14px] font-medium disabled:opacity-50"
         >
           {submitting ? 'Сохранение…' : 'Сохранить'}
         </button>
@@ -537,9 +537,9 @@ function Field({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <Label className="text-[14px] font-medium text-[#1c1917]">
+      <Label className="text-[14px] font-medium text-foreground">
         {label}
-        {required && <span className="text-[#dc2626]">*</span>}
+        {required && <span className="text-destructive">*</span>}
       </Label>
       {children}
     </div>
@@ -548,14 +548,14 @@ function Field({
 
 function Card({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">{children}</div>
+    <div className="bg-card rounded-2xl shadow-xs overflow-hidden">{children}</div>
   );
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-[14px] font-medium text-[#1c1917]">{title}</p>
+      <p className="text-[14px] font-medium text-foreground">{title}</p>
       {children}
     </div>
   );

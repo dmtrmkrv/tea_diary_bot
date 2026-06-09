@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import RichRadioGroup from '@/components/form/RichRadioGroup';
 import { createTeaItem, uploadTeaItemPhoto, type TeaItem } from '@/lib/apiClient';
+import { compressImage } from '@/lib/imageCompression';
 import ConfirmDiscardDialog from '@/components/ConfirmDiscardDialog';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 
@@ -77,17 +78,18 @@ export default function AddTeaSheet({
     setYearError(!/^\d+$/.test(v));
   }
 
-  function handlePhotoPick(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handlePhotoPick(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
     setPhotoLoading(true);
-    setPhotoFile(f);
+    const compressed = await compressImage(f);
+    setPhotoFile(compressed);
     const reader = new FileReader();
     reader.onload = () => {
       setPhotoPreview(reader.result as string);
       setPhotoLoading(false);
     };
-    reader.readAsDataURL(f);
+    reader.readAsDataURL(compressed);
   }
 
   function removePhoto() {

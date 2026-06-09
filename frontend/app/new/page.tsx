@@ -40,6 +40,7 @@ import {
 } from '@/lib/apiClient';
 import ConfirmDiscardDialog from '@/components/ConfirmDiscardDialog';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
+import { compressImage } from '@/lib/imageCompression';
 
 const AROMA_OPTIONS = [
   'Хлебный', 'Кондитерский', 'Ореховый', 'Сухофрукты',
@@ -125,6 +126,7 @@ function NewTastingInner() {
 
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const [photoCompressing, setPhotoCompressing] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const [submitting, setSubmitting] = useState(false);
@@ -174,18 +176,25 @@ function NewTastingInner() {
     setInfusions((prev) => prev.map((i) => (i.uid === uid ? { ...i, ...patch } : i)));
   }
 
-  function handlePhotoPick(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handlePhotoPick(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     const room = 3 - photos.length;
-    const next = files.slice(0, room);
-    if (next.length === 0) return;
-    next.forEach((f) => {
-      const reader = new FileReader();
-      reader.onload = () => setPhotoPreviews((prev) => [...prev, reader.result as string]);
-      reader.readAsDataURL(f);
-    });
-    setPhotos((prev) => [...prev, ...next]);
+    const slice = files.slice(0, room);
     if (photoInputRef.current) photoInputRef.current.value = '';
+    if (slice.length === 0) return;
+
+    setPhotoCompressing(true);
+    try {
+      const compressed = await Promise.all(slice.map(compressImage));
+      compressed.forEach((f) => {
+        const reader = new FileReader();
+        reader.onload = () => setPhotoPreviews((prev) => [...prev, reader.result as string]);
+        reader.readAsDataURL(f);
+      });
+      setPhotos((prev) => [...prev, ...compressed]);
+    } finally {
+      setPhotoCompressing(false);
+    }
   }
 
   function removePhoto(idx: number) {
@@ -478,11 +487,11 @@ function NewTastingInner() {
             <button
               type="button"
               onClick={() => photoInputRef.current?.click()}
-              disabled={photos.length >= 3}
+              disabled={photos.length >= 3 || photoCompressing}
               className="w-full h-10 rounded-full bg-surface-input border border-border-input shadow-xs flex items-center justify-center gap-2 text-[14px] font-medium text-foreground outline-none transition-colors focus-visible:border-accent-default focus-visible:ring-[3px] focus-visible:ring-ring-focus disabled:opacity-50"
             >
               <ImageSquareIcon size={16} />
-              Добавить фото (до 3 фото)
+              {photoCompressing ? 'Обработка фото…' : 'Добавить фото (до 3 фото)'}
             </button>
             {photoPreviews.length > 0 && (
               <div className="flex gap-2 mt-2">

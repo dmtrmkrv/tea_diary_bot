@@ -57,6 +57,7 @@ def create_tasting(
                                 special_notes=infusion.get("special_notes"),
                                 body=infusion.get("body"),
                                 aftertaste=infusion.get("aftertaste"),
+                                note=infusion.get("note"),
                             )
                         )
 

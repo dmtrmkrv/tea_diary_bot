@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 from app.api.deps import get_db
 from app.api.auth import get_current_user_id
-from app.db.models import Tasting, Infusion, Photo, TeaItem
+from app.db.models import Tasting, Infusion, Photo, TeaItem, Teaware
 from app.services.storage import get_presigned_url, save_photo_bytes
 
 router = APIRouter(prefix="/tastings", tags=["tastings"])
@@ -19,6 +19,7 @@ class InfusionOut(BaseModel):
     special_notes: Optional[str] = None
     body: Optional[str]
     aftertaste: Optional[str]
+    note: Optional[str] = None
     class Config:
         from_attributes = True
 
@@ -31,6 +32,7 @@ class InfusionCreate(BaseModel):
     special_notes: Optional[str] = None
     body: Optional[str] = None
     aftertaste: Optional[str] = None
+    note: Optional[str] = None
 
 
 class TastingOut(BaseModel):
@@ -47,10 +49,15 @@ class TastingOut(BaseModel):
     aroma_dry: Optional[str]
     aroma_warmed: Optional[str]
     effects_csv: Optional[str]
+    scenarios_csv: Optional[str] = None
     summary: Optional[str]
     entry_mode: str
     created_at: Optional[datetime.datetime] = None
     cover_url: Optional[str] = None
+    teaware_id: Optional[int] = None
+    teaware_name: Optional[str] = None
+    teaware_type: Optional[str] = None
+    teaware_volume_ml: Optional[int] = None
     tea_item_id: Optional[int] = None
     tea_item_name: Optional[str] = None
     tea_item_category: Optional[str] = None
@@ -237,6 +244,13 @@ def get_tasting(
                     result.tea_item_cover_url = get_presigned_url(tea_item.cover_object_key)
                 except Exception:
                     pass
+
+    if tasting.teaware_id:
+        teaware = db.get(Teaware, tasting.teaware_id)
+        if teaware is not None:
+            result.teaware_name = teaware.name
+            result.teaware_type = teaware.type
+            result.teaware_volume_ml = teaware.volume_ml
 
     return result
 

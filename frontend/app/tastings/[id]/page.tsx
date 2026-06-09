@@ -11,6 +11,7 @@ import {
   CaretRightIcon,
   StarIcon,
   LightningIcon,
+  CompassIcon,
 } from '@phosphor-icons/react/dist/ssr';
 import { getTasting } from '@/lib/api';
 import CategoryBadge from '@/components/CategoryBadge';
@@ -75,6 +76,11 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
 
   const datetime = formatDatetime(t.created_at ?? null);
   const effects = t.effects_csv ? t.effects_csv.split(',').map((s: string) => s.trim()).join(' · ') : null;
+  const scenarios = t.scenarios_csv ? t.scenarios_csv.split(',').map((s: string) => s.trim()).join(' · ') : null;
+  const teawareMeta = [
+    t.teaware_type,
+    t.teaware_volume_ml != null ? `${t.teaware_volume_ml} мл` : null,
+  ].filter(Boolean).join(' · ');
 
   return (
     <main className="min-h-screen bg-background">
@@ -166,6 +172,25 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
             }} />
           )}
 
+          {/* Teaware row — простая строка со стрелкой (по аналогии с TeaItem,
+              без действия по клику пока нет раздела Посуда) */}
+          {t.teaware_name && (
+            <div className="col-span-2 border-b border-border-default pb-2 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <span className="shrink-0 text-muted-foreground">
+                  <DropHalfBottomIcon size={24} />
+                </span>
+                <div className="flex-1 min-w-0 text-left">
+                  <p className="text-[14px] text-foreground truncate leading-5">{t.teaware_name}</p>
+                  {teawareMeta && (
+                    <p className="text-[12px] text-muted-foreground truncate leading-4">{teawareMeta}</p>
+                  )}
+                </div>
+              </div>
+              <CaretRightIcon size={24} className="text-muted-foreground shrink-0" />
+            </div>
+          )}
+
           <DataRow
             icon={<ScalesIcon size={24} />}
             label="Граммовка"
@@ -177,7 +202,9 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
             label="Температура"
             value={t.temp_c != null ? `${t.temp_c} °C` : null}
           />
-          {t.gear && (
+          {/* Legacy gear — текстовое поле от Telegram-бота, показываем только
+              если нет структурной посуды (teaware) */}
+          {!t.teaware_name && t.gear && (
             <DataRow
               icon={<DropHalfBottomIcon size={24} />}
               label="Посуда"
@@ -211,6 +238,15 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
               icon={<DropHalfBottomIcon size={24} />}
               label="Ощущения"
               value={effects}
+              wide
+              border
+            />
+          )}
+          {scenarios && (
+            <DataRow
+              icon={<CompassIcon size={24} />}
+              label="Сценарии"
+              value={scenarios}
               wide
               border
             />

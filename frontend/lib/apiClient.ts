@@ -94,6 +94,7 @@ export type InfusionInput = {
   special_notes?: string | null;
   body?: string | null;
   aftertaste?: string | null;
+  note?: string | null;
 };
 
 export type TastingCreateInput = {

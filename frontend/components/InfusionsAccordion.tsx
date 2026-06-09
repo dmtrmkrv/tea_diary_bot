@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CaretDownIcon, CaretUpIcon, TimerIcon, DropHalfBottomIcon, LeafIcon, BowlSteamIcon } from '@phosphor-icons/react';
+import { CaretDownIcon, CaretUpIcon, TimerIcon, DropHalfBottomIcon, LeafIcon, BowlSteamIcon, NotePencilIcon } from '@phosphor-icons/react';
 
 interface Infusion {
   n: number;
@@ -11,6 +11,7 @@ interface Infusion {
   special_notes?: string | null;
   body?: string | null;
   aftertaste?: string | null;
+  note?: string | null;
 }
 
 function DataCell({
@@ -90,6 +91,15 @@ function InfusionContent({ inf }: { inf: Infusion }) {
           icon={<BowlSteamIcon size={24} />}
           label="Послевкусие"
           value={inf.aftertaste}
+          wide
+          border
+        />
+      )}
+      {inf.note && (
+        <DataCell
+          icon={<NotePencilIcon size={24} />}
+          label="Заметка по проливу"
+          value={inf.note}
           wide
           border
         />

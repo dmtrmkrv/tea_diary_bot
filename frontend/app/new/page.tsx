@@ -228,6 +228,7 @@ function NewTastingInner() {
           special_notes: inf.special_notes.trim() || null,
           body: inf.body,
           aftertaste: richCheckboxToCsv(inf.aftertaste) || null,
+          note: inf.note.trim() || null,
         })),
       };
 

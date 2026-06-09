@@ -127,6 +127,7 @@ class Infusion(Base):
     special_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     body: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     aftertaste: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     tasting: Mapped["Tasting"] = relationship(back_populates="infusions")
 

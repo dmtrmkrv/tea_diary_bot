@@ -67,7 +67,7 @@ function CollectionInner() {
 
   return (
     <main className="min-h-screen bg-background">
-      <div className="px-4 pt-12 flex flex-col gap-4">
+      <div className="max-w-2xl mx-auto px-4 pt-12 flex flex-col gap-4">
         <h1 className="text-[32px] leading-[32px] font-semibold tracking-[-1px] text-foreground">
           Моя коллекция
         </h1>
@@ -100,7 +100,7 @@ function CollectionInner() {
         </div>
       </div>
 
-      <div className="px-4 mt-4 pb-4">
+      <div className="max-w-2xl mx-auto px-4 mt-4 pb-4">
         {tab === 'teaware' ? (
           <div className="flex flex-col items-center gap-3 pt-16 pb-8 px-4 text-center">
             <span className="w-[90px] h-[90px] rounded-full bg-card flex items-center justify-center">

@@ -78,7 +78,7 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
 
   return (
     <main className="min-h-screen bg-background">
-      <div className="flex flex-col gap-5 px-4 pt-12">
+      <div className="max-w-2xl mx-auto flex flex-col gap-5 px-4 pt-12">
 
         {/* Header buttons */}
         <div className="flex items-center justify-between">
@@ -139,13 +139,13 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
 
       {/* Image carousel */}
       {t.photo_urls && t.photo_urls.length > 0 && (
-        <div className="px-4 mt-5">
+        <div className="max-w-2xl mx-auto px-4 mt-5">
           <PhotoCarousel urls={t.photo_urls} alt={t.name} />
         </div>
       )}
 
       {/* Main data card + infusions */}
-      <div className="flex flex-col gap-4 px-4 mt-5 pb-8">
+      <div className="max-w-2xl mx-auto flex flex-col gap-4 px-4 mt-5 pb-8">
 
         {/* Main data card */}
         <div className="bg-card rounded-2xl shadow-md p-4 grid grid-cols-2 gap-x-2 gap-y-2">

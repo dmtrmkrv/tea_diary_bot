@@ -25,7 +25,7 @@ export default function PhotoCarousel({ urls, alt }: { urls: string[]; alt: stri
   return (
     <div className="flex flex-col items-center">
       <div
-        className="relative w-full h-[220px] rounded-2xl overflow-hidden"
+        className="relative w-full aspect-[2/1] rounded-2xl overflow-hidden"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >

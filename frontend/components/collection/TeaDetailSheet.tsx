@@ -72,7 +72,7 @@ export default function TeaDetailSheet({
   return (
     <>
       <div className="fixed inset-0 z-[60] bg-overlay-scrim backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed left-0 right-0 bottom-0 z-[70] bg-card rounded-t-3xl flex flex-col max-h-[90vh] overflow-hidden">
+      <div className="fixed left-1/2 -translate-x-1/2 bottom-0 w-full max-w-2xl z-[70] bg-card rounded-t-3xl flex flex-col max-h-[90vh] overflow-hidden">
         <div className="flex justify-center pt-2 pb-1">
           <span className="w-9 h-1 rounded-full bg-border-strong" />
         </div>
@@ -86,7 +86,7 @@ export default function TeaDetailSheet({
             <XIcon size={16} className="text-text-light" weight="bold" />
           </button>
 
-          <div className="relative w-full h-[190px] rounded-2xl overflow-hidden bg-card flex items-center justify-center">
+          <div className="relative w-full aspect-[2/1] rounded-2xl overflow-hidden bg-card flex items-center justify-center">
             {item.cover_url ? (
               <Image src={item.cover_url} alt={item.name} fill className="object-cover" />
             ) : (

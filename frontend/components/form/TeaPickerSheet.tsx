@@ -40,7 +40,7 @@ export default function TeaPickerSheet({
   return (
     <>
       <div className="fixed inset-0 z-[60] bg-overlay-scrim backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed left-0 right-0 bottom-0 z-[70] bg-card rounded-t-[24px] flex flex-col h-[609px]">
+      <div className="fixed left-1/2 -translate-x-1/2 bottom-0 w-full max-w-2xl z-[70] bg-card rounded-t-[24px] flex flex-col h-[609px]">
 
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-1 shrink-0">

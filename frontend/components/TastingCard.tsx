@@ -107,7 +107,7 @@ export default function TastingCard({ item }: { item: TastingItem }) {
     <Link href={`/tastings/${item.id}`}>
       <article className="bg-card rounded-2xl overflow-hidden shadow-lg">
         {item.cover_url && (
-          <div className="relative h-[176px] w-full">
+          <div className="relative aspect-[2/1] w-full">
             <Image src={item.cover_url} alt={item.name} fill className="object-cover" />
           </div>
         )}

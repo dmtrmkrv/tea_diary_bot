@@ -5,6 +5,7 @@ import "./globals.css";
 import BottomNav from "@/components/BottomNav";
 import AddTeaSheetController from "@/components/AddTeaSheetController";
 import { Toaster } from "@/components/ui/sonner";
+import { Providers } from "./providers";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -22,16 +23,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru" className={`${inter.variable} h-full antialiased`}>
+    <html lang="ru" className={`${inter.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col font-[family-name:var(--font-inter)]">
-        <div className="pb-[88px]">
-          {children}
-        </div>
-        <Suspense fallback={null}>
-          <BottomNav />
-        </Suspense>
-        <AddTeaSheetController />
-        <Toaster position="top-center" />
+        <Providers>
+          <div className="pb-[88px]">
+            {children}
+          </div>
+          <Suspense fallback={null}>
+            <BottomNav />
+          </Suspense>
+          <AddTeaSheetController />
+          <Toaster position="top-center" />
+        </Providers>
       </body>
     </html>
   );

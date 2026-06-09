@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 import {
   ArrowLeftIcon,
   CaretDownIcon,
@@ -235,11 +236,14 @@ function NewTastingInner() {
         try {
           await uploadTastingPhotos(created.id, photos);
         } catch {
-          // фото опционально — продолжаем редирект
+          // Дегустация уже создана, продолжаем редирект,
+          // но предупреждаем юзера что фото не приложились
+          toast.error('Дегустация сохранена, но фото не загрузились');
         }
       }
       router.push(`/tastings/${created.id}`);
     } catch {
+      toast.error('Не удалось сохранить дегустацию. Проверьте подключение и попробуйте ещё раз.');
       setSubmitting(false);
     }
   }

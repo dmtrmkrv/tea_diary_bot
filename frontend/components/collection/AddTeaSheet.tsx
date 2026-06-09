@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import Image from 'next/image';
+import { toast } from 'sonner';
 import { XIcon, ImageSquareIcon } from '@phosphor-icons/react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -113,11 +114,18 @@ export default function AddTeaSheet({
         region: region.trim() || null,
       });
       if (photoFile) {
-        await uploadTeaItemPhoto(created.id, photoFile);
+        try {
+          await uploadTeaItemPhoto(created.id, photoFile);
+        } catch {
+          // Чай уже создан, фото не приложилось — не блокируем onSaved,
+          // но сообщаем юзеру
+          toast.error('Чай добавлен, но фото не загрузилось');
+        }
       }
       reset();
       onSaved(created);
     } catch {
+      toast.error('Не удалось добавить чай. Проверьте подключение и попробуйте ещё раз.');
       setSubmitting(false);
     }
   }

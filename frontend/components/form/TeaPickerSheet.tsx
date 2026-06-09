@@ -64,7 +64,7 @@ export default function TeaPickerSheet({
 
         {/* Search */}
         <div className="px-4 py-3 shrink-0">
-          <div className="flex items-center gap-2 h-10 px-2 rounded-lg border border-border-input bg-surface-input shadow-xs">
+          <div className="flex items-center gap-2 h-10 px-2 rounded-lg border border-border-input bg-surface-input shadow-xs transition-colors focus-within:border-accent-default focus-within:ring-[3px] focus-within:ring-ring-focus">
             <MagnifyingGlassIcon size={16} className="text-text-placeholder shrink-0" />
             <input
               value={query}

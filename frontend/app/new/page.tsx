@@ -517,22 +517,24 @@ function NewTastingInner() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border-default px-4 py-3 flex gap-2 z-40">
-        <button
-          type="button"
-          onClick={() => confirmClose(() => router.push('/'))}
-          className="flex-1 h-10 rounded-full bg-surface-sunken text-[14px] font-medium text-foreground"
-        >
-          Отменить
-        </button>
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={!canSave}
-          className="flex-[2] h-10 rounded-full bg-primary text-primary-foreground text-[14px] font-medium disabled:opacity-50"
-        >
-          {submitting ? 'Сохранение…' : 'Сохранить'}
-        </button>
+      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border-default py-3 z-40">
+        <div className="max-w-2xl mx-auto px-4 flex gap-2">
+          <button
+            type="button"
+            onClick={() => confirmClose(() => router.push('/'))}
+            className="flex-1 h-10 rounded-full bg-surface-sunken text-[14px] font-medium text-foreground"
+          >
+            Отменить
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={!canSave}
+            className="flex-[2] h-10 rounded-full bg-primary text-primary-foreground text-[14px] font-medium disabled:opacity-50"
+          >
+            {submitting ? 'Сохранение…' : 'Сохранить'}
+          </button>
+        </div>
       </div>
     </main>
     </>

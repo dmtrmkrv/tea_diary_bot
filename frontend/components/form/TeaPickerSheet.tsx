@@ -39,52 +39,52 @@ export default function TeaPickerSheet({
 
   return (
     <>
-      <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed left-0 right-0 bottom-0 z-[70] bg-white rounded-t-[24px] flex flex-col h-[609px]">
+      <div className="fixed inset-0 z-[60] bg-overlay-scrim backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed left-0 right-0 bottom-0 z-[70] bg-card rounded-t-[24px] flex flex-col h-[609px]">
 
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-1 shrink-0">
-          <span className="w-10 h-1 rounded-[2px] bg-[#d1ccc7]" />
+          <span className="w-10 h-1 rounded-[2px] bg-border-strong" />
         </div>
 
         {/* Header */}
         <div className="flex items-end justify-between px-4 pt-4 pb-4 shrink-0">
-          <h2 className="text-[20px] font-semibold leading-6 text-[#0a0a0a]">Выбор чая</h2>
+          <h2 className="text-[20px] font-semibold leading-6 text-foreground">Выбор чая</h2>
           <button
             type="button"
             onClick={onClose}
-            className="w-6 h-6 rounded-full bg-[rgba(0,0,0,0.8)] flex items-center justify-center shrink-0"
+            className="w-6 h-6 rounded-full bg-overlay-dialog flex items-center justify-center shrink-0"
           >
-            <XIcon size={11} className="text-white" weight="bold" />
+            <XIcon size={11} className="text-text-light" weight="bold" />
           </button>
         </div>
 
         {/* Divider */}
-        <div className="h-px bg-[#e8e5e3] shrink-0" />
+        <div className="h-px bg-border-default shrink-0" />
 
         {/* Search */}
         <div className="px-4 py-3 shrink-0">
-          <div className="flex items-center gap-2 h-10 px-2 rounded-lg border border-[#e5e5e5] bg-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]">
-            <MagnifyingGlassIcon size={16} className="text-[#a8a29e] shrink-0" />
+          <div className="flex items-center gap-2 h-10 px-2 rounded-lg border border-border-input bg-surface-input shadow-xs">
+            <MagnifyingGlassIcon size={16} className="text-text-placeholder shrink-0" />
             <input
               value={query}
               onChange={e => setQuery(e.target.value)}
               placeholder="Поиск по коллекции"
-              className="flex-1 outline-none text-[14px] text-[#0a0a0a] bg-transparent placeholder:text-[#737373]"
+              className="flex-1 outline-none text-[14px] text-foreground bg-transparent placeholder:text-text-placeholder"
             />
           </div>
         </div>
 
         {/* List */}
-        <div className="mx-4 flex-1 min-h-0 border border-[#d6d3d1] rounded-lg p-2 overflow-y-auto">
+        <div className="mx-4 flex-1 min-h-0 border border-border-strong rounded-lg p-2 overflow-y-auto">
           {isEmpty ? (
             <EmptyCollection />
           ) : filtered.length === 0 ? (
-            <div className="px-2 py-2 text-[14px] text-[#1c1917]">Ничего не найдено</div>
+            <div className="px-2 py-2 text-[14px] text-foreground">Ничего не найдено</div>
           ) : (
             <>
               <div className="px-2 pt-1 pb-2">
-                <p className="text-[12px] font-medium text-[#737373]">Сорта в коллекции</p>
+                <p className="text-[12px] font-medium text-muted-foreground">Сорта в коллекции</p>
               </div>
               {filtered.map(item => {
                 const isSelected = selected?.id === item.id;
@@ -94,20 +94,20 @@ export default function TeaPickerSheet({
                     type="button"
                     onClick={() => setSelected(item)}
                     className={`w-full flex items-center gap-3 px-1 py-[7.5px] rounded-lg transition-colors ${
-                      isSelected ? 'border border-[#b45309]' : 'border border-transparent'
+                      isSelected ? 'border border-accent-default' : 'border border-transparent'
                     }`}
                   >
-                    <div className="w-8 h-8 shrink-0 rounded-lg overflow-hidden bg-[#f5f5f4] relative flex items-center justify-center border border-black/10">
+                    <div className="w-8 h-8 shrink-0 rounded-lg overflow-hidden bg-placeholder-tea-bg relative flex items-center justify-center border border-placeholder-tea-border">
                       {item.cover_url ? (
                         <Image src={item.cover_url} alt={item.name} fill className="object-cover" />
                       ) : (
-                        <LeafIcon size={14} className="text-[#a8a29e]" />
+                        <LeafIcon size={14} className="text-placeholder-tea-icon" />
                       )}
                     </div>
                     <div className="min-w-0 flex-1 text-left">
-                      <p className="text-[14px] text-[#0a0a0a] truncate leading-5">{item.name}</p>
+                      <p className="text-[14px] text-foreground truncate leading-5">{item.name}</p>
                       {(item.category || item.year) && (
-                        <p className="text-[11px] text-[#737373] truncate leading-4">
+                        <p className="text-[11px] text-muted-foreground truncate leading-4">
                           {[item.category, item.year].filter(Boolean).join(' • ')}
                         </p>
                       )}
@@ -124,7 +124,7 @@ export default function TeaPickerSheet({
           <button
             type="button"
             onClick={onAddNew}
-            className="w-full h-10 rounded-full bg-white/40 border border-[#d4d4d4] flex items-center justify-center gap-2 text-[14px] font-medium text-[#0a0a0a] shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)]"
+            className="w-full h-10 rounded-full bg-button-icon-bg border border-button-icon-border flex items-center justify-center gap-2 text-[14px] font-medium text-foreground shadow-xs"
           >
             <PlusIcon size={16} />
             Добавить новый сорт
@@ -136,7 +136,7 @@ export default function TeaPickerSheet({
           <button
             type="button"
             onClick={onClose}
-            className="w-[122px] h-12 rounded-full bg-[#f5f5f5] text-[16px] font-medium text-[#737373] shrink-0"
+            className="w-[122px] h-12 rounded-full bg-surface-sunken text-[16px] font-medium text-muted-foreground shrink-0"
           >
             Отменить
           </button>
@@ -144,7 +144,7 @@ export default function TeaPickerSheet({
             type="button"
             onClick={() => { if (selected) onSelect(selected); }}
             disabled={!selected}
-            className="flex-1 h-12 rounded-full bg-[#b45309] text-[16px] font-medium text-white disabled:opacity-50"
+            className="flex-1 h-12 rounded-full bg-primary text-[16px] font-medium text-primary-foreground disabled:opacity-50"
           >
             Выбрать
           </button>
@@ -157,12 +157,12 @@ export default function TeaPickerSheet({
 function EmptyCollection() {
   return (
     <div className="h-full flex flex-col items-center justify-center gap-4 py-4">
-      <div className="w-[90px] h-[90px] rounded-full bg-[#f5f5f4] flex items-center justify-center">
-        <LeafIcon size={40} className="text-[#a8a29e]" />
+      <div className="w-[90px] h-[90px] rounded-full bg-placeholder-tea-bg flex items-center justify-center">
+        <LeafIcon size={40} className="text-placeholder-tea-icon" />
       </div>
       <div className="text-center px-4">
-        <p className="text-[20px] font-semibold text-[#57534e] leading-6 mb-3">Коллекция пустая</p>
-        <p className="text-[14px] text-[#78716c] leading-5">
+        <p className="text-[20px] font-semibold text-text-secondary leading-6 mb-3">Коллекция пустая</p>
+        <p className="text-[14px] text-muted-foreground leading-5">
           Добавь первый сорт чая,{'\n'}чтобы добавить его к дегустации
         </p>
       </div>

@@ -38,17 +38,17 @@ export default function TeaCombobox({
       <button
         type="button"
         onClick={() => setPickerOpen(true)}
-        className="w-full h-10 px-2 rounded-lg border border-[#e5e5e5] bg-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] flex items-center gap-2 text-left"
+        className="w-full h-10 px-2 rounded-lg border border-border-input bg-surface-input shadow-xs flex items-center gap-2 text-left outline-none transition-colors focus-visible:border-accent-default focus-visible:ring-[3px] focus-visible:ring-ring-focus"
       >
         {value ? (
-          <span className="flex-1 text-[14px] text-[#0a0a0a] truncate">{value.name}</span>
+          <span className="flex-1 text-[14px] text-foreground truncate">{value.name}</span>
         ) : (
           <>
-            <MagnifyingGlassIcon size={16} className="text-[#a8a29e] shrink-0" />
-            <span className="flex-1 text-[14px] text-[#737373] truncate">{placeholder}</span>
+            <MagnifyingGlassIcon size={16} className="text-text-placeholder shrink-0" />
+            <span className="flex-1 text-[14px] text-text-placeholder truncate">{placeholder}</span>
           </>
         )}
-        <CaretDownIcon size={16} className="text-[#a8a29e] shrink-0" />
+        <CaretDownIcon size={16} className="text-text-placeholder shrink-0" />
       </button>
 
       <TeaPickerSheet

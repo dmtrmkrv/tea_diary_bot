@@ -29,7 +29,7 @@ export default function PaginationButtons({
       <button
         disabled={current <= 1}
         onClick={() => onPageChange(current - 1)}
-        className="px-3 h-8 flex items-center text-[14px] font-medium text-[#57534e] disabled:text-[#a8a29e] disabled:cursor-default"
+        className="px-3 h-8 flex items-center text-[14px] font-medium text-text-secondary disabled:text-text-disabled disabled:cursor-default"
       >
         Назад
       </button>
@@ -37,7 +37,7 @@ export default function PaginationButtons({
       {pages.map((p, i) => {
         if (p === 'dots') {
           return (
-            <span key={`dots-${i}`} className="px-2 text-[14px] text-[#a8a29e]">…</span>
+            <span key={`dots-${i}`} className="px-2 text-[14px] text-text-disabled">…</span>
           );
         }
         const active = p === current;
@@ -46,7 +46,7 @@ export default function PaginationButtons({
             key={p}
             onClick={() => onPageChange(p)}
             className={`min-w-8 h-8 px-2 flex items-center justify-center rounded-md text-[14px] font-medium ${
-              active ? 'bg-white shadow-sm text-[#0a0a0a]' : 'text-[#57534e] hover:bg-white/50'
+              active ? 'bg-surface-elevated shadow-xs text-foreground' : 'text-text-secondary hover:bg-surface-sunken'
             }`}
           >
             {p}
@@ -57,7 +57,7 @@ export default function PaginationButtons({
       <button
         disabled={current >= total}
         onClick={() => onPageChange(current + 1)}
-        className="px-3 h-8 flex items-center text-[14px] font-medium text-[#57534e] disabled:text-[#a8a29e] disabled:cursor-default"
+        className="px-3 h-8 flex items-center text-[14px] font-medium text-text-secondary disabled:text-text-disabled disabled:cursor-default"
       >
         Вперёд
       </button>

@@ -26,15 +26,17 @@ function CheckboxIndicator({ active }: { active: boolean }) {
   return (
     <span className="relative shrink-0 size-4">
       <span
-        className={`absolute left-px top-px w-[14px] h-[14px] rounded-[4px] border flex items-center justify-center shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] transition-colors ${
-          active ? 'bg-[#b45309] border-[#b45309]' : 'bg-white border-[#d4d4d4]'
+        className={`absolute left-px top-px w-[14px] h-[14px] rounded-[4px] border flex items-center justify-center shadow-xs transition-colors ${
+          active
+            ? 'bg-accent-default border-accent-default text-primary-foreground'
+            : 'bg-surface-input border-border-input'
         }`}
       >
         {active && (
           <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
             <path
               d="M1 3.5L3.2 5.5L8 1"
-              stroke="white"
+              stroke="currentColor"
               strokeWidth="1.5"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -87,11 +89,11 @@ export default function RichCheckboxGroup({
               key={opt}
               type="button"
               onClick={() => toggle(opt)}
-              className={`flex items-center gap-3 px-3 py-3 rounded-lg border text-left shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] transition-colors ${
-                active ? 'bg-white border-[#b45309]' : 'bg-white border-[#e5e5e5]'
+              className={`flex items-center gap-3 px-3 py-3 rounded-lg border bg-surface-input text-left shadow-xs transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring-focus ${
+                active ? 'border-accent-default' : 'border-border-input'
               }`}
             >
-              <span className={`flex-1 text-[14px] leading-5 ${active ? 'text-[#1c1917]' : 'text-[#404040]'}`}>
+              <span className={`flex-1 text-[14px] leading-5 ${active ? 'text-foreground' : 'text-text-secondary'}`}>
                 {opt}
               </span>
               <CheckboxIndicator active={active} />
@@ -105,11 +107,11 @@ export default function RichCheckboxGroup({
           <button
             type="button"
             onClick={toggleOther}
-            className={`flex items-center gap-3 px-3 py-3 rounded-lg border text-left shadow-[0px_1px_2px_0px_rgba(0,0,0,0.05)] transition-colors ${
-              value.otherEnabled ? 'bg-white border-[#b45309]' : 'bg-white border-[#e5e5e5]'
+            className={`flex items-center gap-3 px-3 py-3 rounded-lg border bg-surface-input text-left shadow-xs transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring-focus ${
+              value.otherEnabled ? 'border-accent-default' : 'border-border-input'
             }`}
           >
-            <span className={`flex-1 text-[14px] leading-5 ${value.otherEnabled ? 'text-[#1c1917]' : 'text-[#404040]'}`}>
+            <span className={`flex-1 text-[14px] leading-5 ${value.otherEnabled ? 'text-foreground' : 'text-text-secondary'}`}>
               Другое
             </span>
             <CheckboxIndicator active={value.otherEnabled} />

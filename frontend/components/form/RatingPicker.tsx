@@ -16,10 +16,10 @@ export default function RatingPicker({
             key={n}
             type="button"
             onClick={() => onChange(active ? 0 : n)}
-            className={`h-8 rounded-md border text-[14px] font-medium transition-colors ${
+            className={`h-8 rounded-md border text-[14px] font-medium transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring-focus ${
               active
-                ? 'bg-[#b45309] text-white border-[#b45309]'
-                : 'bg-white text-[#1c1917] border-[#d4d4d4]'
+                ? 'bg-primary text-primary-foreground border-accent-default'
+                : 'bg-surface-input text-foreground border-border-input'
             }`}
           >
             {n}

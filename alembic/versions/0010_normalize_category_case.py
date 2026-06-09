@@ -16,7 +16,7 @@ from alembic import op
 
 
 revision = "0010_normalize_category_case"
-down_revision = "0009_teaware_id_in_tastings"
+down_revision = "0009"
 branch_labels = None
 depends_on = None
 

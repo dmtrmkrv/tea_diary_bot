@@ -58,6 +58,9 @@ class TastingOut(BaseModel):
     teaware_name: Optional[str] = None
     teaware_type: Optional[str] = None
     teaware_volume_ml: Optional[int] = None
+    teaware_material: Optional[str] = None
+    teaware_region: Optional[str] = None
+    teaware_cover_url: Optional[str] = None
     tea_item_id: Optional[int] = None
     tea_item_name: Optional[str] = None
     tea_item_category: Optional[str] = None
@@ -251,6 +254,13 @@ def get_tasting(
             result.teaware_name = teaware.name
             result.teaware_type = teaware.type
             result.teaware_volume_ml = teaware.volume_ml
+            result.teaware_material = teaware.material
+            result.teaware_region = teaware.region
+            if teaware.cover_object_key:
+                try:
+                    result.teaware_cover_url = get_presigned_url(teaware.cover_object_key)
+                except Exception:
+                    pass
 
     return result
 

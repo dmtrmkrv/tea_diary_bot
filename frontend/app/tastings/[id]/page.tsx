@@ -20,6 +20,7 @@ import InfusionsAccordion from '@/components/InfusionsAccordion';
 import TastingActions from '@/components/TastingActions';
 import PhotoCarousel from '@/components/PhotoCarousel';
 import TeaItemTrigger from '@/components/collection/TeaItemTrigger';
+import TeawareItemTrigger from '@/components/collection/TeawareItemTrigger';
 
 function formatDatetime(dateStr: string | null): string {
   if (!dateStr) return '';
@@ -77,10 +78,6 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
   const datetime = formatDatetime(t.created_at ?? null);
   const effects = t.effects_csv ? t.effects_csv.split(',').map((s: string) => s.trim()).join(' · ') : null;
   const scenarios = t.scenarios_csv ? t.scenarios_csv.split(',').map((s: string) => s.trim()).join(' · ') : null;
-  const teawareMeta = [
-    t.teaware_type,
-    t.teaware_volume_ml != null ? `${t.teaware_volume_ml} мл` : null,
-  ].filter(Boolean).join(' · ');
 
   return (
     <main className="min-h-screen bg-background">
@@ -172,23 +169,21 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
             }} />
           )}
 
-          {/* Teaware row — простая строка со стрелкой (по аналогии с TeaItem,
-              без действия по клику пока нет раздела Посуда) */}
-          {t.teaware_name && (
-            <div className="col-span-2 border-b border-border-default pb-2 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <span className="shrink-0 text-muted-foreground">
-                  <DropHalfBottomIcon size={24} />
-                </span>
-                <div className="flex-1 min-w-0 text-left">
-                  <p className="text-[14px] text-foreground truncate leading-5">{t.teaware_name}</p>
-                  {teawareMeta && (
-                    <p className="text-[12px] text-muted-foreground truncate leading-4">{teawareMeta}</p>
-                  )}
-                </div>
-              </div>
-              <CaretRightIcon size={24} className="text-muted-foreground shrink-0" />
-            </div>
+          {/* Teaware row — кликабельная, открывает TeawareItemSheet */}
+          {t.teaware_name && t.teaware_id && (
+            <TeawareItemTrigger item={{
+              id: t.teaware_id,
+              name: t.teaware_name,
+              type: t.teaware_type ?? null,
+              volume_ml: t.teaware_volume_ml ?? null,
+              material: t.teaware_material ?? null,
+              region: t.teaware_region ?? null,
+              suitable_csv: null,
+              notes: null,
+              cover_url: t.teaware_cover_url ?? null,
+              tasting_count: 0,
+              created_at: '',
+            }} />
           )}
 
           <DataRow

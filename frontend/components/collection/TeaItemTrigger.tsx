@@ -2,11 +2,13 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { LeafIcon, CaretRightIcon } from '@phosphor-icons/react';
 import TeaDetailSheet from './TeaDetailSheet';
 import type { TeaItem } from '@/lib/apiClient';
 
 export default function TeaItemTrigger({ item }: { item: TeaItem }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
 
   return (
@@ -35,7 +37,13 @@ export default function TeaItemTrigger({ item }: { item: TeaItem }) {
         <CaretRightIcon size={24} className="text-muted-foreground shrink-0" />
       </button>
 
-      {open && <TeaDetailSheet item={item} onClose={() => setOpen(false)} />}
+      {open && (
+        <TeaDetailSheet
+          item={item}
+          onClose={() => setOpen(false)}
+          onDeleted={() => router.refresh()}
+        />
+      )}
     </>
   );
 }

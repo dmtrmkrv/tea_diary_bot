@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { XIcon, LeafIcon, BowlSteamIcon, CaretRightIcon } from '@phosphor-icons/react';
+import { toast } from 'sonner';
+import { XIcon, LeafIcon, BowlSteamIcon, CaretRightIcon, DotsThreeIcon } from '@phosphor-icons/react';
 import CategoryBadge from '@/components/CategoryBadge';
-import { getTeaItemTastings, type TeaItem, type TastingShort } from '@/lib/apiClient';
+import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
+import { getTeaItemTastings, deleteTeaItem, type TeaItem, type TastingShort } from '@/lib/apiClient';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 const PAGE_SIZE = 3;
@@ -23,9 +25,11 @@ type LoadedData = { key: string; items: TastingShort[]; total: number };
 export default function TeaDetailSheet({
   item,
   onClose,
+  onDeleted,
 }: {
   item: TeaItem | null;
   onClose: () => void;
+  onDeleted?: () => void;
 }) {
   const router = useRouter();
   const [pageState, setPageState] = useState<{ itemId: number; page: number }>({
@@ -33,6 +37,19 @@ export default function TeaDetailSheet({
     page: 1,
   });
   const page = item && pageState.itemId === item.id ? pageState.page : 1;
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handler(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [menuOpen]);
 
   function setPage(updater: (prev: number) => number) {
     if (!item) return;
@@ -72,6 +89,19 @@ export default function TeaDetailSheet({
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const hasTastings = total > 0;
 
+  async function handleDelete() {
+    if (!item) return;
+    setConfirmDelete(false);
+    try {
+      await deleteTeaItem(item.id);
+      toast.success('Чай удалён из коллекции');
+      onClose();
+      onDeleted?.();
+    } catch {
+      toast.error('Не удалось удалить чай. Попробуйте ещё раз.');
+    }
+  }
+
   return (
     <>
       <div className="fixed inset-0 z-[60] bg-overlay-scrim backdrop-blur-sm" onClick={onClose} />
@@ -99,9 +129,32 @@ export default function TeaDetailSheet({
         </div>
 
         <div className="flex-1 overflow-y-auto overscroll-contain px-4 pt-4 pb-4 flex flex-col gap-3">
-          <h2 className="text-[20px] leading-[24px] font-semibold text-foreground">
-            {item.name}
-          </h2>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-[20px] leading-[24px] font-semibold text-foreground truncate">
+              {item.name}
+            </h2>
+            <div ref={menuRef} className="relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setMenuOpen((v) => !v)}
+                aria-label="Действия"
+                className="w-8 h-8 flex items-center justify-center rounded-full text-muted-foreground hover:bg-surface-sunken transition-colors"
+              >
+                <DotsThreeIcon size={20} weight="bold" />
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 top-9 z-10 bg-popover rounded-lg shadow-lg overflow-hidden min-w-[160px]">
+                  <button
+                    type="button"
+                    className="w-full text-left px-4 py-3 text-[14px] text-destructive hover:bg-surface-sunken transition-colors"
+                    onClick={() => { setMenuOpen(false); setConfirmDelete(true); }}
+                  >
+                    Удалить
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
 
           <div className="flex flex-wrap gap-1">
             {item.category && <CategoryBadge category={item.category} />}
@@ -205,6 +258,18 @@ export default function TeaDetailSheet({
           </button>
         </div>
       </div>
+
+      <ConfirmDeleteDialog
+        open={confirmDelete}
+        title={`Удалить «${item.name}»?`}
+        description={
+          total > 0
+            ? `Связанные дегустации (${total}) останутся, но потеряют привязку к сорту.`
+            : 'Действие нельзя отменить.'
+        }
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDelete(false)}
+      />
     </>
   );
 }

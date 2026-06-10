@@ -225,7 +225,7 @@ function CollectionInner() {
         )}
       </div>
 
-      <TeaDetailSheet item={selected} onClose={() => setSelected(null)} />
+      <TeaDetailSheet item={selected} onClose={() => setSelected(null)} onDeleted={load} />
 
       <TeawareItemSheet
         item={selectedTeaware}

@@ -124,6 +124,10 @@ export function deleteTeaware(itemId: number) {
   return apiCall<{ ok: boolean }>(`/collection/teaware/${itemId}`, { method: 'DELETE' });
 }
 
+export function deleteTeaItem(itemId: number) {
+  return apiCall<{ ok: boolean }>(`/collection/tea/${itemId}`, { method: 'DELETE' });
+}
+
 export type InfusionInput = {
   n: number;
   seconds?: number | null;

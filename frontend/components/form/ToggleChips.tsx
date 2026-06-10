@@ -25,7 +25,7 @@ export default function ToggleChips({
   }
 
   return (
-    <div className="flex gap-2 overflow-x-auto overscroll-x-contain -mx-4 px-4 pb-1">
+    <div className="flex gap-2 overflow-x-auto overscroll-x-contain no-scrollbar -mx-4 px-4 pb-1">
       {options.map((opt) => {
         const active = value.includes(opt);
         return (

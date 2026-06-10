@@ -456,6 +456,15 @@
   }
 }
 
+/* Hide native scrollbar on horizontal chip rows (scroll still works) */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Prevent iOS Safari auto-zoom on input focus (triggered when font-size < 16px) */
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 textarea,

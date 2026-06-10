@@ -16,6 +16,7 @@ import {
   getTeaCollection,
   getTeawareCollection,
   deleteTeaware,
+  deleteTeaItem,
   type TeaItem,
   type Teaware,
 } from '@/lib/apiClient';
@@ -46,6 +47,7 @@ function CollectionInner() {
   const [selected, setSelected] = useState<TeaItem | null>(null);
   const [selectedTeaware, setSelectedTeaware] = useState<Teaware | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Teaware | null>(null);
+  const [teaDeleteTarget, setTeaDeleteTarget] = useState<TeaItem | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -93,6 +95,19 @@ function CollectionInner() {
       load();
     } catch {
       toast.error('Не удалось удалить посуду. Попробуйте ещё раз.');
+    }
+  }
+
+  async function handleDeleteTea() {
+    if (!teaDeleteTarget) return;
+    const target = teaDeleteTarget;
+    setTeaDeleteTarget(null);
+    try {
+      await deleteTeaItem(target.id);
+      toast.success('Чай удалён из коллекции');
+      load();
+    } catch {
+      toast.error('Не удалось удалить чай. Попробуйте ещё раз.');
     }
   }
 
@@ -212,6 +227,7 @@ function CollectionInner() {
                   key={item.id}
                   item={item}
                   onClick={() => setSelected(item)}
+                  onDelete={() => setTeaDeleteTarget(item)}
                 />
               ))}
             </div>
@@ -243,6 +259,18 @@ function CollectionInner() {
         }
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      <ConfirmDeleteDialog
+        open={teaDeleteTarget != null}
+        title={`Удалить «${teaDeleteTarget?.name ?? ''}»?`}
+        description={
+          teaDeleteTarget && teaDeleteTarget.tasting_count > 0
+            ? `Связанные дегустации (${teaDeleteTarget.tasting_count}) останутся, но потеряют привязку к сорту.`
+            : 'Действие нельзя отменить.'
+        }
+        onConfirm={handleDeleteTea}
+        onCancel={() => setTeaDeleteTarget(null)}
       />
     </main>
   );

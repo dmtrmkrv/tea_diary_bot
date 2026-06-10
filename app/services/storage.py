@@ -102,6 +102,17 @@ def save_tea_item_photo_bytes(
     )
 
 
+def save_teaware_photo_bytes(
+    user_id: int,
+    teaware_id: int,
+    body: bytes,
+    filename_hint: str = "photo.jpg",
+) -> SaveResult:
+    return _save_bytes_with_prefix(
+        f"teaware/{user_id}/{teaware_id}", body, filename_hint
+    )
+
+
 def get_presigned_url(key: str, expires: int = 3600) -> str:
     cfg = get_s3_config()
     return _s3_client().generate_presigned_url(

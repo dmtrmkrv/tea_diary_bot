@@ -177,6 +177,8 @@ class Teaware(Base):
     type: Mapped[Optional[str]] = mapped_column(String(60), nullable=True)
     volume_ml: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     material: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    region: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    suitable_csv: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     cover_object_key: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow, nullable=False)

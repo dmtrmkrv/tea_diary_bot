@@ -71,6 +71,9 @@
   /* --- Button destructive (soft red fill для деструктивных кнопок в диалогах) --- */
   --button-destructive-bg: rgba(239, 68, 68, 0.15);  /* red-500 @ 15% */
 
+  /* --- Button toggle (chips «Подходит для чая» и подобные multi-select) --- */
+  --button-toggle-bg: rgba(180, 83, 9, 0.20);  /* amber-700 @ 20%, одинаков в обеих темах */
+
   /* --- Focus ring (used on inputs as soft glow) --- */
   --ring-focus: rgba(180, 83, 9, 0.20);  /* amber-700 @ 20% */
 
@@ -140,6 +143,7 @@
 
   /* --- Shadows (kept from current code) --- */
   --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.10), 0 1px 2px -1px rgba(0, 0, 0, 0.10);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.10), 0 2px 4px -2px rgba(0, 0, 0, 0.10);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.10), 0 4px 6px -4px rgba(0, 0, 0, 0.10);
 
@@ -378,6 +382,9 @@
   /* --- Button destructive --- */
   --color-button-destructive-bg: var(--button-destructive-bg);
 
+  /* --- Button toggle --- */
+  --color-button-toggle-bg: var(--button-toggle-bg);
+
   /* --- Ring (used as bg/border color of focus glow) --- */
   --color-ring-focus: var(--ring-focus);
 
@@ -432,6 +439,7 @@
 
   /* --- Shadows --- */
   --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
   --shadow-md: var(--shadow-md);
   --shadow-lg: var(--shadow-lg);
 }

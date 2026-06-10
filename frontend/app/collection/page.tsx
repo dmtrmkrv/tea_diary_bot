@@ -9,6 +9,7 @@ import { LeafIcon, StackIcon, PlusIcon } from '@phosphor-icons/react';
 import TeaCard from '@/components/collection/TeaCard';
 import TeaDetailSheet from '@/components/collection/TeaDetailSheet';
 import TeawareCard from '@/components/collection/TeawareCard';
+import TeawareItemSheet from '@/components/collection/TeawareItemSheet';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
 import PaginationButtons from '@/components/PaginationButtons';
 import {
@@ -43,6 +44,7 @@ function CollectionInner() {
   const [wPage, setWPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<TeaItem | null>(null);
+  const [selectedTeaware, setSelectedTeaware] = useState<Teaware | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Teaware | null>(null);
 
   const load = useCallback(async () => {
@@ -166,7 +168,7 @@ function CollectionInner() {
                   <TeawareCard
                     key={item.id}
                     item={item}
-                    onClick={() => { /* TODO: TeawareItemSheet — шаг E */ }}
+                    onClick={() => setSelectedTeaware(item)}
                     onDelete={() => setDeleteTarget(item)}
                   />
                 ))}
@@ -224,6 +226,12 @@ function CollectionInner() {
       </div>
 
       <TeaDetailSheet item={selected} onClose={() => setSelected(null)} />
+
+      <TeawareItemSheet
+        item={selectedTeaware}
+        onClose={() => setSelectedTeaware(null)}
+        onDeleted={load}
+      />
 
       <ConfirmDeleteDialog
         open={deleteTarget != null}

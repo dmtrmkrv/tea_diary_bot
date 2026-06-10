@@ -36,6 +36,7 @@ import {
   createTasting,
   uploadTastingPhotos,
   getTeaCollection,
+  getTeawareCollection,
   type TeaItem,
   type Teaware,
 } from '@/lib/apiClient';
@@ -106,6 +107,7 @@ function NewTastingInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialTeaItemId = searchParams.get('tea_item_id');
+  const initialTeawareId = searchParams.get('teaware_id');
 
   const [name, setName] = useState('');
   const [teaItem, setTeaItem] = useState<TeaItem | null>(null);
@@ -160,6 +162,21 @@ function NewTastingInner() {
       .catch(() => {});
     return () => { cancelled = true; };
   }, [initialTeaItemId]);
+
+  useEffect(() => {
+    if (!initialTeawareId) return;
+    const id = Number(initialTeawareId);
+    if (Number.isNaN(id)) return;
+    let cancelled = false;
+    getTeawareCollection(100, 0)
+      .then((res) => {
+        if (cancelled) return;
+        const found = res.items.find((i) => i.id === id);
+        if (found) setTeaware(found);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [initialTeawareId]);
 
   function addInfusion() {
     const uid = nextInfusionUid.current++;

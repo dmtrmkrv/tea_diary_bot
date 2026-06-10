@@ -44,8 +44,11 @@ export type Teaware = {
   type: string | null;
   volume_ml: number | null;
   material: string | null;
+  region: string | null;
+  suitable_csv: string | null;
   notes: string | null;
   cover_url: string | null;
+  tasting_count: number;
   created_at: string;
 };
 export type TeawareList = { items: Teaware[]; total: number };
@@ -84,6 +87,41 @@ export async function uploadTeaItemPhoto(itemId: number, file: File): Promise<Te
     method: 'POST',
     body: fd,
   });
+}
+
+export type TeawareCreateInput = {
+  name: string;
+  type?: string | null;
+  volume_ml?: number | null;
+  material?: string | null;
+  region?: string | null;
+  suitable_csv?: string | null;
+  notes?: string | null;
+};
+
+export function createTeaware(data: TeawareCreateInput) {
+  return apiCall<Teaware>('/collection/teaware', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function uploadTeawarePhoto(itemId: number, file: File): Promise<Teaware> {
+  const fd = new FormData();
+  fd.append('file', file);
+  return apiCall<Teaware>(`/collection/teaware/${itemId}/photo`, {
+    method: 'POST',
+    body: fd,
+  });
+}
+
+export function getTeawareTastings(itemId: number, limit = 3, offset = 0) {
+  return apiCall<TastingsList>(`/collection/teaware/${itemId}/tastings?limit=${limit}&offset=${offset}`);
+}
+
+export function deleteTeaware(itemId: number) {
+  return apiCall<{ ok: boolean }>(`/collection/teaware/${itemId}`, { method: 'DELETE' });
 }
 
 export type InfusionInput = {

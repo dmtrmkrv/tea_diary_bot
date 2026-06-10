@@ -19,12 +19,12 @@ const navLinks = [
 
 type AddAction =
   | { kind: 'link'; label: string; href: string }
-  | { kind: 'sheet'; label: string; sheet: 'tea' };
+  | { kind: 'sheet'; label: string; sheet: 'tea' | 'teaware' };
 
 const addActions: AddAction[] = [
-  { kind: 'link',  label: 'Дегустацию', href: '/new'         },
-  { kind: 'link',  label: 'Посуду',     href: '/teaware/new' },
-  { kind: 'sheet', label: 'Чай',        sheet: 'tea'         },
+  { kind: 'link',  label: 'Дегустацию', href: '/new'      },
+  { kind: 'sheet', label: 'Посуду',     sheet: 'teaware'  },
+  { kind: 'sheet', label: 'Чай',        sheet: 'tea'      },
 ];
 
 export default function BottomNav() {
@@ -35,7 +35,7 @@ export default function BottomNav() {
 
   if (pathname === '/login' || pathname.startsWith('/auth') || pathname === '/new') return null;
 
-  function openSheet(name: 'tea') {
+  function openSheet(name: 'tea' | 'teaware') {
     const params = new URLSearchParams(searchParams.toString());
     params.set('add', name);
     router.push(`${pathname}?${params.toString()}`);

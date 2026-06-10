@@ -4,12 +4,13 @@ import { Suspense } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import AddTeaSheet from '@/components/collection/AddTeaSheet';
+import AddTeawareSheet from '@/components/collection/AddTeawareSheet';
 
 function Inner() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const isOpen = searchParams.get('add') === 'tea';
+  const add = searchParams.get('add');
 
   function close() {
     const params = new URLSearchParams(searchParams.toString());
@@ -18,22 +19,37 @@ function Inner() {
     router.replace(qs ? `${pathname}?${qs}` : pathname);
   }
 
-  function onSaved(_item: unknown) {
-    void _item;
-    close();
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('tea:added'));
-    }
-    if (pathname === '/collection') {
-      toast.success('Чай добавлен в коллекцию');
-    } else {
-      toast.success('Чай добавлен в коллекцию', {
-        action: { label: 'Открыть', onClick: () => router.push('/collection') },
-      });
-    }
+  function makeOnSaved(eventName: string, message: string) {
+    return (_item: unknown) => {
+      void _item;
+      close();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent(eventName));
+      }
+      if (pathname === '/collection') {
+        toast.success(message);
+      } else {
+        toast.success(message, {
+          action: { label: 'Открыть', onClick: () => router.push('/collection') },
+        });
+      }
+    };
   }
 
-  return <AddTeaSheet open={isOpen} onClose={close} onSaved={onSaved} />;
+  return (
+    <>
+      <AddTeaSheet
+        open={add === 'tea'}
+        onClose={close}
+        onSaved={makeOnSaved('tea:added', 'Чай добавлен в коллекцию')}
+      />
+      <AddTeawareSheet
+        open={add === 'teaware'}
+        onClose={close}
+        onSaved={makeOnSaved('teaware:added', 'Посуда добавлена в коллекцию')}
+      />
+    </>
+  );
 }
 
 export default function AddTeaSheetController() {

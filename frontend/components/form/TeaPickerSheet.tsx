@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { MagnifyingGlassIcon, PlusIcon, XIcon, LeafIcon } from '@phosphor-icons/react';
 import { type TeaItem } from '@/lib/apiClient';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 export default function TeaPickerSheet({
   open,
@@ -29,6 +30,8 @@ export default function TeaPickerSheet({
       setQuery('');
     }
   }, [open, initialValue]);
+
+  useBodyScrollLock(open);
 
   if (!open) return null;
 
@@ -76,7 +79,7 @@ export default function TeaPickerSheet({
         </div>
 
         {/* List */}
-        <div className="mx-4 flex-1 min-h-0 border border-border-strong rounded-lg p-2 overflow-y-auto">
+        <div className="mx-4 flex-1 min-h-0 border border-border-strong rounded-lg p-2 overflow-y-auto overscroll-contain">
           {isEmpty ? (
             <EmptyCollection />
           ) : filtered.length === 0 ? (

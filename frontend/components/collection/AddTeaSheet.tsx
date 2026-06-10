@@ -11,6 +11,7 @@ import { createTeaItem, uploadTeaItemPhoto, type TeaItem } from '@/lib/apiClient
 import { compressImage } from '@/lib/imageCompression';
 import ConfirmDiscardDialog from '@/components/ConfirmDiscardDialog';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 const CATEGORIES = [
   'Белый',
@@ -130,6 +131,8 @@ export default function AddTeaSheet({
     }
   }
 
+  useBodyScrollLock(open);
+
   if (!open) return null;
 
   const canSave = name.trim().length > 0 && !yearError && !submitting;
@@ -163,7 +166,7 @@ export default function AddTeaSheet({
 
         <div className="h-px bg-border-default shrink-0" />
 
-        <div className="flex-1 overflow-y-auto px-4 pb-4 flex flex-col gap-4">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-4 flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="tea-name" className="text-[14px] font-medium text-foreground">
               Название<span className="text-destructive">*</span>

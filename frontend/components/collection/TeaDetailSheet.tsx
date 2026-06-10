@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { XIcon, LeafIcon, BowlSteamIcon, CaretRightIcon } from '@phosphor-icons/react';
 import CategoryBadge from '@/components/CategoryBadge';
 import { getTeaItemTastings, type TeaItem, type TastingShort } from '@/lib/apiClient';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 const PAGE_SIZE = 3;
 
@@ -60,6 +61,8 @@ export default function TeaDetailSheet({
     return () => { cancelled = true; };
   }, [item, page, loadKey]);
 
+  useBodyScrollLock(item != null);
+
   if (!item) return null;
 
   const loading = data?.key !== loadKey;
@@ -95,7 +98,7 @@ export default function TeaDetailSheet({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 pt-4 pb-4 flex flex-col gap-3">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 pt-4 pb-4 flex flex-col gap-3">
           <h2 className="text-[20px] leading-[24px] font-semibold text-foreground">
             {item.name}
           </h2>

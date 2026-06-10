@@ -8,6 +8,7 @@ import { XIcon, LeafIcon, CaretRightIcon } from '@phosphor-icons/react';
 import { getTeaItemTastings, type TeaItem, type TastingShort } from '@/lib/apiClient';
 import CategoryBadge from '@/components/CategoryBadge';
 import PaginationButtons from '@/components/PaginationButtons';
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 const PAGE_SIZE = 4;
 
@@ -33,6 +34,8 @@ export default function TeaItemSheet({
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  // Шторка рендерится родителем условно — лок на всё время жизни компонента
+  useBodyScrollLock();
 
   const loadTastings = useCallback((p: number) => {
     setLoading(true);
@@ -86,7 +89,7 @@ export default function TeaItemSheet({
         </div>
 
         {/* Content */}
-        <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-4 px-4 pt-4 pb-2">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-col gap-4 px-4 pt-4 pb-2">
 
           {/* Title + badges */}
           <div className="flex flex-col gap-3">

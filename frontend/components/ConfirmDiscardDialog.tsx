@@ -1,5 +1,7 @@
 'use client';
 
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+
 export default function ConfirmDiscardDialog({
   open,
   onConfirm,
@@ -9,6 +11,8 @@ export default function ConfirmDiscardDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  useBodyScrollLock(open);
+
   if (!open) return null;
 
   return (

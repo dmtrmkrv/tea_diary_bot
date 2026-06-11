@@ -28,6 +28,7 @@ export type TeaItem = {
   region: string | null;
   vendor: string | null;
   notes: string | null;
+  amount_g: number | null;
   cover_url: string | null;
   tasting_count: number;
   created_at: string;
@@ -70,7 +71,16 @@ export type TeaCreateInput = {
   category?: string | null;
   year?: number | null;
   region?: string | null;
+  amount_g?: number | null;
 };
+
+export function updateTeaAmount(itemId: number, amount_g: number | null) {
+  return apiCall<TeaItem>(`/collection/tea/${itemId}/amount`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ amount_g }),
+  });
+}
 
 export function createTeaItem(data: TeaCreateInput) {
   return apiCall<TeaItem>('/collection/tea', {

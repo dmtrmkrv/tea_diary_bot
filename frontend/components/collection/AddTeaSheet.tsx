@@ -13,17 +13,24 @@ import ConfirmDiscardDialog from '@/components/ConfirmDiscardDialog';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
+// В UI пуэры сокращены до «Шу»/«Шен» (3 колонки без переносов),
+// в БД сохраняются канонические формы — см. CATEGORY_CANONICAL.
 const CATEGORIES = [
   'Белый',
   'Жёлтый',
   'Зелёный',
   'Красный',
   'Улун',
-  'Шу пуэр',
-  'Шен пуэр',
+  'Шу',
+  'Шен',
   'Хэй ча',
   'Другое',
 ];
+
+const CATEGORY_CANONICAL: Record<string, string> = {
+  'Шу': 'Шу пуэр',
+  'Шен': 'Шен пуэр',
+};
 
 export default function AddTeaSheet({
   open,
@@ -46,13 +53,15 @@ export default function AddTeaSheet({
   const [category, setCategory] = useState<string | null>(null);
   const [year, setYear] = useState('');
   const [region, setRegion] = useState('');
+  const [amount, setAmount] = useState('');
   const [yearError, setYearError] = useState(false);
+  const [amountError, setAmountError] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoLoading, setPhotoLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const isDirty = name.trim().length > 0 || category !== null || year !== '' || region !== '' || photoFile !== null;
+  const isDirty = name.trim().length > 0 || category !== null || year !== '' || region !== '' || amount !== '' || photoFile !== null;
   const { confirmClose, discardDialogOpen, onConfirmDiscard, onCancelDiscard } = useUnsavedChanges(isDirty);
 
   function reset() {
@@ -60,7 +69,9 @@ export default function AddTeaSheet({
     setCategory(null);
     setYear('');
     setRegion('');
+    setAmount('');
     setYearError(false);
+    setAmountError(false);
     setPhotoFile(null);
     setPhotoPreview(null);
     setPhotoLoading(false);
@@ -78,6 +89,11 @@ export default function AddTeaSheet({
       return;
     }
     setYearError(!/^\d+$/.test(v));
+  }
+
+  function handleAmountChange(v: string) {
+    setAmount(v);
+    setAmountError(v !== '' && !/^\d+$/.test(v));
   }
 
   async function handlePhotoPick(e: React.ChangeEvent<HTMLInputElement>) {
@@ -106,13 +122,15 @@ export default function AddTeaSheet({
       setYearError(true);
       return;
     }
+    if (amountError) return;
     setSubmitting(true);
     try {
       const created = await createTeaItem({
         name: name.trim(),
-        category: category || null,
+        category: category ? (CATEGORY_CANONICAL[category] ?? category) : null,
         year: year ? Number(year) : null,
         region: region.trim() || null,
+        amount_g: amount ? Number(amount) : null,
       });
       if (photoFile) {
         try {
@@ -135,7 +153,7 @@ export default function AddTeaSheet({
 
   if (!open) return null;
 
-  const canSave = name.trim().length > 0 && !yearError && !submitting;
+  const canSave = name.trim().length > 0 && !yearError && !amountError && !submitting;
 
   return (
     <>
@@ -189,6 +207,18 @@ export default function AddTeaSheet({
             />
           </div>
 
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="tea-region" className="text-[14px] font-medium text-foreground">
+              Регион
+            </Label>
+            <Input
+              id="tea-region"
+              value={region}
+              onChange={(e) => setRegion(e.target.value)}
+              placeholder="Например: Юньнань"
+            />
+          </div>
+
           <div className="flex gap-2 items-start">
             <div className="flex flex-col gap-1.5 w-[114px] shrink-0">
               <Label htmlFor="tea-year" className="text-[14px] font-medium text-foreground">
@@ -207,15 +237,20 @@ export default function AddTeaSheet({
               )}
             </div>
             <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-              <Label htmlFor="tea-region" className="text-[14px] font-medium text-foreground">
-                Регион
+              <Label htmlFor="tea-amount" className="text-[14px] font-medium text-foreground">
+                Количество в наличии (гр)
               </Label>
               <Input
-                id="tea-region"
-                value={region}
-                onChange={(e) => setRegion(e.target.value)}
-                placeholder="Например: Юньнань, Китай"
+                id="tea-amount"
+                inputMode="numeric"
+                value={amount}
+                onChange={(e) => handleAmountChange(e.target.value)}
+                placeholder="100"
+                aria-invalid={amountError}
               />
+              {amountError && (
+                <p className="text-[12px] leading-[16px] text-destructive">только цифры</p>
+              )}
             </div>
           </div>
 

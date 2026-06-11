@@ -71,6 +71,9 @@ export default function TeaCard({
         </div>
         <p className="text-[12px] leading-[16px] text-muted-foreground">
           {pluralizeTastings(item.tasting_count)}
+          {item.amount_g != null && item.amount_g > 0 && (
+            <> • Осталось: {item.amount_g.toLocaleString('ru-RU')} гр</>
+          )}
         </p>
       </div>
 

@@ -164,6 +164,7 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
               cover_url: t.tea_item_cover_url ?? null,
               notes: null,
               vendor: null,
+              amount_g: t.tea_item_amount_g ?? null,
               tasting_count: 0,
               created_at: '',
             }} />

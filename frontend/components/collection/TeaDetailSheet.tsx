@@ -5,10 +5,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { XIcon, LeafIcon, BowlSteamIcon, CaretRightIcon, DotsThreeIcon } from '@phosphor-icons/react';
+import { XIcon, LeafIcon, BowlSteamIcon, CaretRightIcon, DotsThreeIcon, MinusIcon, PlusIcon } from '@phosphor-icons/react';
 import CategoryBadge from '@/components/CategoryBadge';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
-import { getTeaItemTastings, deleteTeaItem, type TeaItem, type TastingShort } from '@/lib/apiClient';
+import { getTeaItemTastings, deleteTeaItem, updateTeaAmount, type TeaItem, type TastingShort } from '@/lib/apiClient';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 const PAGE_SIZE = 3;
@@ -22,14 +22,18 @@ function formatDate(s: string): string {
 
 type LoadedData = { key: string; items: TastingShort[]; total: number };
 
+const AMOUNT_STEP = 5;
+
 export default function TeaDetailSheet({
   item,
   onClose,
   onDeleted,
+  onAmountChanged,
 }: {
   item: TeaItem | null;
   onClose: () => void;
   onDeleted?: () => void;
+  onAmountChanged?: () => void;
 }) {
   const router = useRouter();
   const [pageState, setPageState] = useState<{ itemId: number; page: number }>({
@@ -41,6 +45,72 @@ export default function TeaDetailSheet({
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // --- Остаток (автосохранение: степпер с debounce, инпут по blur) ---
+  const [amountState, setAmountState] = useState<{ itemId: number; value: string }>({
+    itemId: 0,
+    value: '',
+  });
+  const amountStr =
+    item && amountState.itemId === item.id
+      ? amountState.value
+      : item?.amount_g != null
+        ? String(item.amount_g)
+        : '';
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSavedAmount = useRef<number | null>(null);
+
+  useEffect(() => {
+    // При смене сорта сбрасываем базу для отката и отменяем отложенный сейв
+    lastSavedAmount.current = item?.amount_g ?? null;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+  }, [item?.id, item?.amount_g]);
+
+  function setAmountLocal(value: string) {
+    if (!item) return;
+    setAmountState({ itemId: item.id, value });
+  }
+
+  function scheduleAmountSave(next: number | null, immediate = false) {
+    if (!item) return;
+    const itemId = item.id;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    const doSave = async () => {
+      try {
+        await updateTeaAmount(itemId, next);
+        lastSavedAmount.current = next;
+        onAmountChanged?.();
+      } catch {
+        toast.error('Не удалось сохранить остаток. Попробуйте ещё раз.');
+        setAmountState({
+          itemId,
+          value: lastSavedAmount.current != null ? String(lastSavedAmount.current) : '',
+        });
+      }
+    };
+    if (immediate) {
+      doSave();
+    } else {
+      saveTimer.current = setTimeout(doSave, 800);
+    }
+  }
+
+  function stepAmount(delta: number) {
+    const current = amountStr === '' ? 0 : Number(amountStr);
+    const next = Math.max(0, (Number.isNaN(current) ? 0 : current) + delta);
+    setAmountLocal(String(next));
+    scheduleAmountSave(next);
+  }
+
+  function handleAmountInput(v: string) {
+    if (v !== '' && !/^\d+$/.test(v)) return;
+    setAmountLocal(v);
+  }
+
+  function handleAmountBlur() {
+    const next = amountStr === '' ? null : Number(amountStr);
+    scheduleAmountSave(next, true);
+  }
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -168,6 +238,38 @@ export default function TeaDetailSheet({
                 {item.region}
               </span>
             )}
+          </div>
+
+          {/* В наличии — степпер с автосохранением (без кнопок подтверждения) */}
+          <div className="flex items-center justify-between border-t border-b border-border-default py-3 mt-1">
+            <p className="text-[16px] font-semibold text-foreground">В наличии (гр)</p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => stepAmount(-AMOUNT_STEP)}
+                aria-label={`Минус ${AMOUNT_STEP} грамм`}
+                className="w-8 h-8 shrink-0 rounded-full border border-border-input bg-surface-input flex items-center justify-center text-foreground transition-colors outline-none focus-visible:border-accent-default focus-visible:ring-[3px] focus-visible:ring-ring-focus"
+              >
+                <MinusIcon size={14} weight="bold" />
+              </button>
+              <input
+                inputMode="numeric"
+                value={amountStr}
+                onChange={(e) => handleAmountInput(e.target.value)}
+                onBlur={handleAmountBlur}
+                placeholder="0"
+                aria-label="Остаток в граммах"
+                className="w-[90px] h-9 text-center text-[14px] rounded-lg border border-border-input bg-surface-input text-foreground shadow-xs transition-colors outline-none placeholder:text-text-placeholder focus-visible:border-accent-default focus-visible:ring-[3px] focus-visible:ring-ring-focus"
+              />
+              <button
+                type="button"
+                onClick={() => stepAmount(AMOUNT_STEP)}
+                aria-label={`Плюс ${AMOUNT_STEP} грамм`}
+                className="w-8 h-8 shrink-0 rounded-full border border-border-input bg-surface-input flex items-center justify-center text-foreground transition-colors outline-none focus-visible:border-accent-default focus-visible:ring-[3px] focus-visible:ring-ring-focus"
+              >
+                <PlusIcon size={14} weight="bold" />
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center gap-2 mt-2">

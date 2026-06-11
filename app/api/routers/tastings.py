@@ -67,6 +67,7 @@ class TastingOut(BaseModel):
     tea_item_year: Optional[int] = None
     tea_item_region: Optional[str] = None
     tea_item_cover_url: Optional[str] = None
+    tea_item_amount_g: Optional[float] = None
     class Config:
         from_attributes = True
 
@@ -242,6 +243,7 @@ def get_tasting(
             result.tea_item_category = tea_item.category
             result.tea_item_year = tea_item.year
             result.tea_item_region = tea_item.region
+            result.tea_item_amount_g = tea_item.amount_g
             if tea_item.cover_object_key:
                 try:
                     result.tea_item_cover_url = get_presigned_url(tea_item.cover_object_key)

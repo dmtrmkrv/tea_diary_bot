@@ -121,7 +121,7 @@ export default function TeawareItemSheet({
       <div className="fixed left-1/2 -translate-x-1/2 bottom-0 w-full max-w-2xl z-[70] bg-card rounded-t-[24px] flex flex-col max-h-[85dvh] overflow-hidden">
 
         {/* Cover */}
-        <div className="relative aspect-[2/1] shrink-0 rounded-t-[24px] overflow-hidden bg-surface-sunken">
+        <div className="relative aspect-[2/1] shrink-0 rounded-t-[24px] overflow-hidden bg-surface-app">
           {item.cover_url ? (
             <Image src={item.cover_url} alt={item.name} fill className="object-cover" />
           ) : (
@@ -249,24 +249,26 @@ export default function TeawareItemSheet({
               )}
             </>
           ) : (
-            <div className="border border-border-default rounded-2xl py-8 flex flex-col items-center gap-2">
-              <span className="w-12 h-12 rounded-full bg-placeholder-tea-bg flex items-center justify-center">
+            <div className="py-6 flex flex-col items-center gap-4">
+              <span className="w-14 h-14 rounded-full bg-placeholder-tea-bg flex items-center justify-center">
                 <BowlSteamIcon size={24} className="text-muted-foreground" />
               </span>
-              <p className="text-[16px] font-semibold text-text-secondary">Дегустаций нет</p>
-              <p className="text-[12px] text-muted-foreground text-center px-6">
-                Создайте новую дегустацию с этой посудой.
-              </p>
+              <div className="flex flex-col gap-2 text-center px-4">
+                <p className="text-[18px] leading-[24px] font-semibold text-text-secondary">Дегустаций нет</p>
+                <p className="text-[14px] leading-[20px] text-muted-foreground">
+                  Создайте новую дегустацию с этой посудой.
+                </p>
+              </div>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="flex gap-2 p-4 border-t border-border-default bg-card">
+        <div className="flex gap-2 px-4 pt-3 pb-6 shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 h-10 rounded-full bg-surface-sunken text-[14px] font-medium text-foreground"
+            className="w-[122px] shrink-0 h-12 rounded-full bg-surface-sunken text-[16px] font-medium text-muted-foreground"
           >
             Закрыть
           </button>
@@ -275,7 +277,7 @@ export default function TeawareItemSheet({
             onClick={() => {
               if (item) router.push(`/new?teaware_id=${item.id}`);
             }}
-            className="flex-[2] h-10 rounded-full bg-primary text-[14px] font-medium text-primary-foreground"
+            className="flex-1 h-12 rounded-full bg-primary text-[16px] font-medium text-primary-foreground"
           >
             Новая дегустация
           </button>

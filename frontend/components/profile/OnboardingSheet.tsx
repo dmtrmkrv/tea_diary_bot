@@ -102,7 +102,8 @@ export default function OnboardingSheet({
           onTouchEnd={onTouchEnd}
         >
           {/* Иллюстрация слайда (ассеты подъедут позже) */}
-          <div className="w-full aspect-[7/8] max-h-[420px] rounded-2xl overflow-hidden bg-surface-sunken flex items-center justify-center">
+          {/* Аспект = размеру ассетов (716×848), чтобы object-cover ничего не резал */}
+          <div className="w-full aspect-[716/848] max-h-[420px] rounded-2xl overflow-hidden bg-surface-sunken flex items-center justify-center">
             {slide.image ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={slide.image} alt={slide.title} className="w-full h-full object-cover" />

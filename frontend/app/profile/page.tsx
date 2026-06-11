@@ -43,8 +43,17 @@ export default function ProfilePage() {
   return (
     <main className="min-h-screen bg-background">
       {/* Cover — брендовая обложка (как градиент на /login, намеренно вне
-          токенов тем; паттерн листьев добавим ассетом). Пока один для всех. */}
-      <div className="relative h-[210px] bg-[#d97706] overflow-hidden">
+          токенов тем). Паттерн листьев + затемнение к низу, оба soft-light
+          поверх amber-600 — как в Figma (74:1395). Пока один для всех. */}
+      <div
+        className="relative h-[284px] rounded-b-2xl overflow-hidden"
+        style={{
+          backgroundColor: '#d97706',
+          backgroundImage:
+            'linear-gradient(180deg, rgba(0,0,0,0.05) 50.12%, rgba(0,0,0,0.45) 90.17%), url(/cover-pattern.svg)',
+          backgroundBlendMode: 'soft-light, soft-light',
+        }}
+      >
         <div className="max-w-2xl mx-auto px-4 pt-12 flex items-start justify-between">
           <h1 className="text-[32px] leading-[32px] font-semibold tracking-[-1px] text-[#fafaf9]">
             Профиль
@@ -101,11 +110,10 @@ export default function ProfilePage() {
 
         {/* Меню */}
         <div className="bg-card rounded-2xl shadow-sm mt-4 overflow-hidden">
-          <MenuRow label="Темная тема" onClick={() => setThemeSheetOpen(true)} />
+          <MenuRow label="Настройки темы" onClick={() => setThemeSheetOpen(true)} />
           <div className="h-px bg-border-default mx-4" />
           <MenuRow
             label="Возможности приложения"
-            caret
             onClick={() => setOnboardingOpen(true)}
           />
           <div className="h-px bg-border-default mx-4" />
@@ -137,11 +145,9 @@ function Stat({ value, label }: { value: number | undefined; label: string }) {
 
 function MenuRow({
   label,
-  caret,
   onClick,
 }: {
   label: string;
-  caret?: boolean;
   onClick: () => void;
 }) {
   return (
@@ -151,7 +157,7 @@ function MenuRow({
       className="w-full flex items-center justify-between px-4 h-14 text-left transition-colors hover:bg-surface-sunken outline-none focus-visible:ring-[3px] focus-visible:ring-ring-focus focus-visible:ring-inset"
     >
       <span className="text-[15px] text-foreground">{label}</span>
-      {caret && <CaretRightIcon size={18} className="text-muted-foreground shrink-0" />}
+      <CaretRightIcon size={18} className="text-muted-foreground shrink-0" />
     </button>
   );
 }

@@ -176,6 +176,29 @@ export function createTasting(data: TastingCreateInput) {
   });
 }
 
+export type Me = {
+  id: number;
+  username: string | null;
+  first_name: string | null;
+  photo_url: string | null;
+  tz_offset_min: number;
+};
+
+export type MyStats = {
+  tastings: number;
+  tea_items: number;
+  teaware: number;
+  top_categories: string[];
+};
+
+export function getMe() {
+  return apiCall<Me>('/users/me');
+}
+
+export function getMyStats() {
+  return apiCall<MyStats>('/users/me/stats');
+}
+
 export function deleteTasting(tastingId: number) {
   return apiCall<{ ok: boolean }>(`/tastings/${tastingId}`, { method: 'DELETE' });
 }

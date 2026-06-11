@@ -9,9 +9,10 @@ import {
   UserIcon,
   CaretRightIcon,
 } from '@phosphor-icons/react';
+import { toast } from 'sonner';
 import ThemeSheet from '@/components/profile/ThemeSheet';
 import OnboardingSheet from '@/components/profile/OnboardingSheet';
-import { getMe, getMyStats, type Me, type MyStats } from '@/lib/apiClient';
+import { getMe, getMyStats, downloadTastingsCsv, type Me, type MyStats } from '@/lib/apiClient';
 
 const FEEDBACK_EMAIL = 'dmitryidentity@gmail.com';
 
@@ -115,6 +116,15 @@ export default function ProfilePage() {
           <MenuRow
             label="Возможности приложения"
             onClick={() => setOnboardingOpen(true)}
+          />
+          <div className="h-px bg-border-default mx-4" />
+          <MenuRow
+            label="Экспорт данных (CSV)"
+            onClick={() => {
+              downloadTastingsCsv().catch(() =>
+                toast.error('Не удалось выгрузить данные. Попробуйте ещё раз.')
+              );
+            }}
           />
           <div className="h-px bg-border-default mx-4" />
           <MenuRow

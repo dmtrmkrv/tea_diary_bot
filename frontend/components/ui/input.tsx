@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils"
 // Типы для которых X-clear не имеет смысла — checkbox/radio/range/file и т.д.
 const TYPES_WITHOUT_CLEAR = new Set([
   'checkbox', 'radio', 'range', 'file', 'hidden',
-  'image', 'submit', 'reset', 'button',
+  'image', 'submit', 'reset', 'button', 'date',
 ]);
 
 function Input({

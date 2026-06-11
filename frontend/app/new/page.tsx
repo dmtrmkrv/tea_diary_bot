@@ -110,6 +110,11 @@ function NewTastingInner() {
   const initialTeawareId = searchParams.get('teaware_id');
 
   const [name, setName] = useState('');
+  // Бэкдейтинг: дефолт — сегодня (локальная дата устройства)
+  const [tastedDate, setTastedDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
   const [teaItem, setTeaItem] = useState<TeaItem | null>(null);
   const [teaware, setTeaware] = useState<Teaware | null>(null);
   const [grams, setGrams] = useState('');
@@ -226,6 +231,7 @@ function NewTastingInner() {
     try {
       const payload = {
         name: name.trim(),
+        tasted_date: tastedDate || null,
         tea_item_id: teaItem?.id ?? null,
         teaware_id: teaware?.id ?? null,
         grams: grams ? Number(grams) : null,
@@ -294,6 +300,14 @@ function NewTastingInner() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Например: Дянь хун в гайвани"
+            />
+          </Field>
+
+          <Field label="Дата дегустации">
+            <Input
+              type="date"
+              value={tastedDate}
+              onChange={(e) => setTastedDate(e.target.value)}
             />
           </Field>
 

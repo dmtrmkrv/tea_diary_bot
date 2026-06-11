@@ -151,6 +151,7 @@ export type InfusionInput = {
 
 export type TastingCreateInput = {
   name: string;
+  tasted_date?: string | null; // YYYY-MM-DD, бэкдейтинг
   tea_item_id?: number | null;
   teaware_id?: number | null;
   grams?: number | null;
@@ -197,6 +198,24 @@ export function getMe() {
 
 export function getMyStats() {
   return apiCall<MyStats>('/users/me/stats');
+}
+
+export async function downloadTastingsCsv(): Promise<void> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}/tastings/export.csv`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error(`API ${res.status}`);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `leafpulse-tastings-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 export function deleteTasting(tastingId: number) {

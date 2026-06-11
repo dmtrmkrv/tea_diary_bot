@@ -1,5 +1,8 @@
+import csv
 import datetime
+import io
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.responses import StreamingResponse
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -84,6 +87,7 @@ class TastingListOut(BaseModel):
 
 class TastingCreate(BaseModel):
     name: str
+    tasted_date: Optional[datetime.date] = None  # бэкдейтинг: дата дегустации
     tea_item_id: Optional[int] = None
     teaware_id: Optional[int] = None
     grams: Optional[float] = None
@@ -177,6 +181,12 @@ def create_tasting_api(
 
     tasted_at = data.tasted_at or datetime.datetime.utcnow().strftime("%H:%M")
 
+    # Бэкдейтинг: прошлая дата сохраняется с временем 00:00 —
+    # фронт в этом случае показывает только дату, без времени.
+    created_at: Optional[datetime.datetime] = None
+    if data.tasted_date is not None and data.tasted_date != datetime.date.today():
+        created_at = datetime.datetime.combine(data.tasted_date, datetime.time.min)
+
     tasting_data = {
         "user_id": user_id,
         "name": data.name,
@@ -197,9 +207,87 @@ def create_tasting_api(
         "summary": data.summary,
         "entry_mode": data.entry_mode,
     }
+    if created_at is not None:
+        tasting_data["created_at"] = created_at
     infusions = [inf.model_dump() for inf in data.infusions]
     tasting = create_tasting(tasting_data, infusions, [])
     return TastingOut.model_validate(tasting)
+
+
+@router.get("/export.csv")
+def export_tastings_csv(
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),
+):
+    """Экспорт всех дегустаций пользователя в CSV (Excel-friendly: BOM, ;)."""
+    rows = db.execute(
+        select(Tasting, TeaItem, Teaware)
+        .outerjoin(TeaItem, Tasting.tea_item_id == TeaItem.id)
+        .outerjoin(Teaware, Tasting.teaware_id == Teaware.id)
+        .where(Tasting.user_id == user_id)
+        .order_by(Tasting.seq_no)
+    ).all()
+
+    tasting_ids = [t.id for t, _, _ in rows]
+    infusions_map: dict[int, list[Infusion]] = {}
+    if tasting_ids:
+        for inf in db.execute(
+            select(Infusion)
+            .where(Infusion.tasting_id.in_(tasting_ids))
+            .order_by(Infusion.tasting_id, Infusion.n)
+        ).scalars():
+            infusions_map.setdefault(inf.tasting_id, []).append(inf)
+
+    def infusions_text(items: list[Infusion]) -> str:
+        parts = []
+        for inf in items:
+            bits = [f"№{inf.n}"]
+            if inf.seconds is not None:
+                bits.append(f"{inf.seconds}с")
+            for value in (inf.liquor_color, inf.taste, inf.body, inf.aftertaste,
+                          inf.special_notes, inf.note):
+                if value:
+                    bits.append(value)
+            parts.append(", ".join(bits))
+        return " | ".join(parts)
+
+    buffer = io.StringIO()
+    writer = csv.writer(buffer, delimiter=";")
+    writer.writerow([
+        "№", "Дата", "Название", "Категория", "Год", "Регион",
+        "Сорт из коллекции", "Посуда", "Вес (г)", "Температура (°C)",
+        "Оценка", "Аромат сухого листа", "Аромат прогретого листа",
+        "Ощущения", "Сценарии", "Заметка", "Проливы",
+    ])
+    for tasting, tea_item, teaware in rows:
+        writer.writerow([
+            tasting.seq_no,
+            tasting.created_at.strftime("%Y-%m-%d %H:%M") if tasting.created_at else "",
+            tasting.name,
+            tasting.category or "",
+            tasting.year or "",
+            tasting.region or "",
+            tea_item.name if tea_item else "",
+            teaware.name if teaware else (tasting.gear or ""),
+            tasting.grams if tasting.grams is not None else "",
+            tasting.temp_c if tasting.temp_c is not None else "",
+            tasting.rating or "",
+            tasting.aroma_dry or "",
+            tasting.aroma_warmed or "",
+            tasting.effects_csv or "",
+            tasting.scenarios_csv or "",
+            tasting.summary or "",
+            infusions_text(infusions_map.get(tasting.id, [])),
+        ])
+
+    # BOM — чтобы Excel корректно открыл UTF-8
+    payload = "\ufeff" + buffer.getvalue()
+    filename = f"leafpulse-tastings-{datetime.date.today().isoformat()}.csv"
+    return StreamingResponse(
+        iter([payload]),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.get("/{tasting_id}", response_model=TastingDetail)

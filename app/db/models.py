@@ -33,6 +33,9 @@ class User(Base):
     )
     tz_offset_min: Mapped[int] = mapped_column(Integer, default=0)
     username: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    # Профиль из Telegram-виджета; обновляются при каждом веб-логине
+    first_name: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    photo_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
 class Tasting(Base):

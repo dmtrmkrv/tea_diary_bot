@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 
 from app.db.engine import SessionLocal
-from app.db.models import LoginCode
+from app.db.models import LoginCode, User
 from app.services.users import get_or_create_user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -72,6 +72,17 @@ def decode_jwt_token(token: str) -> dict:
 def telegram_auth(data: TelegramAuthData):
     if not verify_telegram_auth(data):
         raise HTTPException(status_code=401, detail="Неверная подпись Telegram")
+
+    # Гарантируем запись о пользователе и обновляем профиль из виджета
+    get_or_create_user(data.id, username=data.username)
+    with SessionLocal() as session:
+        user = session.get(User, data.id)
+        if user is not None:
+            if data.first_name:
+                user.first_name = data.first_name[:64]
+            if data.photo_url:
+                user.photo_url = data.photo_url
+            session.commit()
 
     token = create_jwt_token(data.id, data.username)
     return {"access_token": token, "token_type": "bearer"}

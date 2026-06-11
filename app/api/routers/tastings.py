@@ -267,6 +267,29 @@ def get_tasting(
     return result
 
 
+@router.delete("/{tasting_id}")
+def delete_tasting_api(
+    tasting_id: int,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),
+):
+    tasting = db.get(Tasting, tasting_id)
+    if not tasting or tasting.user_id != user_id:
+        raise HTTPException(status_code=404, detail="Не найдено")
+
+    # Возврат фактически списанного остатка сорта (deducted_g записывается
+    # при создании с учётом clamp). Старые записи без deducted_g — без
+    # возврата: по ним и не списывалось.
+    if tasting.tea_item_id and tasting.deducted_g:
+        tea_item = db.get(TeaItem, tasting.tea_item_id)
+        if tea_item is not None and tea_item.amount_g is not None:
+            tea_item.amount_g = tea_item.amount_g + tasting.deducted_g
+
+    db.delete(tasting)
+    db.commit()
+    return {"ok": True}
+
+
 @router.post("/{tasting_id}/photos", response_model=TastingDetail)
 async def upload_tasting_photos(
     tasting_id: int,

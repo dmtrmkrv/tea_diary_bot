@@ -1,10 +1,17 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { DotsThreeOutlineIcon } from '@phosphor-icons/react';
+import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
+import { deleteTasting } from '@/lib/apiClient';
 
 export default function TastingActions({ tastingId }: { tastingId: number }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -14,6 +21,20 @@ export default function TastingActions({ tastingId }: { tastingId: number }) {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  async function handleDelete() {
+    setConfirmDelete(false);
+    setDeleting(true);
+    try {
+      await deleteTasting(tastingId);
+      toast.success('Дегустация удалена');
+      router.push('/');
+      router.refresh();
+    } catch {
+      toast.error('Не удалось удалить дегустацию. Попробуйте ещё раз.');
+      setDeleting(false);
+    }
+  }
 
   return (
     <div ref={ref} className="relative">
@@ -26,20 +47,24 @@ export default function TastingActions({ tastingId }: { tastingId: number }) {
       </button>
       {open && (
         <div className="absolute right-0 top-10 bg-popover rounded-lg shadow-lg z-50 overflow-hidden min-w-[160px]">
+          {/* «Редактировать» появится после релиза — пока только удаление */}
           <button
-            className="w-full text-left px-4 py-3 text-[14px] text-popover-foreground hover:bg-muted transition-colors"
-            onClick={() => setOpen(false)}
+            className="w-full text-left px-4 py-3 text-[14px] text-destructive hover:bg-surface-sunken transition-colors disabled:opacity-50"
+            disabled={deleting}
+            onClick={() => { setOpen(false); setConfirmDelete(true); }}
           >
-            Редактировать
-          </button>
-          <button
-            className="w-full text-left px-4 py-3 text-[14px] text-destructive hover:bg-muted transition-colors"
-            onClick={() => setOpen(false)}
-          >
-            Удалить
+            {deleting ? 'Удаление…' : 'Удалить'}
           </button>
         </div>
       )}
+
+      <ConfirmDeleteDialog
+        open={confirmDelete}
+        title="Удалить дегустацию?"
+        description="Действие нельзя отменить. Если при создании списывался остаток сорта — он вернётся в коллекцию."
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDelete(false)}
+      />
     </div>
   );
 }

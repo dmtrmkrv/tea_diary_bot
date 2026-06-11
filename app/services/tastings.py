@@ -57,7 +57,12 @@ def create_tasting(
                     if tea_item_id and grams:
                         tea_item = session.get(TeaItem, tea_item_id)
                         if tea_item is not None and tea_item.amount_g is not None:
-                            tea_item.amount_g = max(0.0, tea_item.amount_g - float(grams))
+                            # Фактически списываем не больше, чем есть (clamp до 0),
+                            # и запоминаем списанное в дегустации — для честного
+                            # возврата при её удалении.
+                            deducted = min(float(grams), tea_item.amount_g)
+                            tea_item.amount_g = tea_item.amount_g - deducted
+                            tasting.deducted_g = deducted
 
                     for infusion in infusions:
                         session.add(

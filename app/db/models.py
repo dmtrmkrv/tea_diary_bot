@@ -90,6 +90,8 @@ class Tasting(Base):
 
     rating: Mapped[int] = mapped_column(Integer, default=0)
     summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # Фактически списанный остаток сорта при создании (для возврата при удалении)
+    deducted_g: Mapped[Optional[float]] = mapped_column(nullable=True)
     seq_no: Mapped[int] = mapped_column(Integer, nullable=False)
     tea_item_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("tea_items.id", ondelete="SET NULL"), nullable=True)
     teaware_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("teaware.id", ondelete="SET NULL"), nullable=True)

@@ -176,6 +176,10 @@ export function createTasting(data: TastingCreateInput) {
   });
 }
 
+export function deleteTasting(tastingId: number) {
+  return apiCall<{ ok: boolean }>(`/tastings/${tastingId}`, { method: 'DELETE' });
+}
+
 export async function uploadTastingPhotos(tastingId: number, files: File[]): Promise<void> {
   if (files.length === 0) return;
   const fd = new FormData();

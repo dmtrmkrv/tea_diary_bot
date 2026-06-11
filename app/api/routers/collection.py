@@ -12,6 +12,7 @@ from app.services.storage import (
     get_presigned_url,
     save_tea_item_photo_bytes,
     save_teaware_photo_bytes,
+    delete_object,
 )
 
 router = APIRouter(prefix="/collection", tags=["collection"])
@@ -183,6 +184,9 @@ async def upload_tea_photo(
         body=body,
         filename_hint=file.filename or "photo.jpg",
     )
+    # Старый cover больше не нужен — чистим из хранилища
+    if item.cover_object_key and item.cover_object_key != saved.object_key:
+        delete_object(item.cover_object_key)
     item.cover_object_key = saved.object_key
     db.commit()
     db.refresh(item)
@@ -281,6 +285,7 @@ def delete_tea(
     item = db.get(TeaItem, item_id)
     if not item or item.user_id != user_id:
         raise HTTPException(status_code=404, detail="Не найдено")
+    delete_object(item.cover_object_key)
     db.delete(item)
     db.commit()
     return {"ok": True}
@@ -369,6 +374,9 @@ async def upload_teaware_photo(
         body=body,
         filename_hint=file.filename or "photo.jpg",
     )
+    # Старый cover больше не нужен — чистим из хранилища
+    if item.cover_object_key and item.cover_object_key != saved.object_key:
+        delete_object(item.cover_object_key)
     item.cover_object_key = saved.object_key
     db.commit()
     db.refresh(item)
@@ -441,6 +449,7 @@ def delete_teaware(
     item = db.get(Teaware, item_id)
     if not item or item.user_id != user_id:
         raise HTTPException(status_code=404, detail="Не найдено")
+    delete_object(item.cover_object_key)
     db.delete(item)
     db.commit()
     return {"ok": True}

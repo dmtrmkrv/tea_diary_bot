@@ -10,7 +10,7 @@ from typing import Optional, List
 from app.api.deps import get_db
 from app.api.auth import get_current_user_id
 from app.db.models import Tasting, Infusion, Photo, TeaItem, Teaware
-from app.services.storage import get_presigned_url, save_photo_bytes
+from app.services.storage import get_presigned_url, save_photo_bytes, delete_object
 
 router = APIRouter(prefix="/tastings", tags=["tastings"])
 
@@ -372,6 +372,13 @@ def delete_tasting_api(
         tea_item = db.get(TeaItem, tasting.tea_item_id)
         if tea_item is not None and tea_item.amount_g is not None:
             tea_item.amount_g = tea_item.amount_g + tasting.deducted_g
+
+    # Файлы фото из хранилища — до удаления записей (best-effort)
+    photos = db.execute(
+        select(Photo).where(Photo.tasting_id == tasting.id)
+    ).scalars().all()
+    for photo in photos:
+        delete_object(photo.object_key, photo.storage_backend)
 
     db.delete(tasting)
     db.commit()

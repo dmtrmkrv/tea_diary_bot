@@ -5188,6 +5188,11 @@ async def del_ok_cb(call: CallbackQuery):
             await call.message.answer("Нет доступа к этой записи.")
             await call.answer()
             return
+        # Чистим файлы фото из хранилища до удаления записей (best-effort)
+        from app.services.storage import delete_object
+
+        for photo in s.query(Photo).filter(Photo.tasting_id == t.id).all():
+            delete_object(photo.object_key, photo.storage_backend)
         s.delete(t)
         s.commit()
     await call.message.answer(f"Удалил #{t.seq_no}.")

@@ -113,6 +113,27 @@ def save_teaware_photo_bytes(
     )
 
 
+def delete_object(object_key: Optional[str], storage_backend: str = "s3") -> None:
+    """Удаляет файл из хранилища (S3 или локального). Best-effort:
+    ошибки глотаем — удаление записи в БД важнее, осиротевший файл
+    хуже, чем упавший запрос пользователя."""
+    if not object_key:
+        return
+    try:
+        if storage_backend == "s3":
+            cfg = get_s3_config()
+            if cfg.enabled and all([cfg.bucket, cfg.access_key, cfg.secret_key]):
+                _s3_client().delete_object(Bucket=cfg.bucket, Key=object_key)
+                return
+        # Локальный фоллбек (или backend == "local")
+        base_dir = os.path.abspath(os.getenv("MEDIA_DIR", "/app/media"))
+        path = os.path.join(base_dir, object_key)
+        if os.path.isfile(path):
+            os.remove(path)
+    except Exception:
+        pass
+
+
 def get_presigned_url(key: str, expires: int = 3600) -> str:
     cfg = get_s3_config()
     return _s3_client().generate_presigned_url(

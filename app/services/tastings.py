@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from app.db.engine import SessionLocal
-from app.db.models import Infusion, Photo, Tasting
+from app.db.models import Infusion, Photo, Tasting, TeaItem
 from app.services.storage import save_photo_bytes
 
 _MAX_CREATE_ATTEMPTS = 2
@@ -45,6 +45,19 @@ def create_tasting(
                     tasting = Tasting(seq_no=seq_no, **tasting_data)
                     session.add(tasting)
                     session.flush()
+
+                    # Автосписание остатка сорта: только если у дегустации есть
+                    # привязка к коллекции, указан вес и владелец ведёт учёт
+                    # (amount_g не NULL). Clamp до 0 — запись дегустации важнее
+                    # точности учёта, в минус не уходим. Та же транзакция, что
+                    # и создание дегустации. Бот не передаёт tea_item_id,
+                    # поэтому бот-флоу не затронут.
+                    tea_item_id = tasting_data.get("tea_item_id")
+                    grams = tasting_data.get("grams")
+                    if tea_item_id and grams:
+                        tea_item = session.get(TeaItem, tea_item_id)
+                        if tea_item is not None and tea_item.amount_g is not None:
+                            tea_item.amount_g = max(0.0, tea_item.amount_g - float(grams))
 
                     for infusion in infusions:
                         session.add(

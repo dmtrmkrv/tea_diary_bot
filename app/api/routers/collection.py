@@ -27,6 +27,7 @@ class TeaItemOut(BaseModel):
     region: Optional[str]
     vendor: Optional[str]
     notes: Optional[str]
+    amount_g: Optional[float] = None
     cover_url: Optional[str] = None
     tasting_count: int = 0
     created_at: datetime.datetime
@@ -41,6 +42,12 @@ class TeaItemCreate(BaseModel):
     region: Optional[str] = None
     vendor: Optional[str] = None
     notes: Optional[str] = None
+    amount_g: Optional[float] = None
+
+
+class TeaItemAmountUpdate(BaseModel):
+    # None — выключить учёт остатка; число >= 0 — новое значение в граммах
+    amount_g: Optional[float] = None
 
 
 class TeaItemListOut(BaseModel):
@@ -177,6 +184,32 @@ async def upload_tea_photo(
         filename_hint=file.filename or "photo.jpg",
     )
     item.cover_object_key = saved.object_key
+    db.commit()
+    db.refresh(item)
+
+    out = TeaItemOut.model_validate(item)
+    if item.cover_object_key:
+        try:
+            out.cover_url = get_presigned_url(item.cover_object_key)
+        except Exception:
+            pass
+    return out
+
+
+@router.patch("/tea/{item_id}/amount", response_model=TeaItemOut)
+def update_tea_amount(
+    item_id: int,
+    data: TeaItemAmountUpdate,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),
+):
+    item = db.get(TeaItem, item_id)
+    if not item or item.user_id != user_id:
+        raise HTTPException(status_code=404, detail="Не найдено")
+    if data.amount_g is not None and data.amount_g < 0:
+        raise HTTPException(status_code=400, detail="Остаток не может быть отрицательным")
+
+    item.amount_g = data.amount_g
     db.commit()
     db.refresh(item)
 

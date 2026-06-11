@@ -164,6 +164,8 @@ class TeaItem(Base):
     region: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
     vendor: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # Остаток в граммах: NULL — не отслеживается, 0 — закончился.
+    amount_g: Mapped[Optional[float]] = mapped_column(nullable=True)
     cover_object_key: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow, nullable=False)
 

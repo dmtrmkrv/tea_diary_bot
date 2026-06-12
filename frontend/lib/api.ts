@@ -26,8 +26,24 @@ async function apiFetch(path: string) {
   return res.json();
 }
 
-export async function getTastings(limit = 20, offset = 0) {
-  return apiFetch(`/tastings?limit=${limit}&offset=${offset}`);
+export type TastingsFilter = {
+  q?: string;
+  categories?: string;   // CSV категорий
+  teawareIds?: string;   // CSV id посуды
+  ratingMin?: number;
+};
+
+export async function getTastings(limit = 20, offset = 0, filter: TastingsFilter = {}) {
+  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  if (filter.q) params.set('q', filter.q);
+  if (filter.categories) params.set('categories', filter.categories);
+  if (filter.teawareIds) params.set('teaware_ids', filter.teawareIds);
+  if (filter.ratingMin) params.set('rating_min', String(filter.ratingMin));
+  return apiFetch(`/tastings?${params.toString()}`);
+}
+
+export async function getTeawareList() {
+  return apiFetch('/collection/teaware?limit=100&offset=0');
 }
 
 export async function getTasting(id: number) {

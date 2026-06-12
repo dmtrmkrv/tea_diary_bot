@@ -110,15 +110,40 @@ def list_tastings(
     user_id: int = Depends(get_current_user_id),
     limit: int = 20,
     offset: int = 0,
+    q: str = "",
+    categories: str = "",
+    teaware_ids: str = "",
+    rating_min: int = 0,
 ):
+    # Поиск/фильтры (комбинируются по AND, значения внутри фильтра — OR).
+    # Текстовый поиск — по названию дегустации И названию привязанного сорта.
+    filters = [Tasting.user_id == user_id]
+    q_clean = q.strip()
+    if q_clean:
+        pattern = f"%{q_clean}%"
+        filters.append(
+            Tasting.name.ilike(pattern) | TeaItem.name.ilike(pattern)
+        )
+    cat_list = [c.strip() for c in categories.split(",") if c.strip()]
+    if cat_list:
+        filters.append(Tasting.category.in_(cat_list))
+    tw_list = [int(t) for t in teaware_ids.split(",") if t.strip().isdigit()]
+    if tw_list:
+        filters.append(Tasting.teaware_id.in_(tw_list))
+    if rating_min > 0:
+        filters.append(Tasting.rating >= rating_min)
+
+    # outerjoin на TeaItem нужен и для count (текстовый поиск по сорту)
     total = db.execute(
-        select(func.count(Tasting.id)).where(Tasting.user_id == user_id)
+        select(func.count(Tasting.id))
+        .outerjoin(TeaItem, Tasting.tea_item_id == TeaItem.id)
+        .where(*filters)
     ).scalar_one()
 
     rows = db.execute(
         select(Tasting, TeaItem)
         .outerjoin(TeaItem, Tasting.tea_item_id == TeaItem.id)
-        .where(Tasting.user_id == user_id)
+        .where(*filters)
         .order_by(Tasting.id.desc())
         .limit(limit)
         .offset(offset)

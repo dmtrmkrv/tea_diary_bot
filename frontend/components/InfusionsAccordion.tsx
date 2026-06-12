@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CaretDownIcon, CaretUpIcon, TimerIcon, DropHalfBottomIcon, LeafIcon, BowlSteamIcon, NotePencilIcon } from '@phosphor-icons/react';
+import { CaretDownIcon, CaretUpIcon, TimerIcon, DropHalfBottomIcon, BoulesIcon, DropHalfIcon, BowlFoodIcon, WindIcon, NotePencilIcon } from '@phosphor-icons/react';
 
 interface Infusion {
   n: number;
@@ -55,7 +55,7 @@ function InfusionContent({ inf }: { inf: Infusion }) {
         rightBorder
       />
       <DataCell
-        icon={<DropHalfBottomIcon size={24} />}
+        icon={<BoulesIcon size={24} />}
         label="Цвет настоя"
         value={inf.liquor_color}
       />
@@ -70,7 +70,7 @@ function InfusionContent({ inf }: { inf: Infusion }) {
       )}
       {inf.special_notes && (
         <DataCell
-          icon={<LeafIcon size={24} />}
+          icon={<DropHalfIcon size={24} />}
           label="Особенные ноты пролива"
           value={inf.special_notes}
           wide
@@ -79,7 +79,7 @@ function InfusionContent({ inf }: { inf: Infusion }) {
       )}
       {inf.body && (
         <DataCell
-          icon={<LeafIcon size={24} />}
+          icon={<BowlFoodIcon size={24} />}
           label="Тело"
           value={inf.body}
           wide
@@ -88,7 +88,7 @@ function InfusionContent({ inf }: { inf: Infusion }) {
       )}
       {inf.aftertaste && (
         <DataCell
-          icon={<BowlSteamIcon size={24} />}
+          icon={<WindIcon size={24} />}
           label="Послевкусие"
           value={inf.aftertaste}
           wide

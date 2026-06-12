@@ -5,9 +5,11 @@ import {
   ArrowLeftIcon,
   ScalesIcon,
   ThermometerIcon,
-  LeafIcon,
+  PlantIcon,
   BowlSteamIcon,
   DropHalfBottomIcon,
+  MaskHappyIcon,
+  NotePencilIcon,
   CaretRightIcon,
   StarIcon,
   LightningIcon,
@@ -213,7 +215,7 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
           )}
           {t.aroma_dry && (
             <DataRow
-              icon={<LeafIcon size={24} />}
+              icon={<PlantIcon size={24} />}
               label="Аромат сухого листа"
               value={t.aroma_dry}
               wide
@@ -231,7 +233,7 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
           )}
           {effects && (
             <DataRow
-              icon={<DropHalfBottomIcon size={24} />}
+              icon={<MaskHappyIcon size={24} />}
               label="Ощущения"
               value={effects}
               wide
@@ -252,7 +254,7 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
           {t.summary && (
             <div className="col-span-2 border-t border-border-default pt-4 flex gap-2 items-start">
               <span className="shrink-0 text-muted-foreground mt-0.5">
-                <DropHalfBottomIcon size={24} />
+                <NotePencilIcon size={24} />
               </span>
               <div className="flex-1 min-w-0">
                 <p className="text-[12px] font-medium leading-[16px] text-muted-foreground mb-0.5">Заметка</p>

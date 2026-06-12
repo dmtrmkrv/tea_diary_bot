@@ -107,16 +107,26 @@ class TastingsListOut(BaseModel):
 def list_tea(
     limit: int = Query(10, ge=1, le=100),
     offset: int = Query(0, ge=0),
+    q: str = "",
+    categories: str = "",
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id),
 ):
+    filters = [TeaItem.user_id == user_id]
+    q_clean = q.strip()
+    if q_clean:
+        filters.append(TeaItem.name.ilike(f"%{q_clean}%"))
+    cat_list = [c.strip() for c in categories.split(",") if c.strip()]
+    if cat_list:
+        filters.append(TeaItem.category.in_(cat_list))
+
     total = db.execute(
-        select(func.count(TeaItem.id)).where(TeaItem.user_id == user_id)
+        select(func.count(TeaItem.id)).where(*filters)
     ).scalar_one()
 
     items = db.execute(
         select(TeaItem)
-        .where(TeaItem.user_id == user_id)
+        .where(*filters)
         .order_by(TeaItem.created_at.desc())
         .limit(limit)
         .offset(offset)
@@ -297,16 +307,22 @@ def delete_tea(
 def list_teaware(
     limit: int = Query(10, ge=1, le=100),
     offset: int = Query(0, ge=0),
+    q: str = "",
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id),
 ):
+    filters = [Teaware.user_id == user_id]
+    q_clean = q.strip()
+    if q_clean:
+        filters.append(Teaware.name.ilike(f"%{q_clean}%"))
+
     total = db.execute(
-        select(func.count(Teaware.id)).where(Teaware.user_id == user_id)
+        select(func.count(Teaware.id)).where(*filters)
     ).scalar_one()
 
     items = db.execute(
         select(Teaware)
-        .where(Teaware.user_id == user_id)
+        .where(*filters)
         .order_by(Teaware.created_at.desc())
         .limit(limit)
         .offset(offset)

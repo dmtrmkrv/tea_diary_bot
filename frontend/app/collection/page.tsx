@@ -5,7 +5,8 @@ export const dynamic = 'force-dynamic';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { LeafIcon, StackIcon, PlusIcon } from '@phosphor-icons/react';
+import { LeafIcon, StackIcon, PlusIcon, MagnifyingGlassIcon, XIcon } from '@phosphor-icons/react';
+import ToggleChips from '@/components/form/ToggleChips';
 import TeaCard from '@/components/collection/TeaCard';
 import TeaDetailSheet from '@/components/collection/TeaDetailSheet';
 import TeawareCard from '@/components/collection/TeawareCard';
@@ -22,6 +23,8 @@ import {
 } from '@/lib/apiClient';
 
 const PAGE_SIZE = 10;
+
+const CATEGORY_FILTER = ['Белый', 'Жёлтый', 'Зелёный', 'Красный', 'Улун', 'Шу пуэр', 'Шен пуэр', 'Хэй ча', 'Другое'];
 
 export default function CollectionPage() {
   return (
@@ -44,19 +47,36 @@ function CollectionInner() {
   const [teawareTotal, setTeawareTotal] = useState(0);
   const [wPage, setWPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [teaCats, setTeaCats] = useState<string[]>([]);
   const [selected, setSelected] = useState<TeaItem | null>(null);
   const [selectedTeaware, setSelectedTeaware] = useState<Teaware | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Teaware | null>(null);
   const [teaDeleteTarget, setTeaDeleteTarget] = useState<TeaItem | null>(null);
 
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query.trim()), 400);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  useEffect(() => {
+    // Новый запрос/фильтр — начинаем с первой страницы
+    setPage(1);
+    setWPage(1);
+  }, [debouncedQuery, teaCats]);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const [tea, teaware] = await Promise.all([
-        getTeaCollection(PAGE_SIZE, (page - 1) * PAGE_SIZE),
-        getTeawareCollection(PAGE_SIZE, (wPage - 1) * PAGE_SIZE).catch(
-          () => ({ items: [], total: 0 })
-        ),
+        getTeaCollection(PAGE_SIZE, (page - 1) * PAGE_SIZE, {
+          q: debouncedQuery,
+          categories: teaCats.join(','),
+        }),
+        getTeawareCollection(PAGE_SIZE, (wPage - 1) * PAGE_SIZE, {
+          q: debouncedQuery,
+        }).catch(() => ({ items: [], total: 0 })),
       ]);
       setItems(tea.items);
       setTotal(tea.total);
@@ -65,7 +85,7 @@ function CollectionInner() {
     } finally {
       setLoading(false);
     }
-  }, [page, wPage]);
+  }, [page, wPage, debouncedQuery, teaCats]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -113,6 +133,12 @@ function CollectionInner() {
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const wTotalPages = Math.max(1, Math.ceil(teawareTotal / PAGE_SIZE));
+  const hasFilter = Boolean(debouncedQuery) || teaCats.length > 0;
+  const notFound = (
+    <p className="text-center text-[14px] text-muted-foreground pt-8">
+      Ничего не найдено. Измените запрос или фильтры.
+    </p>
+  );
 
   return (
     <main className="min-h-screen bg-background">
@@ -147,13 +173,42 @@ function CollectionInner() {
             </span>
           </button>
         </div>
+
+        {/* Поиск по коллекции + быстрый фильтр по категориям (таб «Чай») */}
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2 h-11 px-2 rounded-lg border border-border-input bg-surface-input shadow-xs transition-colors focus-within:border-accent-default focus-within:ring-[3px] focus-within:ring-ring-focus">
+            <MagnifyingGlassIcon size={16} className="text-text-placeholder shrink-0" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Поиск по названию"
+              className="flex-1 outline-none text-[14px] text-foreground bg-transparent placeholder:text-text-placeholder"
+            />
+            {query && (
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => setQuery('')}
+                aria-label="Очистить"
+                className="w-5 h-5 shrink-0 rounded-full bg-surface-sunken-strong text-text-secondary flex items-center justify-center"
+              >
+                <XIcon size={11} weight="bold" />
+              </button>
+            )}
+          </div>
+          {tab === 'tea' && (
+            <ToggleChips options={CATEGORY_FILTER} value={teaCats} onChange={setTeaCats} />
+          )}
+        </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 mt-4 pb-4">
         {loading ? (
           <p className="text-center text-[14px] text-muted-foreground pt-8">Загрузка…</p>
         ) : tab === 'teaware' ? (
-          wItems.length === 0 ? (
+          wItems.length === 0 && hasFilter ? (
+            notFound
+          ) : wItems.length === 0 ? (
             <div className="flex flex-col items-center gap-8 pt-16 pb-8 px-4 text-center">
               <div className="flex flex-col items-center gap-4">
                 <span className="w-[90px] h-[90px] rounded-full bg-card flex items-center justify-center">
@@ -196,6 +251,8 @@ function CollectionInner() {
               />
             </>
           )
+        ) : items.length === 0 && hasFilter ? (
+          notFound
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center gap-8 pt-16 pb-8 px-4 text-center">
             <div className="flex flex-col items-center gap-4">

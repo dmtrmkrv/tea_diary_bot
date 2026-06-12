@@ -54,12 +54,25 @@ export type Teaware = {
 };
 export type TeawareList = { items: Teaware[]; total: number };
 
-export function getTeaCollection(limit = 10, offset = 0) {
-  return apiCall<TeaItemList>(`/collection/tea?limit=${limit}&offset=${offset}`);
+export function getTeaCollection(
+  limit = 10,
+  offset = 0,
+  filter: { q?: string; categories?: string } = {}
+) {
+  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  if (filter.q) params.set('q', filter.q);
+  if (filter.categories) params.set('categories', filter.categories);
+  return apiCall<TeaItemList>(`/collection/tea?${params.toString()}`);
 }
 
-export function getTeawareCollection(limit = 10, offset = 0) {
-  return apiCall<TeawareList>(`/collection/teaware?limit=${limit}&offset=${offset}`);
+export function getTeawareCollection(
+  limit = 10,
+  offset = 0,
+  filter: { q?: string } = {}
+) {
+  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  if (filter.q) params.set('q', filter.q);
+  return apiCall<TeawareList>(`/collection/teaware?${params.toString()}`);
 }
 
 export function getTeaItemTastings(itemId: number, limit = 3, offset = 0) {

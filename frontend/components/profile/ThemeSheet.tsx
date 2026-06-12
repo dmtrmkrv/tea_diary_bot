@@ -26,7 +26,7 @@ export default function ThemeSheet({
   return (
     <>
       <div className="fixed inset-0 z-[60] bg-overlay-scrim backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed left-1/2 -translate-x-1/2 bottom-0 w-full max-w-2xl z-[70] bg-card rounded-t-3xl flex flex-col max-h-[calc(100svh-100px)] overflow-hidden">
+      <div className="fixed left-1/2 -translate-x-1/2 bottom-0 w-full max-w-2xl z-[70] bg-card rounded-t-3xl flex flex-col max-h-[calc(100svh-48px)] overflow-hidden">
         <div className="flex justify-center pt-2 pb-1">
           <span className="w-9 h-1 rounded-full bg-border-strong" />
         </div>

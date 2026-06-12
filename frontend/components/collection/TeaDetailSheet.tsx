@@ -176,7 +176,7 @@ export default function TeaDetailSheet({
   return (
     <>
       <div className="fixed inset-0 z-[60] bg-overlay-scrim backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed left-1/2 -translate-x-1/2 bottom-0 w-full max-w-2xl z-[70] bg-card rounded-t-3xl flex flex-col max-h-[calc(100svh-100px)] overflow-hidden">
+      <div className="fixed left-1/2 -translate-x-1/2 bottom-0 w-full max-w-2xl z-[70] bg-card rounded-t-3xl flex flex-col max-h-[calc(100svh-48px)] overflow-hidden">
         {/* Cover full-bleed — handle и X поверх (по макету 98:2050) */}
         <div className="relative aspect-[2/1] shrink-0 rounded-t-3xl overflow-hidden bg-surface-app flex items-center justify-center">
           {item.cover_url ? (
@@ -197,11 +197,11 @@ export default function TeaDetailSheet({
         </div>
 
         <div className="flex-1 overflow-y-auto overscroll-contain px-4 pt-4 pb-4 flex flex-col gap-4">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-[20px] leading-[24px] font-semibold text-foreground truncate">
+          <div className="flex items-start justify-between gap-2">
+            <h2 className="text-[20px] leading-[24px] font-semibold text-foreground">
               {item.name}
             </h2>
-            <div ref={menuRef} className="relative shrink-0">
+            <div ref={menuRef} className="relative shrink-0 -mt-1">
               <button
                 type="button"
                 onClick={() => setMenuOpen((v) => !v)}

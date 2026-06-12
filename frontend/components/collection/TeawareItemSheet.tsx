@@ -120,7 +120,7 @@ export default function TeawareItemSheet({
   return (
     <>
       <div className="fixed inset-0 z-[60] bg-overlay-scrim backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed left-1/2 -translate-x-1/2 bottom-0 w-full max-w-2xl z-[70] bg-card rounded-t-[24px] flex flex-col max-h-[calc(100svh-100px)] overflow-hidden">
+      <div className="fixed left-1/2 -translate-x-1/2 bottom-0 w-full max-w-2xl z-[70] bg-card rounded-t-[24px] flex flex-col max-h-[calc(100svh-48px)] overflow-hidden">
 
         {/* Cover */}
         <div className="relative aspect-[2/1] shrink-0 rounded-t-[24px] overflow-hidden bg-surface-app">
@@ -150,11 +150,11 @@ export default function TeawareItemSheet({
 
           {/* Title + more */}
           <div className="flex flex-col gap-1">
-            <div className="flex items-center justify-between gap-2">
-              <h2 className="text-[20px] leading-[24px] font-semibold text-foreground truncate">
+            <div className="flex items-start justify-between gap-2">
+              <h2 className="text-[20px] leading-[24px] font-semibold text-foreground">
                 {item.name}
               </h2>
-              <div ref={menuRef} className="relative shrink-0">
+              <div ref={menuRef} className="relative shrink-0 -mt-1">
                 <button
                   type="button"
                   onClick={() => setMenuOpen((v) => !v)}

@@ -11,6 +11,7 @@ import {
   BowlSteamIcon,
   CaretRightIcon,
   DotsThreeIcon,
+  LeafIcon,
 } from '@phosphor-icons/react';
 import {
   getTeawareTastings,
@@ -20,8 +21,9 @@ import {
 } from '@/lib/apiClient';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import PaginationButtons from '@/components/PaginationButtons';
 
-const PAGE_SIZE = 3;
+const PAGE_SIZE = 4;
 
 function formatDate(s: string): string {
   const d = new Date(s);
@@ -118,7 +120,7 @@ export default function TeawareItemSheet({
   return (
     <>
       <div className="fixed inset-0 z-[60] bg-overlay-scrim backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed left-1/2 -translate-x-1/2 bottom-0 w-full max-w-2xl z-[70] bg-card rounded-t-[24px] flex flex-col max-h-[85dvh] overflow-hidden">
+      <div className="fixed left-1/2 -translate-x-1/2 bottom-0 w-full max-w-2xl z-[70] bg-card rounded-t-[24px] flex flex-col max-h-[calc(100svh-100px)] overflow-hidden">
 
         {/* Cover */}
         <div className="relative aspect-[2/1] shrink-0 rounded-t-[24px] overflow-hidden bg-surface-app">
@@ -144,7 +146,7 @@ export default function TeawareItemSheet({
         </div>
 
         {/* Content */}
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pt-4 pb-2 flex flex-col gap-3">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pt-4 pb-2 flex flex-col gap-4">
 
           {/* Title + more */}
           <div className="flex flex-col gap-1">
@@ -192,8 +194,8 @@ export default function TeawareItemSheet({
             </div>
           )}
 
-          <div className="flex items-center gap-2 mt-2">
-            <h3 className="text-[16px] font-semibold text-foreground">Дегустации</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-[16px] font-medium text-foreground">Дегустации</h3>
             <span className="bg-surface-sunken-strong rounded-full px-2 h-4 flex items-center text-[12px] font-semibold text-foreground">
               {total}
             </span>
@@ -209,47 +211,38 @@ export default function TeawareItemSheet({
                     key={t.id}
                     href={`/tastings/${t.id}`}
                     onClick={onClose}
-                    className="bg-surface-sunken rounded-xl px-3 py-2 flex items-center gap-2"
+                    className="bg-surface-sunken rounded-2xl pl-2 pr-4 py-2 flex items-center gap-3"
                   >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[12px] leading-[16px] text-muted-foreground">
+                    <div className="w-[50px] h-[50px] shrink-0 rounded-lg overflow-hidden bg-placeholder-tea-bg border border-border-strong relative flex items-center justify-center">
+                      {t.cover_url ? (
+                        <Image src={t.cover_url} alt={t.name} fill className="object-cover" />
+                      ) : (
+                        <LeafIcon size={18} className="text-placeholder-tea-icon" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0 flex flex-col gap-2">
+                      <p className="text-[12px] leading-[16px] font-medium text-muted-foreground">
                         {formatDate(t.created_at)}
                       </p>
-                      <p className="text-[14px] leading-[20px] font-medium text-foreground truncate">
+                      <p className="text-[14px] leading-[20px] font-semibold text-foreground truncate">
                         {t.name}
                       </p>
                     </div>
-                    <CaretRightIcon size={20} className="text-muted-foreground shrink-0" />
+                    <CaretRightIcon size={24} className="text-muted-foreground shrink-0" />
                   </Link>
                 ))}
               </div>
 
               {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-1 pt-2">
-                  <button
-                    type="button"
-                    disabled={page === 1}
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    className="px-3 h-8 text-[14px] text-text-secondary disabled:opacity-40"
-                  >
-                    Назад
-                  </button>
-                  <span className="text-[14px] text-foreground px-2">
-                    {page} / {totalPages}
-                  </span>
-                  <button
-                    type="button"
-                    disabled={page === totalPages}
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                    className="px-3 h-8 text-[14px] text-text-secondary disabled:opacity-40"
-                  >
-                    Вперёд
-                  </button>
-                </div>
+                <PaginationButtons
+                  current={page}
+                  total={totalPages}
+                  onPageChange={(p) => setPage(() => p)}
+                />
               )}
             </>
           ) : (
-            <div className="py-6 flex flex-col items-center gap-4">
+            <div className="border border-border-default rounded-2xl py-4 flex flex-col items-center gap-4">
               <span className="w-14 h-14 rounded-full bg-placeholder-tea-bg flex items-center justify-center">
                 <BowlSteamIcon size={24} className="text-muted-foreground" />
               </span>

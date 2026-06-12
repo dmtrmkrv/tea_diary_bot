@@ -87,7 +87,7 @@ function Input({
         onFocus={handleFocus}
         onBlur={handleBlur}
         className={cn(
-          "h-10 w-full min-w-0 rounded-lg border border-border-input bg-surface-input px-4 py-1 text-[14px] shadow-xs transition-colors outline-none placeholder:text-text-placeholder focus-visible:border-accent-default focus-visible:ring-[3px] focus-visible:ring-ring-focus disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive",
+          "h-11 w-full min-w-0 rounded-lg border border-border-input bg-surface-input px-4 py-1 text-[14px] shadow-xs transition-colors outline-none placeholder:text-text-placeholder focus-visible:border-accent-default focus-visible:ring-[3px] focus-visible:ring-ring-focus disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive",
           showClear && "pr-9",
           className
         )}

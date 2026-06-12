@@ -264,11 +264,11 @@ export default function TeawareItemSheet({
         </div>
 
         {/* Footer */}
-        <div className="flex gap-2 px-4 pt-3 pb-6 shrink-0">
+        <div className="flex gap-2 p-4 border-t border-border-default bg-card shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="w-[122px] shrink-0 h-12 rounded-full bg-surface-sunken text-[16px] font-medium text-muted-foreground"
+            className="w-[120px] shrink-0 h-10 rounded-full bg-surface-sunken text-[14px] font-medium text-muted-foreground"
           >
             Закрыть
           </button>
@@ -277,7 +277,7 @@ export default function TeawareItemSheet({
             onClick={() => {
               if (item) router.push(`/new?teaware_id=${item.id}`);
             }}
-            className="flex-1 h-12 rounded-full bg-primary text-[16px] font-medium text-primary-foreground"
+            className="flex-1 h-10 rounded-full bg-primary text-[14px] font-medium text-primary-foreground"
           >
             Новая дегустация
           </button>

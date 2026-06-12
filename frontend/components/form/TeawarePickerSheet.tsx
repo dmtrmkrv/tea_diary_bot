@@ -67,7 +67,7 @@ export default function TeawarePickerSheet({
 
         {/* Search */}
         <div className="px-4 py-3 shrink-0">
-          <div className="flex items-center gap-2 h-10 px-2 rounded-lg border border-border-input bg-surface-input shadow-xs transition-colors focus-within:border-accent-default focus-within:ring-[3px] focus-within:ring-ring-focus">
+          <div className="flex items-center gap-2 h-11 px-2 rounded-lg border border-border-input bg-surface-input shadow-xs transition-colors focus-within:border-accent-default focus-within:ring-[3px] focus-within:ring-ring-focus">
             <MagnifyingGlassIcon size={16} className="text-text-placeholder shrink-0" />
             <input
               value={query}
@@ -137,11 +137,11 @@ export default function TeawarePickerSheet({
         </div>
 
         {/* Footer */}
-        <div className="flex gap-2 px-4 pb-8 pt-1 shrink-0">
+        <div className="flex gap-2 p-4 border-t border-border-default bg-card shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="w-[122px] h-12 rounded-full bg-surface-sunken text-[16px] font-medium text-muted-foreground shrink-0"
+            className="w-[120px] shrink-0 h-10 rounded-full bg-surface-sunken text-[14px] font-medium text-muted-foreground"
           >
             Отменить
           </button>
@@ -149,7 +149,7 @@ export default function TeawarePickerSheet({
             type="button"
             onClick={() => { if (selected) onSelect(selected); }}
             disabled={!selected}
-            className="flex-1 h-12 rounded-full bg-primary text-[16px] font-medium text-primary-foreground disabled:opacity-50"
+            className="flex-1 h-10 rounded-full bg-primary text-[14px] font-medium text-primary-foreground disabled:opacity-50"
           >
             Выбрать
           </button>

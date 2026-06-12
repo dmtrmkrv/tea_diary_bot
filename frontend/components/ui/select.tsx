@@ -27,7 +27,7 @@ function Select({
         data-slot="select"
         value={value}
         className={cn(
-          'h-10 w-full min-w-0 appearance-none rounded-lg border border-border-input bg-surface-input pl-4 pr-9 py-1 text-[14px] shadow-xs transition-colors outline-none focus-visible:border-accent-default focus-visible:ring-[3px] focus-visible:ring-ring-focus disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive',
+          'h-11 w-full min-w-0 appearance-none rounded-lg border border-border-input bg-surface-input pl-4 pr-9 py-1 text-[14px] shadow-xs transition-colors outline-none focus-visible:border-accent-default focus-visible:ring-[3px] focus-visible:ring-ring-focus disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive',
           isEmpty ? 'text-text-placeholder' : 'text-foreground',
           className
         )}

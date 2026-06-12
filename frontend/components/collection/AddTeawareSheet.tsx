@@ -164,7 +164,7 @@ export default function AddTeawareSheet({
           <span className="w-9 h-1 rounded-full bg-border-strong" />
         </div>
 
-        <div className="flex items-end justify-between px-4 pt-4 pb-4 shrink-0">
+        <div className="flex items-end justify-between px-4 pt-4 pb-3 shrink-0">
           <h2 className="text-[20px] font-semibold text-foreground">Новая посуда</h2>
           <button
             type="button"
@@ -177,8 +177,8 @@ export default function AddTeawareSheet({
 
         <div className="h-px bg-border-default shrink-0" />
 
-        <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-4 flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5 pt-4">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-4 flex flex-col gap-[18px]">
+          <div className="flex flex-col gap-2 pt-4">
             <Label htmlFor="tw-name" className="text-[14px] font-medium text-foreground">
               Название<span className="text-destructive">*</span>
             </Label>
@@ -190,7 +190,7 @@ export default function AddTeawareSheet({
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <p className="text-[14px] font-medium text-foreground">
               Тип посуды<span className="text-destructive">*</span>
             </p>
@@ -204,7 +204,7 @@ export default function AddTeawareSheet({
             )}
           </div>
 
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <Label htmlFor="tw-region" className="text-[14px] font-medium text-foreground">
               Регион
             </Label>
@@ -228,7 +228,7 @@ export default function AddTeawareSheet({
           </div>
 
           <div className="flex gap-2 items-start">
-            <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+            <div className="flex flex-col gap-2 flex-1 min-w-0">
               <Label htmlFor="tw-material" className="text-[14px] font-medium text-foreground">
                 Материал
               </Label>
@@ -247,7 +247,7 @@ export default function AddTeawareSheet({
                 ))}
               </Select>
             </div>
-            <div className="flex flex-col gap-1.5 w-[114px] shrink-0">
+            <div className="flex flex-col gap-2 w-[114px] shrink-0">
               <Label htmlFor="tw-volume" className="text-[14px] font-medium text-foreground">
                 Объем (мл)
               </Label>
@@ -272,7 +272,7 @@ export default function AddTeawareSheet({
             />
           )}
 
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <p className="text-[14px] font-medium text-foreground">Подходит для чая:</p>
             <ToggleChips
               options={SUITABLE_CATEGORIES}
@@ -281,7 +281,7 @@ export default function AddTeawareSheet({
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <Label htmlFor="tw-notes" className="text-[14px] font-medium text-foreground">
               Заметка
             </Label>
@@ -334,7 +334,7 @@ export default function AddTeawareSheet({
           <button
             type="button"
             onClick={handleClose}
-            className="flex-1 h-10 rounded-full bg-surface-sunken text-[14px] font-medium text-foreground"
+            className="w-[120px] shrink-0 h-10 rounded-full bg-surface-sunken text-[14px] font-medium text-muted-foreground"
           >
             Отменить
           </button>
@@ -342,7 +342,7 @@ export default function AddTeawareSheet({
             type="button"
             onClick={handleSave}
             disabled={!canSave}
-            className="flex-[2] h-10 rounded-full bg-primary text-[14px] font-medium text-primary-foreground disabled:opacity-50"
+            className="flex-1 h-10 rounded-full bg-primary text-[14px] font-medium text-primary-foreground disabled:opacity-50"
           >
             {submitting ? 'Сохранение…' : 'Сохранить'}
           </button>

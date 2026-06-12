@@ -38,7 +38,7 @@ export default function TeaCombobox({
       <button
         type="button"
         onClick={() => setPickerOpen(true)}
-        className="w-full h-10 px-2 rounded-lg border border-border-input bg-surface-input shadow-xs flex items-center gap-2 text-left outline-none transition-colors focus-visible:border-accent-default focus-visible:ring-[3px] focus-visible:ring-ring-focus"
+        className="w-full h-11 px-2 rounded-lg border border-border-input bg-surface-input shadow-xs flex items-center gap-2 text-left outline-none transition-colors focus-visible:border-accent-default focus-visible:ring-[3px] focus-visible:ring-ring-focus"
       >
         {value ? (
           <span className="flex-1 text-[14px] text-foreground truncate">{value.name}</span>

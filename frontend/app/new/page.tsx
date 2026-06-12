@@ -549,12 +549,12 @@ function NewTastingInner() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border-default py-3 z-40">
-        <div className="max-w-2xl mx-auto px-4 flex gap-2">
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border-default z-40">
+        <div className="max-w-2xl mx-auto p-4 flex gap-2">
           <button
             type="button"
             onClick={() => confirmClose(() => router.push('/'))}
-            className="flex-1 h-10 rounded-full bg-surface-sunken text-[14px] font-medium text-foreground"
+            className="w-[120px] shrink-0 h-10 rounded-full bg-surface-sunken text-[14px] font-medium text-muted-foreground"
           >
             Отменить
           </button>
@@ -562,7 +562,7 @@ function NewTastingInner() {
             type="button"
             onClick={handleSave}
             disabled={!canSave}
-            className="flex-[2] h-10 rounded-full bg-primary text-primary-foreground text-[14px] font-medium disabled:opacity-50"
+            className="flex-1 h-10 rounded-full bg-primary text-[14px] font-medium text-primary-foreground disabled:opacity-50"
           >
             {submitting ? 'Сохранение…' : 'Сохранить'}
           </button>

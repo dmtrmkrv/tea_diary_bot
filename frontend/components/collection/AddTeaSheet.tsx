@@ -171,7 +171,7 @@ export default function AddTeaSheet({
           <span className="w-9 h-1 rounded-full bg-border-strong" />
         </div>
 
-        <div className="flex items-end justify-between px-4 pt-4 pb-4 shrink-0">
+        <div className="flex items-end justify-between px-4 pt-4 pb-3 shrink-0">
           <h2 className="text-[20px] font-semibold text-foreground">Новый чай</h2>
           <button
             type="button"
@@ -184,8 +184,8 @@ export default function AddTeaSheet({
 
         <div className="h-px bg-border-default shrink-0" />
 
-        <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-4 flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-4 flex flex-col gap-[18px]">
+          <div className="flex flex-col gap-2">
             <Label htmlFor="tea-name" className="text-[14px] font-medium text-foreground">
               Название<span className="text-destructive">*</span>
             </Label>
@@ -197,7 +197,7 @@ export default function AddTeaSheet({
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <p className="text-[14px] font-medium text-foreground">Категория</p>
             <RichRadioGroup
               options={CATEGORIES}
@@ -207,7 +207,7 @@ export default function AddTeaSheet({
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <Label htmlFor="tea-region" className="text-[14px] font-medium text-foreground">
               Регион
             </Label>
@@ -220,7 +220,7 @@ export default function AddTeaSheet({
           </div>
 
           <div className="flex gap-2 items-start">
-            <div className="flex flex-col gap-1.5 w-[114px] shrink-0">
+            <div className="flex flex-col gap-2 w-[114px] shrink-0">
               <Label htmlFor="tea-year" className="text-[14px] font-medium text-foreground">
                 Год сбора
               </Label>
@@ -236,7 +236,7 @@ export default function AddTeaSheet({
                 <p className="text-[12px] leading-[16px] text-destructive">только цифры</p>
               )}
             </div>
-            <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+            <div className="flex flex-col gap-2 flex-1 min-w-0">
               <Label htmlFor="tea-amount" className="text-[14px] font-medium text-foreground">
                 Количество в наличии (гр)
               </Label>
@@ -294,7 +294,7 @@ export default function AddTeaSheet({
           <button
             type="button"
             onClick={handleClose}
-            className="flex-1 h-10 rounded-full bg-surface-sunken text-[14px] font-medium text-foreground"
+            className="w-[120px] shrink-0 h-10 rounded-full bg-surface-sunken text-[14px] font-medium text-muted-foreground"
           >
             Отменить
           </button>
@@ -302,7 +302,7 @@ export default function AddTeaSheet({
             type="button"
             onClick={handleSave}
             disabled={!canSave}
-            className="flex-[2] h-10 rounded-full bg-primary text-[14px] font-medium text-primary-foreground disabled:opacity-50"
+            className="flex-1 h-10 rounded-full bg-primary text-[14px] font-medium text-primary-foreground disabled:opacity-50"
           >
             {submitting ? 'Сохранение…' : 'Сохранить'}
           </button>

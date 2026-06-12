@@ -46,7 +46,8 @@ export default function TeawareCard({
     .filter(Boolean) as string[];
 
   return (
-    <div className="w-full bg-card rounded-2xl shadow-sm p-2 flex gap-3 items-center text-left relative">
+    // Отступы/гэпы по макету карточки коллекции (123:3037): px-12 pt-12 pb-8
+    <div className="w-full bg-card rounded-2xl shadow-xs px-3 pt-3 pb-2 flex gap-3 items-start text-left relative">
       {/* Клик по карточке — открыть просмотр; кнопка more поверх */}
       <button
         type="button"
@@ -55,7 +56,7 @@ export default function TeawareCard({
         aria-label={item.name}
       />
 
-      <div className="w-[76px] h-[76px] shrink-0 rounded-xl overflow-hidden bg-placeholder-tea-bg border border-placeholder-tea-border relative flex items-center justify-center pointer-events-none">
+      <div className="w-[76px] h-[76px] shrink-0 rounded-lg overflow-hidden bg-placeholder-tea-bg border border-border-strong relative flex items-center justify-center pointer-events-none">
         {item.cover_url ? (
           <Image src={item.cover_url} alt={item.name} fill className="object-cover" />
         ) : (
@@ -63,50 +64,52 @@ export default function TeawareCard({
         )}
       </div>
 
-      <div className="flex-1 min-w-0 flex flex-col gap-1 pointer-events-none">
-        <div className="flex items-baseline justify-between gap-2">
-          <p className="text-[14px] leading-[20px] font-semibold text-foreground truncate">
-            {item.name}
-          </p>
-          {item.type && (
-            <span className="text-[12px] leading-[16px] text-muted-foreground shrink-0">
-              {item.type}
-            </span>
+      <div className="flex-1 min-w-0 flex flex-col gap-3 pointer-events-none">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-baseline justify-between gap-2">
+            <p className="text-[14px] leading-[20px] font-semibold text-foreground truncate">
+              {item.name}
+            </p>
+            {item.type && (
+              <span className="text-[12px] leading-[16px] text-muted-foreground shrink-0">
+                {item.type}
+              </span>
+            )}
+          </div>
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {tags.map((t) => <Tag key={t}>{t}</Tag>)}
+            </div>
           )}
         </div>
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {tags.map((t) => <Tag key={t}>{t}</Tag>)}
-          </div>
-        )}
+
+        {/* Info-строка: мета слева, more (…) справа — в потоке, по макету */}
         <div className="flex items-center justify-between gap-2">
-          <p className="text-[12px] leading-[16px] text-muted-foreground">
+          <p className="text-[12px] leading-[16px] font-medium text-muted-foreground truncate">
             {pluralizeTastings(item.tasting_count)}
           </p>
-        </div>
-      </div>
-
-      {/* More (…) — поверх оверлей-кнопки карточки */}
-      <div ref={menuRef} className="absolute bottom-2 right-3 z-10">
-        <button
-          type="button"
-          onClick={() => setMenuOpen((v) => !v)}
-          aria-label="Действия"
-          className="w-8 h-8 flex items-center justify-center rounded-full text-muted-foreground hover:bg-surface-sunken transition-colors"
-        >
-          <DotsThreeIcon size={20} weight="bold" />
-        </button>
-        {menuOpen && (
-          <div className="absolute right-0 bottom-9 bg-popover rounded-lg shadow-lg overflow-hidden min-w-[160px]">
+          <div ref={menuRef} className="relative shrink-0 pointer-events-auto z-10">
             <button
               type="button"
-              className="w-full text-left px-4 py-3 text-[14px] text-destructive hover:bg-surface-sunken transition-colors"
-              onClick={() => { setMenuOpen(false); onDelete(); }}
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-label="Действия"
+              className="w-8 h-8 -my-1.5 -mr-1.5 flex items-center justify-center rounded-full text-muted-foreground hover:bg-surface-sunken transition-colors"
             >
-              Удалить
+              <DotsThreeIcon size={20} weight="bold" />
             </button>
+            {menuOpen && (
+              <div className="absolute right-0 bottom-8 bg-popover rounded-lg shadow-lg overflow-hidden min-w-[160px]">
+                <button
+                  type="button"
+                  className="w-full text-left px-4 py-3 text-[14px] text-destructive hover:bg-surface-sunken transition-colors"
+                  onClick={() => { setMenuOpen(false); onDelete(); }}
+                >
+                  Удалить
+                </button>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

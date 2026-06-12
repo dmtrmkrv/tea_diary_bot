@@ -79,6 +79,7 @@ export default function BottomNav() {
               <Link
                 key={href}
                 href={href}
+                onClick={() => setOpen(false)}
                 className={`flex flex-1 flex-col items-center justify-center h-full rounded-full transition-colors ${
                   isActive ? 'bg-nav-selected-bg' : ''
                 }`}

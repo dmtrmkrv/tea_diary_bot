@@ -103,7 +103,7 @@ export default function SearchControls({ teaware }: { teaware: TeawareFilterItem
           type="button"
           onClick={toggleOpen}
           aria-label={open ? 'Закрыть поиск' : 'Поиск'}
-          className="flex items-center justify-center w-9 h-9 bg-button-icon-bg border border-button-icon-border rounded-lg text-foreground"
+          className="flex items-center justify-center w-9 h-9 bg-button-icon-bg border border-button-icon-border rounded-full text-foreground"
         >
           {open ? <XIcon size={16} /> : <MagnifyingGlassIcon size={16} />}
         </button>

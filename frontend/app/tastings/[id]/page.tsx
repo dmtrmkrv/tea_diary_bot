@@ -153,7 +153,7 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
         {/* Main data card */}
         <div className="bg-card rounded-2xl shadow-md p-4 grid grid-cols-2 gap-x-2 gap-y-2">
 
-          {/* Tea item row — кликабельная, открывает TeaItemSheet */}
+          {/* Tea item row — кликабельная, открывает TeaDetailSheet */}
           {t.tea_item_name && t.tea_item_id && (
             <TeaItemTrigger item={{
               id: t.tea_item_id,

@@ -465,6 +465,18 @@
   display: none;
 }
 
+/* iOS Safari: у input[type=date] есть «интринсик» ширина, из-за которой
+   он игнорирует w-full и вылезает за контейнер. appearance-none + min-width
+   возвращают ему обычное блочное поведение. text-align сбрасываем — iOS
+   центрирует значение. */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  width: 100%;
+  text-align: left;
+}
+
 /* Prevent iOS Safari auto-zoom on input focus (triggered when font-size < 16px) */
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 textarea,

@@ -1,0 +1,485 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================================
+ * Semantic tokens — synced from Figma "Semantic" collection.
+ * Source of truth: Figma file sM9Jr39VS3nDKWdPVgNTL1
+ *
+ * Architecture:
+ *   1. :root and .dark define semantic CSS variables (surface, text, border,
+ *      accent, status, overlay, nav, placeholder, badge category).
+ *   2. shadcn tokens (--background, --primary, --card etc.) are ALIASES on
+ *      semantic variables — keeping shadcn components working without edits.
+ *   3. @theme inline (below) publishes everything as Tailwind utilities.
+ *
+ * Naming notes:
+ *   - CTA-кнопки используют bg-primary text-primary-foreground.
+ *     --primary-foreground aliases on --text-inverse (Light: #fafaf9 светлый
+ *     текст на amber-700, Dark: #1c1917 тёмный на amber-600). Это соответствует
+ *     Figma макетам, где CTA-текст использует text/inverse, а не статичный
+ *     accent/foreground.
+ *   - shadcn --accent / --accent-foreground keep their original shadcn
+ *     semantics (secondary tinted surface + readable text on it) and map to
+ *     surface/muted + text/primary. Это про tinted-кнопки внутри shadcn-компонентов,
+ *     не путать с Figma accent/foreground.
+ * ========================================================================= */
+
+:root {
+  color-scheme: light;
+
+  /* --- Surface --- */
+  --surface-app: #e7e5e4;        /* app background (page) */
+  --surface-card: #fafaf9;       /* card background */
+  --surface-elevated: #ffffff;   /* sheet, dialog, popover, dropdown, tooltip */
+  --surface-muted: #f5f5f4;      /* muted surface (secondary accent) */
+  --surface-inverse: #1c1917;    /* inverse surface (e.g. dark chip on light) */
+  --surface-input: #ffffff;      /* input background */
+  --surface-sunken: rgba(0, 0, 0, 0.10);          /* трек табов, утопленные зоны на app-фоне */
+  --surface-sunken-strong: rgba(0, 0, 0, 0.15);   /* counter-бейджи внутри табов, более контрастное углубление */
+
+  /* --- Text --- */
+  --text-primary: #1c1917;       /* main text */
+  --text-secondary: #57534e;     /* subheadings */
+  --text-muted: #78716c;         /* dates, meta */
+  --text-disabled: #a8a29e;      /* disabled text */
+  --text-inverse: #fafaf9;       /* text on inverse surface */
+  --text-placeholder: #a8a29e;   /* input placeholder */
+  --text-destructive: #dc2626;   /* destructive actions, validation */
+  --text-light: #fafaf9;         /* always-light text (on saturated dark fills) */
+
+  /* --- Border --- */
+  --border-default: #e7e5e4;     /* default border */
+  --border-strong: #d6d3d1;      /* prominent border (nav, tags) */
+  --border-subtle: #f5f5f4;      /* faint border */
+  --border-focus: #f59e0b;       /* focused input border (amber-500) */
+  --border-input: #e7e5e4;       /* input border (idle) */
+
+  /* --- Accent (brand) --- */
+  --accent-default: #b45309;     /* primary CTA bg (amber-700) */
+  --accent-hover: #92400e;       /* CTA hover (amber-800, darker) */
+  --accent-pressed: #78350f;     /* CTA pressed (amber-900) */
+  --accent-disabled: #d6d3d1;    /* CTA disabled (stone-300, not faded amber) */
+  --accent-muted: #d97706;       /* secondary accent (amber-600) */
+
+  /* --- Button icon (круглые иконочные кнопки back/more/search на app-фоне) --- */
+  --button-icon-bg: rgba(255, 255, 255, 0.70);    /* glass-стиль, белая полупрозрачная подложка */
+  --button-icon-border: #ffffff;                   /* непрозрачная белая граница */
+
+  /* --- Button destructive (soft red fill для деструктивных кнопок в диалогах) --- */
+  --button-destructive-bg: rgba(239, 68, 68, 0.15);  /* red-500 @ 15% */
+
+  /* --- Button toggle (chips «Подходит для чая» и подобные multi-select) --- */
+  --button-toggle-bg: rgba(180, 83, 9, 0.20);  /* amber-700 @ 20%, одинаков в обеих темах */
+
+  /* --- Focus ring (used on inputs as soft glow) --- */
+  --ring-focus: rgba(180, 83, 9, 0.20);  /* amber-700 @ 20% */
+
+  /* --- Status --- */
+  --status-destructive: #dc2626;
+  --status-destructive-foreground: #fafaf9;
+  --status-success: #15803d;
+  --status-warning: #d97706;
+
+  /* --- Overlay (for sheets, dialogs, drawers) --- */
+  --overlay-scrim: rgba(0, 0, 0, 0.40);   /* sheet/drawer backdrop */
+  --overlay-dialog: rgba(0, 0, 0, 0.80);  /* dialog close button bg */
+
+  /* --- Bottom nav --- */
+  --nav-bg: rgba(255, 255, 255, 0.40);          /* glass bg */
+  --nav-selected-bg: rgba(255, 255, 255, 0.80); /* selected pill, усилен для лучшего контраста */
+  --nav-icon-active: #b45309;
+  --nav-text-active: #b45309;
+  --nav-icon-inactive: #57534e;
+  --nav-text-inactive: #57534e;
+
+  /* --- Tea image placeholder --- */
+  --placeholder-tea-bg: #f5f5f4;
+  --placeholder-tea-border: #e7e5e4;
+  --placeholder-tea-icon: #78716c;
+
+  /* --- Badge: category (used via var() in CategoryBadge.tsx) --- */
+  --badge-category-green-bg: #bbf7d0;
+  --badge-category-green-text: #14532d;
+  --badge-category-red-bg: #fecaca;
+  --badge-category-red-text: #7f1d1d;
+  --badge-category-oolong-bg: #a5f3fc;
+  --badge-category-oolong-text: #164e63;
+  --badge-category-shu-bg: #a16207;
+  --badge-category-shu-text: #fef08a;
+  --badge-category-sheng-bg: #fb923c;
+  --badge-category-sheng-text: #7c2d12;
+  --badge-category-white-bg: #fef3c7;
+  --badge-category-white-text: #1c1917;
+  --badge-category-heicha-bg: #44403c;
+  --badge-category-heicha-text: #fafaf9;
+  --badge-category-yellow-bg: #fde68a;
+  --badge-category-yellow-text: #1c1917;
+  --badge-category-default-bg: #f5f5f4;
+  --badge-category-default-text: #44403c;
+
+  /* --- Badge: rating (★ pill) --- */
+  --badge-rating-border: #f59e0b;
+  --badge-rating-bg: #ffffff;
+  --badge-rating-text: #f59e0b;  /* amber-500, matches border */
+
+  /* --- Badge: neutral (counters) --- */
+  --badge-neutral-bg: #a8a29e;
+  --badge-neutral-text: #fafaf9;
+
+  /* --- Badge: tag (year, region) --- */
+  --badge-tag-bg: rgba(255, 255, 255, 0.50);
+  --badge-tag-border: #d6d3d1;
+  --badge-tag-text: #44403c;
+
+  /* --- Badge: quick (⚡) --- */
+  --badge-quick-bg: #ffffff;
+  --badge-quick-text: #f59e0b;  /* amber-500, matches badge-rating border */
+
+  /* --- Radius (kept from previous globals; base = 0.625rem = 10px) --- */
+  --radius: 0.625rem;
+
+  /* --- Shadows (kept from current code) --- */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.10), 0 1px 2px -1px rgba(0, 0, 0, 0.10);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.10), 0 2px 4px -2px rgba(0, 0, 0, 0.10);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.10), 0 4px 6px -4px rgba(0, 0, 0, 0.10);
+
+  /* ============================================================
+   * shadcn tokens — aliases onto semantic above.
+   * Keep these in sync if you rename semantic tokens.
+   * ============================================================ */
+  --background: var(--surface-app);
+  --foreground: var(--text-primary);
+  --card: var(--surface-card);
+  --card-foreground: var(--text-primary);
+  --popover: var(--surface-elevated);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--accent-default);
+  --primary-foreground: var(--text-inverse);  /* Light: #fafaf9 (светлый текст на amber-700), Dark: #1c1917 (тёмный на amber-600) */
+  --secondary: var(--surface-muted);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--surface-muted);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--surface-muted);                /* shadcn "accent" = tinted secondary surface */
+  --accent-foreground: var(--text-primary);      /* text on that tinted surface */
+  --destructive: var(--status-destructive);
+  --border: var(--border-default);
+  --input: var(--border-input);
+  --ring: var(--accent-default);
+
+  /* Sidebar — kept for shadcn compatibility (unused in app for now) */
+  --sidebar: var(--surface-card);
+  --sidebar-foreground: var(--text-primary);
+  --sidebar-primary: var(--accent-default);
+  --sidebar-primary-foreground: var(--text-inverse);
+  --sidebar-accent: var(--surface-muted);
+  --sidebar-accent-foreground: var(--text-primary);
+  --sidebar-border: var(--border-default);
+  --sidebar-ring: var(--accent-default);
+}
+
+.dark {
+  color-scheme: dark;
+
+  /* --- Surface --- */
+  --surface-app: #1c1917;
+  --surface-card: #292524;
+  --surface-elevated: #44403c;   /* stone-700, lighter than card so it "pops" */
+  --surface-muted: #1c1917;      /* = surface-app, трёхслойная иерархия app/muted → card → elevated */
+  --surface-inverse: #fafaf9;
+  --surface-input: #1c1917;      /* tonal: input == app bg, visibility via border */
+  --surface-sunken: rgba(255, 255, 255, 0.05);
+  --surface-sunken-strong: rgba(255, 255, 255, 0.10);
+
+  /* --- Text --- */
+  --text-primary: #fafaf9;
+  --text-secondary: #d6d3d1;
+  --text-muted: #a8a29e;
+  --text-disabled: #57534e;
+  --text-inverse: #1c1917;
+  --text-placeholder: #78716c;
+  --text-destructive: #f87171;   /* lightened for dark (red-400) */
+  /* --text-light stays #fafaf9 — same in both themes */
+
+  /* --- Border --- */
+  --border-default: #44403c;
+  --border-strong: #57534e;
+  --border-subtle: #292524;
+  --border-focus: #fbbf24;       /* amber-400 */
+  --border-input: rgba(255, 255, 255, 0.15);
+
+  /* --- Accent --- */
+  --accent-default: #d97706;     /* amber-600, brighter brand in dark */
+  --accent-hover: #fcd34d;       /* amber-300, hover goes lighter in dark */
+  --accent-pressed: #fde68a;     /* amber-200 */
+  --accent-disabled: #44403c;    /* stone-700 */
+  --accent-muted: #f59e0b;       /* amber-500 */
+
+  /* --- Button icon --- */
+  --button-icon-bg: rgba(0, 0, 0, 0.70);          /* glass на тёмном фоне */
+  --button-icon-border: rgba(255, 255, 255, 0.15); /* тонкая полупрозрачная белая граница */
+
+  /* --- Button destructive --- */
+  --button-destructive-bg: rgba(239, 68, 68, 0.20);  /* red-500 @ 20% — чуть сильнее в dark */
+
+  /* --- Focus ring --- */
+  --ring-focus: rgba(251, 191, 36, 0.30);  /* amber-400 @ 30%, strengthened on dark */
+
+  /* --- Status --- */
+  --status-destructive: #ef4444;
+  --status-destructive-foreground: #fafaf9;
+  --status-success: #86efac;
+  --status-warning: #fbbf24;
+
+  /* --- Overlay --- */
+  --overlay-scrim: rgba(0, 0, 0, 0.70);
+  --overlay-dialog: rgba(0, 0, 0, 0.80);
+
+  /* --- Bottom nav --- */
+  --nav-bg: rgba(0, 0, 0, 0.40);
+  --nav-selected-bg: rgba(255, 255, 255, 0.15); /* в dark меняем направление подсветки: вместо затемнения — лёгкое осветление активного пункта */
+  --nav-icon-active: #d97706;
+  --nav-text-active: #d97706;
+  --nav-icon-inactive: #d6d3d1;
+  --nav-text-inactive: #d6d3d1;
+
+  /* --- Tea image placeholder --- */
+  --placeholder-tea-bg: #44403c;
+  --placeholder-tea-border: rgba(255, 255, 255, 0.15);
+  --placeholder-tea-icon: #a8a29e;
+
+  /* --- Badge: category — soft-tint pattern (alpha bg + bright text) --- */
+  --badge-category-green-bg: rgba(34, 197, 94, 0.15);    /* green-500 @ 15% */
+  --badge-category-green-text: #86efac;                  /* green-300 */
+  --badge-category-red-bg: rgba(239, 68, 68, 0.15);      /* red-500 @ 15% */
+  --badge-category-red-text: #fca5a5;                    /* red-300 */
+  --badge-category-oolong-bg: rgba(6, 182, 212, 0.15);   /* cyan-500 @ 15% */
+  --badge-category-oolong-text: #67e8f9;                 /* cyan-300 */
+  --badge-category-shu-bg: rgba(234, 179, 8, 0.15);      /* yellow-500 @ 15% */
+  --badge-category-shu-text: #eab308;                    /* yellow-500 (intentional) */
+  --badge-category-sheng-bg: rgba(249, 115, 22, 0.15);   /* orange-500 @ 15% */
+  --badge-category-sheng-text: #fdba74;                  /* orange-300 */
+  --badge-category-white-bg: rgba(245, 158, 11, 0.15);   /* amber-500 @ 15% */
+  --badge-category-white-text: #fde68a;                  /* amber-200 */
+  --badge-category-heicha-bg: rgba(168, 162, 158, 0.20); /* stone-400 @ 20% */
+  --badge-category-heicha-text: #e7e5e4;                 /* stone-200 */
+  --badge-category-yellow-bg: rgba(245, 158, 11, 0.15);  /* amber-500 @ 15% */
+  --badge-category-yellow-text: #fcd34d;                 /* amber-300 */
+  --badge-category-default-bg: rgba(120, 113, 108, 0.15);/* stone-500 @ 15% */
+  --badge-category-default-text: #a8a29e;                /* stone-400 */
+
+  /* --- Badge: rating --- */
+  --badge-rating-border: #fbbf24;
+  --badge-rating-bg: #292524;
+  --badge-rating-text: #fbbf24;  /* amber-400, matches border */
+
+  /* --- Badge: neutral --- */
+  --badge-neutral-bg: #57534e;
+  --badge-neutral-text: #e7e5e4;
+
+  /* --- Badge: tag --- */
+  --badge-tag-bg: rgba(0, 0, 0, 0.20);
+  --badge-tag-border: rgba(255, 255, 255, 0.10);
+  --badge-tag-text: #d6d3d1;
+
+  /* --- Badge: quick --- */
+  --badge-quick-bg: #292524;
+  --badge-quick-text: #fbbf24;  /* amber-400, matches badge-rating border */
+
+  /* ============================================================
+   * shadcn aliases — Dark.
+   * All aliases use var(--surface-*) / var(--text-*) etc., so overriding
+   * the semantic variables above is enough — aliases auto-update.
+   * --primary-foreground and --sidebar-primary-foreground both alias on
+   * var(--text-inverse), which is theme-aware (Light: #fafaf9, Dark: #1c1917).
+   * ============================================================ */
+}
+
+/* ============================================================================
+ * Tailwind v4 theme bindings — publishes tokens as utility classes.
+ *
+ * Examples:
+ *   bg-background, text-foreground         → shadcn aliases
+ *   bg-surface-card, text-text-muted       → semantic
+ *   border-border-default, ring-ring-focus → semantic
+ *   text-status-success                    → semantic
+ *
+ * Category badges are NOT published here on purpose — they live as raw
+ * CSS variables and are consumed in CategoryBadge.tsx via
+ * bg-[var(--badge-category-green-bg)] etc., which keeps the dictionary
+ * lookup simple and avoids 18 utility entries.
+ * ========================================================================= */
+@theme inline {
+  /* --- shadcn token bindings (kept from previous setup) --- */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* --- Surface --- */
+  --color-surface-app: var(--surface-app);
+  --color-surface-card: var(--surface-card);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-inverse: var(--surface-inverse);
+  --color-surface-input: var(--surface-input);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-sunken-strong: var(--surface-sunken-strong);
+
+  /* --- Text --- */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-disabled: var(--text-disabled);
+  --color-text-inverse: var(--text-inverse);
+  --color-text-placeholder: var(--text-placeholder);
+  --color-text-destructive: var(--text-destructive);
+  --color-text-light: var(--text-light);
+
+  /* --- Border --- */
+  --color-border-default: var(--border-default);
+  --color-border-strong: var(--border-strong);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-focus: var(--border-focus);
+  --color-border-input: var(--border-input);
+
+  /* --- Accent --- */
+  --color-accent-default: var(--accent-default);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-pressed: var(--accent-pressed);
+  --color-accent-disabled: var(--accent-disabled);
+  --color-accent-muted: var(--accent-muted);
+
+  /* --- Button icon --- */
+  --color-button-icon-bg: var(--button-icon-bg);
+  --color-button-icon-border: var(--button-icon-border);
+
+  /* --- Button destructive --- */
+  --color-button-destructive-bg: var(--button-destructive-bg);
+
+  /* --- Button toggle --- */
+  --color-button-toggle-bg: var(--button-toggle-bg);
+
+  /* --- Ring (used as bg/border color of focus glow) --- */
+  --color-ring-focus: var(--ring-focus);
+
+  /* --- Status --- */
+  --color-status-destructive: var(--status-destructive);
+  --color-status-destructive-foreground: var(--status-destructive-foreground);
+  --color-status-success: var(--status-success);
+  --color-status-warning: var(--status-warning);
+
+  /* --- Overlay --- */
+  --color-overlay-scrim: var(--overlay-scrim);
+  --color-overlay-dialog: var(--overlay-dialog);
+
+  /* --- Nav --- */
+  --color-nav-bg: var(--nav-bg);
+  --color-nav-selected-bg: var(--nav-selected-bg);
+  --color-nav-icon-active: var(--nav-icon-active);
+  --color-nav-text-active: var(--nav-text-active);
+  --color-nav-icon-inactive: var(--nav-icon-inactive);
+  --color-nav-text-inactive: var(--nav-text-inactive);
+
+  /* --- Placeholder --- */
+  --color-placeholder-tea-bg: var(--placeholder-tea-bg);
+  --color-placeholder-tea-border: var(--placeholder-tea-border);
+  --color-placeholder-tea-icon: var(--placeholder-tea-icon);
+
+  /* --- Badge: non-category variants --- */
+  --color-badge-rating-border: var(--badge-rating-border);
+  --color-badge-rating-bg: var(--badge-rating-bg);
+  --color-badge-rating-text: var(--badge-rating-text);
+  --color-badge-neutral-bg: var(--badge-neutral-bg);
+  --color-badge-neutral-text: var(--badge-neutral-text);
+  --color-badge-tag-bg: var(--badge-tag-bg);
+  --color-badge-tag-border: var(--badge-tag-border);
+  --color-badge-tag-text: var(--badge-tag-text);
+  --color-badge-quick-bg: var(--badge-quick-bg);
+  --color-badge-quick-text: var(--badge-quick-text);
+
+  /* --- Fonts --- */
+  --font-sans: var(--font-inter, ui-sans-serif, system-ui, sans-serif);
+  --font-mono: var(--font-geist-mono, ui-monospace, monospace);
+  --font-heading: var(--font-sans);
+
+  /* --- Radius scale --- */
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* --- Shadows --- */
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* Hide native scrollbar on horizontal chip rows (scroll still works) */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* iOS Safari: у input[type=date] есть «интринсик» ширина, из-за которой
+   он игнорирует w-full и вылезает за контейнер. appearance-none + min-width
+   возвращают ему обычное блочное поведение. text-align сбрасываем — iOS
+   центрирует значение. */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  width: 100%;
+  text-align: left;
+}
+
+/* Prevent iOS Safari auto-zoom on input focus (triggered when font-size < 16px) */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+textarea,
+select {
+  font-size: 16px !important;
+}

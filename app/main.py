@@ -152,7 +152,7 @@ def resolve_tasting(uid: int, identifier: str) -> Optional[Tasting]:
 
 # ---------------- КОНСТАНТЫ UI ----------------
 
-CATEGORIES = ["Зелёный", "Белый", "Красный", "Улун", "Шу Пуэр", "Шен Пуэр", "Хэй Ча", "Другое"]
+CATEGORIES = ["Зелёный", "Белый", "Красный", "Улун", "Шу пуэр", "Шен пуэр", "Хэй ча", "Другое"]
 BODY_PRESETS = ["тонкое", "лёгкое", "среднее", "плотное", "маслянистое"]
 
 YEAR_MIN = 1900
@@ -216,9 +216,9 @@ QUICK_CATEGORIES = {
     "white": "Белый",
     "oolong": "Улун",
     "red": "Красный",
-    "shu": "Шу Пуэр",
-    "shen": "Шен Пуэр",
-    "hei": "Хэй Ча",
+    "shu": "Шу пуэр",
+    "shen": "Шен пуэр",
+    "hei": "Хэй ча",
 }
 
 QUICK_CATEGORY_FALLBACK = "Другое"
@@ -5188,6 +5188,11 @@ async def del_ok_cb(call: CallbackQuery):
             await call.message.answer("Нет доступа к этой записи.")
             await call.answer()
             return
+        # Чистим файлы фото из хранилища до удаления записей (best-effort)
+        from app.services.storage import delete_object
+
+        for photo in s.query(Photo).filter(Photo.tasting_id == t.id).all():
+            delete_object(photo.object_key, photo.storage_backend)
         s.delete(t)
         s.commit()
     await call.message.answer(f"Удалил #{t.seq_no}.")
@@ -5515,6 +5520,28 @@ async def show_main_menu(bot: Bot, chat_id: int):
 
 
 async def on_start(message: Message, state: FSMContext):
+    args = message.text.split(maxsplit=1)
+    payload = args[1].strip() if len(args) > 1 else ""
+
+    if payload == "login":
+        uid = message.from_user.id
+        username = message.from_user.username
+        get_or_create_user(uid, username)
+
+        from app.api.auth_router import generate_login_code
+        code = generate_login_code(uid)
+        web_url = os.getenv("WEB_URL", "https://dmtrmkrv-tea-diary-bot-0188.twc1.net")
+        login_url = f"{web_url}/auth?code={code}"
+
+        kb = InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(text="🍵 Войти в Чайный дневник", url=login_url)
+        ]])
+        await message.answer(
+            "Нажми кнопку ниже чтобы войти на сайт.\nСсылка действует 5 минут.",
+            reply_markup=kb,
+        )
+        return
+
     await state.update_data(numpad_active=False)
     await show_main_menu(message.bot, message.chat.id)
 
@@ -5725,6 +5752,7 @@ def setup_handlers(dp: Dispatcher):
         dp.include_router(create_router(ADMINS, IS_PROD))
 
     # команды
+    dp.message.register(on_start, CommandStart(deep_link=True))
     dp.message.register(on_start, CommandStart())
     dp.message.register(help_cmd, Command("help"))
     dp.message.register(cancel_cmd, Command("cancel"))

@@ -44,15 +44,15 @@ def _s3_client():
     )
 
 
-def save_photo_bytes(
-    user_id: int,
-    tasting_id: int,
+def _save_bytes_with_prefix(
+    key_prefix: str,
     body: bytes,
-    filename_hint: str = "photo.jpg",
+    filename_hint: str,
 ) -> SaveResult:
     backend = get_media_backend()
     size = len(body)
     content_type = _guess_mime(filename_hint)
+    key = f"{key_prefix}/{uuid.uuid4().hex}{_suffix_from_name(filename_hint)}"
 
     cfg = get_s3_config()
     if (
@@ -60,10 +60,6 @@ def save_photo_bytes(
         and cfg.enabled
         and all([cfg.bucket, cfg.access_key, cfg.secret_key])
     ):
-        key = (
-            f"tastings/{user_id}/{tasting_id}/"
-            f"{uuid.uuid4().hex}{_suffix_from_name(filename_hint)}"
-        )
         try:
             _s3_client().put_object(
                 Bucket=cfg.bucket,
@@ -77,15 +73,65 @@ def save_photo_bytes(
             pass
 
     base_dir = os.path.abspath(os.getenv("MEDIA_DIR", "/app/media"))
-    key = (
-        f"tastings/{user_id}/{tasting_id}/"
-        f"{uuid.uuid4().hex}{_suffix_from_name(filename_hint)}"
-    )
     path = os.path.join(base_dir, key)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "wb") as handle:
         handle.write(body)
     return SaveResult("local", key, content_type, size)
+
+
+def save_photo_bytes(
+    user_id: int,
+    tasting_id: int,
+    body: bytes,
+    filename_hint: str = "photo.jpg",
+) -> SaveResult:
+    return _save_bytes_with_prefix(
+        f"tastings/{user_id}/{tasting_id}", body, filename_hint
+    )
+
+
+def save_tea_item_photo_bytes(
+    user_id: int,
+    tea_item_id: int,
+    body: bytes,
+    filename_hint: str = "photo.jpg",
+) -> SaveResult:
+    return _save_bytes_with_prefix(
+        f"tea_items/{user_id}/{tea_item_id}", body, filename_hint
+    )
+
+
+def save_teaware_photo_bytes(
+    user_id: int,
+    teaware_id: int,
+    body: bytes,
+    filename_hint: str = "photo.jpg",
+) -> SaveResult:
+    return _save_bytes_with_prefix(
+        f"teaware/{user_id}/{teaware_id}", body, filename_hint
+    )
+
+
+def delete_object(object_key: Optional[str], storage_backend: str = "s3") -> None:
+    """Удаляет файл из хранилища (S3 или локального). Best-effort:
+    ошибки глотаем — удаление записи в БД важнее, осиротевший файл
+    хуже, чем упавший запрос пользователя."""
+    if not object_key:
+        return
+    try:
+        if storage_backend == "s3":
+            cfg = get_s3_config()
+            if cfg.enabled and all([cfg.bucket, cfg.access_key, cfg.secret_key]):
+                _s3_client().delete_object(Bucket=cfg.bucket, Key=object_key)
+                return
+        # Локальный фоллбек (или backend == "local")
+        base_dir = os.path.abspath(os.getenv("MEDIA_DIR", "/app/media"))
+        path = os.path.join(base_dir, object_key)
+        if os.path.isfile(path):
+            os.remove(path)
+    except Exception:
+        pass
 
 
 def get_presigned_url(key: str, expires: int = 3600) -> str:
@@ -101,5 +147,6 @@ __all__ = [
     "SaveResult",
     "get_presigned_url",
     "save_photo_bytes",
+    "save_tea_item_photo_bytes",
     "_s3_client",
 ]

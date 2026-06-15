@@ -33,6 +33,9 @@ class User(Base):
     )
     tz_offset_min: Mapped[int] = mapped_column(Integer, default=0)
     username: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    # Профиль из Telegram-виджета; обновляются при каждом веб-логине
+    first_name: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    photo_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
 class Tasting(Base):
@@ -90,7 +93,11 @@ class Tasting(Base):
 
     rating: Mapped[int] = mapped_column(Integer, default=0)
     summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # Фактически списанный остаток сорта при создании (для возврата при удалении)
+    deducted_g: Mapped[Optional[float]] = mapped_column(nullable=True)
     seq_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    tea_item_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("tea_items.id", ondelete="SET NULL"), nullable=True)
+    teaware_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("teaware.id", ondelete="SET NULL"), nullable=True)
 
     infusions: Mapped[List["Infusion"]] = relationship(
         back_populates="tasting", cascade="all, delete-orphan"
@@ -125,6 +132,7 @@ class Infusion(Base):
     special_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     body: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     aftertaste: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     tasting: Mapped["Tasting"] = relationship(back_populates="infusions")
 
@@ -148,3 +156,48 @@ class Photo(Base):
     telegram_file_unique_id: Mapped[Optional[str]] = mapped_column(
         Text, nullable=True
     )
+
+
+class TeaItem(Base):
+    __tablename__ = "tea_items"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    category: Mapped[Optional[str]] = mapped_column(String(60), nullable=True)
+    year: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    region: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    vendor: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # Остаток в граммах: NULL — не отслеживается, 0 — закончился.
+    amount_g: Mapped[Optional[float]] = mapped_column(nullable=True)
+    cover_object_key: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
+
+class Teaware(Base):
+    __tablename__ = "teaware"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    type: Mapped[Optional[str]] = mapped_column(String(60), nullable=True)
+    volume_ml: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    material: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    region: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    suitable_csv: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    cover_object_key: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
+
+class LoginCode(Base):
+    __tablename__ = "login_codes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    code: Mapped[str] = mapped_column(String(8), nullable=False, unique=True, index=True)
+    telegram_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow, nullable=False
+    )
+    used: Mapped[bool] = mapped_column(default=False, nullable=False)

@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from app.db.engine import SessionLocal
-from app.db.models import Infusion, Photo, Tasting
+from app.db.models import Infusion, Photo, Tasting, TeaItem
 from app.services.storage import save_photo_bytes
 
 _MAX_CREATE_ATTEMPTS = 2
@@ -46,6 +46,24 @@ def create_tasting(
                     session.add(tasting)
                     session.flush()
 
+                    # Автосписание остатка сорта: только если у дегустации есть
+                    # привязка к коллекции, указан вес и владелец ведёт учёт
+                    # (amount_g не NULL). Clamp до 0 — запись дегустации важнее
+                    # точности учёта, в минус не уходим. Та же транзакция, что
+                    # и создание дегустации. Бот не передаёт tea_item_id,
+                    # поэтому бот-флоу не затронут.
+                    tea_item_id = tasting_data.get("tea_item_id")
+                    grams = tasting_data.get("grams")
+                    if tea_item_id and grams:
+                        tea_item = session.get(TeaItem, tea_item_id)
+                        if tea_item is not None and tea_item.amount_g is not None:
+                            # Фактически списываем не больше, чем есть (clamp до 0),
+                            # и запоминаем списанное в дегустации — для честного
+                            # возврата при её удалении.
+                            deducted = min(float(grams), tea_item.amount_g)
+                            tea_item.amount_g = tea_item.amount_g - deducted
+                            tasting.deducted_g = deducted
+
                     for infusion in infusions:
                         session.add(
                             Infusion(
@@ -57,6 +75,7 @@ def create_tasting(
                                 special_notes=infusion.get("special_notes"),
                                 body=infusion.get("body"),
                                 aftertaste=infusion.get("aftertaste"),
+                                note=infusion.get("note"),
                             )
                         )
 

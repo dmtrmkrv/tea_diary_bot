@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routers import tastings, users, collection
@@ -12,12 +14,18 @@ app = FastAPI(
     version="0.1.0",
 )
 
+# Разрешённые origin'ы фронта. На проде задаём CORS_ORIGINS (через запятую),
+# иначе — дефолт для staging-фронта и локальной разработки.
+_default_origins = [
+    "https://dmtrmkrv-tea-diary-bot-0188.twc1.net",  # staging frontend
+    "http://localhost:3000",  # local dev
+]
+_env_origins = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
+allow_origins = _env_origins or _default_origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://dmtrmkrv-tea-diary-bot-0188.twc1.net",  # staging frontend
-        "http://localhost:3000",  # local dev
-    ],
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

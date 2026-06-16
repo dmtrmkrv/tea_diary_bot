@@ -65,30 +65,20 @@ export default async function Home({
   return (
     <main className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-4">
+        <Suspense fallback={null}>
+          <SearchControls teaware={teawareItems} />
+        </Suspense>
+
+        <div className="mt-2">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-badge-neutral-bg text-badge-neutral-text text-[12px] font-semibold leading-[16px]">
+            {data.total} записей
+          </span>
+        </div>
+
         {isEmpty ? (
-          <>
-            <h1 className="pt-12 text-[32px] font-semibold leading-[32px] tracking-[-1px] text-foreground">
-              Мои дегустации
-            </h1>
-            <div className="mt-2">
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-badge-neutral-bg text-badge-neutral-text text-[12px] font-semibold leading-[16px]">
-                0 записей
-              </span>
-            </div>
-            <EmptyTastings />
-          </>
+          <EmptyTastings />
         ) : (
           <>
-            <Suspense fallback={null}>
-              <SearchControls teaware={teawareItems} />
-            </Suspense>
-
-            <div className="mt-2">
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-badge-neutral-bg text-badge-neutral-text text-[12px] font-semibold leading-[16px]">
-                {data.total} записей
-              </span>
-            </div>
-
             <div className="flex flex-col gap-3 mt-4 pb-4">
               {data.items.map((item) => (
                 <TastingCard key={item.id} item={item} />

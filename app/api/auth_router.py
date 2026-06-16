@@ -22,7 +22,7 @@ SECRET_KEY = os.getenv("JWT_SECRET", "dev-secret-change-in-prod")
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 WEB_URL = os.getenv("WEB_URL", "http://localhost:3000")
 ALGORITHM = "HS256"
-TOKEN_EXPIRE_SECONDS = 60 * 60 * 24 * 30  # 30 дней
+TOKEN_EXPIRE_SECONDS = 60 * 60 * 24 * 180  # 180 дней — редкий перелогин (вход завязан на Telegram, который в РФ нестабилен)
 
 
 class TelegramAuthData(BaseModel):

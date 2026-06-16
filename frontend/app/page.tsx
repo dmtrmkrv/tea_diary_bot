@@ -5,6 +5,7 @@ import { getTastings, getTeawareList } from '@/lib/api';
 import TastingCard, { TastingItem } from '@/components/TastingCard';
 import PaginationLinks from '@/components/PaginationLinks';
 import SearchControls, { type TeawareFilterItem } from '@/components/SearchControls';
+import EmptyTastings from '@/components/EmptyTastings';
 
 const PAGE_SIZE = 10;
 
@@ -59,6 +60,8 @@ export default async function Home({
     cover_url: t.cover_url ?? null,
   }));
 
+  const isEmpty = data.total === 0 && !hasFilter;
+
   return (
     <main className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-4">
@@ -72,25 +75,29 @@ export default async function Home({
           </span>
         </div>
 
-        <div className="flex flex-col gap-3 mt-4 pb-4">
-          {data.items.map((item) => (
-            <TastingCard key={item.id} item={item} />
-          ))}
+        {isEmpty ? (
+          <EmptyTastings />
+        ) : (
+          <>
+            <div className="flex flex-col gap-3 mt-4 pb-4">
+              {data.items.map((item) => (
+                <TastingCard key={item.id} item={item} />
+              ))}
 
-          {data.items.length === 0 && (
-            <p className="text-muted-foreground text-[14px] text-center py-12">
-              {hasFilter
-                ? 'Ничего не найдено. Измените запрос или фильтры.'
-                : 'Пока нет записей'}
-            </p>
-          )}
-        </div>
+              {data.items.length === 0 && (
+                <p className="text-muted-foreground text-[14px] text-center py-12">
+                  Ничего не найдено. Измените запрос или фильтры.
+                </p>
+              )}
+            </div>
 
-        <PaginationLinks
-          current={page}
-          total={totalPages}
-          buildHref={buildHref}
-        />
+            <PaginationLinks
+              current={page}
+              total={totalPages}
+              buildHref={buildHref}
+            />
+          </>
+        )}
       </div>
     </main>
   );

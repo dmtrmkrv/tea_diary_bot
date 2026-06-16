@@ -69,7 +69,7 @@ export default function LoginPage() {
 
   return (
     <main
-      className="h-[100svh] overflow-hidden flex flex-col items-center px-4 pt-[clamp(56px,12vh,138px)] pb-[clamp(40px,6vh,56px)] text-white text-center"
+      className="fixed inset-0 overflow-hidden flex flex-col items-center px-4 pt-[clamp(56px,12vh,138px)] pb-[max(env(safe-area-inset-bottom),clamp(40px,6vh,56px))] text-white text-center"
       style={{ background: 'linear-gradient(204.8deg, rgb(148, 232, 125) 0%, rgb(222, 203, 105) 33.875%, rgb(241, 136, 63) 100%)' }}
     >
       {/* Логотип */}

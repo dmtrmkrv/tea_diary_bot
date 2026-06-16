@@ -4,6 +4,7 @@ import hmac
 import secrets
 import time
 from typing import Optional
+from urllib.parse import urlencode
 
 import jwt
 import os
@@ -19,6 +20,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 SECRET_KEY = os.getenv("JWT_SECRET", "dev-secret-change-in-prod")
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
+WEB_URL = os.getenv("WEB_URL", "http://localhost:3000")
 ALGORITHM = "HS256"
 TOKEN_EXPIRE_SECONDS = 60 * 60 * 24 * 30  # 30 дней
 
@@ -86,6 +88,25 @@ def telegram_auth(data: TelegramAuthData):
 
     token = create_jwt_token(data.id, data.username)
     return {"access_token": token, "token_type": "bearer"}
+
+
+@router.get("/telegram/login-url")
+def telegram_login_url():
+    """URL для входа через Telegram в один клик (redirect, без JS-виджета).
+
+    Фронт по клику уводит пользователя на этот URL; после авторизации Telegram
+    возвращает его на {WEB_URL}/login с подписанными данными, которые фронт
+    отправляет в POST /auth/telegram. Домен WEB_URL должен быть прописан у бота
+    через BotFather /setdomain.
+    """
+    bot_id = BOT_TOKEN.split(":", 1)[0] if BOT_TOKEN else ""
+    params = {
+        "bot_id": bot_id,
+        "origin": WEB_URL,
+        "request_access": "write",
+        "return_to": f"{WEB_URL}/login",
+    }
+    return {"url": "https://oauth.telegram.org/auth?" + urlencode(params)}
 
 
 def generate_login_code(telegram_id: int) -> str:

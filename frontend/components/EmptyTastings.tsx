@@ -9,7 +9,7 @@ export default function EmptyTastings() {
   return (
     <div className="flex flex-col items-center justify-center gap-8 text-center min-h-[70svh]">
       <div className="flex flex-col items-center gap-4">
-        <span className="w-[90px] h-[90px] rounded-full bg-placeholder-tea-bg flex items-center justify-center">
+        <span className="w-[90px] h-[90px] rounded-full bg-card flex items-center justify-center">
           <BowlSteamIcon size={36} className="text-muted-foreground" />
         </span>
         <div className="flex flex-col gap-3">

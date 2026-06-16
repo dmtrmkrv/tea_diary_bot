@@ -5,6 +5,7 @@ import { getTastings, getTeawareList } from '@/lib/api';
 import TastingCard, { TastingItem } from '@/components/TastingCard';
 import PaginationLinks from '@/components/PaginationLinks';
 import SearchControls, { type TeawareFilterItem } from '@/components/SearchControls';
+import EmptyTastings from '@/components/EmptyTastings';
 
 const PAGE_SIZE = 10;
 
@@ -59,38 +60,54 @@ export default async function Home({
     cover_url: t.cover_url ?? null,
   }));
 
+  const isEmpty = data.total === 0 && !hasFilter;
+
   return (
     <main className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-4">
-        <Suspense fallback={null}>
-          <SearchControls teaware={teawareItems} />
-        </Suspense>
+        {isEmpty ? (
+          <>
+            <h1 className="pt-12 text-[32px] font-semibold leading-[32px] tracking-[-1px] text-foreground">
+              Мои дегустации
+            </h1>
+            <div className="mt-2">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-badge-neutral-bg text-badge-neutral-text text-[12px] font-semibold leading-[16px]">
+                0 записей
+              </span>
+            </div>
+            <EmptyTastings />
+          </>
+        ) : (
+          <>
+            <Suspense fallback={null}>
+              <SearchControls teaware={teawareItems} />
+            </Suspense>
 
-        <div className="mt-2">
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-badge-neutral-bg text-badge-neutral-text text-[12px] font-semibold leading-[16px]">
-            {data.total} записей
-          </span>
-        </div>
+            <div className="mt-2">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-badge-neutral-bg text-badge-neutral-text text-[12px] font-semibold leading-[16px]">
+                {data.total} записей
+              </span>
+            </div>
 
-        <div className="flex flex-col gap-3 mt-4 pb-4">
-          {data.items.map((item) => (
-            <TastingCard key={item.id} item={item} />
-          ))}
+            <div className="flex flex-col gap-3 mt-4 pb-4">
+              {data.items.map((item) => (
+                <TastingCard key={item.id} item={item} />
+              ))}
 
-          {data.items.length === 0 && (
-            <p className="text-muted-foreground text-[14px] text-center py-12">
-              {hasFilter
-                ? 'Ничего не найдено. Измените запрос или фильтры.'
-                : 'Пока нет записей'}
-            </p>
-          )}
-        </div>
+              {data.items.length === 0 && (
+                <p className="text-muted-foreground text-[14px] text-center py-12">
+                  Ничего не найдено. Измените запрос или фильтры.
+                </p>
+              )}
+            </div>
 
-        <PaginationLinks
-          current={page}
-          total={totalPages}
-          buildHref={buildHref}
-        />
+            <PaginationLinks
+              current={page}
+              total={totalPages}
+              buildHref={buildHref}
+            />
+          </>
+        )}
       </div>
     </main>
   );

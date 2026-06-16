@@ -68,7 +68,7 @@ export default function LoginPage() {
         return res.json();
       })
       .then(({ access_token }) => {
-        document.cookie = `token=${access_token}; path=/; max-age=${60 * 60 * 24 * 30}`;
+        document.cookie = `token=${access_token}; path=/; max-age=${60 * 60 * 24 * 180}`;
         router.push('/');
       })
       .catch(() => setStatus('error'));

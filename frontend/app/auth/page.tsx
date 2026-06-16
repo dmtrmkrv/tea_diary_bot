@@ -25,7 +25,7 @@ function AuthContent() {
       .then(res => res.json())
       .then(data => {
         if (data.access_token) {
-          document.cookie = `token=${data.access_token}; path=/; max-age=${60 * 60 * 24 * 30}`;
+          document.cookie = `token=${data.access_token}; path=/; max-age=${60 * 60 * 24 * 180}`;
           router.push('/');
         } else {
           setStatus('error');

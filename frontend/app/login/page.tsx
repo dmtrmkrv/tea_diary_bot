@@ -1,16 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-declare global {
-  interface Window {
-    TelegramLoginWidget: {
-      dataOnauth: (user: TelegramUser) => void;
-    };
-    onTelegramAuth: (user: TelegramUser) => void;
-  }
-}
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 interface TelegramUser {
   id: number;
@@ -22,49 +15,76 @@ interface TelegramUser {
   hash: string;
 }
 
-const BOT_USERNAME = process.env.NEXT_PUBLIC_BOT_USERNAME || '';
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+// Данные авторизации могут вернуться от Telegram либо в hash
+// (#tgAuthResult=base64url(json)), либо в query (?id=&hash=…). Поддерживаем оба.
+function parseTelegramAuth(): TelegramUser | null {
+  if (typeof window === 'undefined') return null;
+
+  const hashMatch = window.location.hash.match(/tgAuthResult=([^&]+)/);
+  if (hashMatch) {
+    try {
+      let b64 = decodeURIComponent(hashMatch[1]).replace(/-/g, '+').replace(/_/g, '/');
+      while (b64.length % 4) b64 += '=';
+      const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+      return JSON.parse(new TextDecoder('utf-8').decode(bytes)) as TelegramUser;
+    } catch {
+      /* пустой — упадём в проверку query ниже */
+    }
+  }
+
+  const sp = new URLSearchParams(window.location.search);
+  if (sp.get('id') && sp.get('hash')) {
+    return {
+      id: Number(sp.get('id')),
+      first_name: sp.get('first_name') ?? '',
+      last_name: sp.get('last_name') ?? undefined,
+      username: sp.get('username') ?? undefined,
+      photo_url: sp.get('photo_url') ?? undefined,
+      auth_date: Number(sp.get('auth_date')),
+      hash: sp.get('hash') as string,
+    };
+  }
+  return null;
+}
 
 export default function LoginPage() {
   const router = useRouter();
-  const [showWidget, setShowWidget] = useState(false);
-  const widgetRef = useRef<HTMLDivElement>(null);
-  const widgetLoaded = useRef(false);
+  const [status, setStatus] = useState<'idle' | 'pending' | 'error'>('idle');
 
-  // Только присваиваем колбэк виджета — без обращений к сети.
+  // Возврат от Telegram: разбираем подписанные данные и логинимся.
   useEffect(() => {
-    window.onTelegramAuth = async (user: TelegramUser) => {
-      const res = await fetch(`${API_URL}/auth/telegram`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(user),
-      });
-
-      if (res.ok) {
-        const { access_token } = await res.json();
+    const user = parseTelegramAuth();
+    if (!user) return;
+    setStatus('pending');
+    // Чистим URL, чтобы данные не остались в истории / при обновлении.
+    window.history.replaceState(null, '', window.location.pathname);
+    fetch(`${API_URL}/auth/telegram`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(user),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
+      .then(({ access_token }) => {
         document.cookie = `token=${access_token}; path=/; max-age=${60 * 60 * 24 * 30}`;
         router.push('/');
-      } else {
-        alert('Ошибка авторизации. Попробуй ещё раз.');
-      }
-    };
+      })
+      .catch(() => setStatus('error'));
   }, [router]);
 
-  // Скрипт виджета грузится с telegram.org только по клику, а не при открытии
-  // страницы — иначе в РФ (telegram.org режется ТСПУ) страница входа зависает.
-  function loadWidget() {
-    if (!widgetLoaded.current) {
-      widgetLoaded.current = true;
-      const script = document.createElement('script');
-      script.src = 'https://telegram.org/js/telegram-widget.js?22';
-      script.setAttribute('data-telegram-login', BOT_USERNAME);
-      script.setAttribute('data-size', 'large');
-      script.setAttribute('data-onauth', 'onTelegramAuth(user)');
-      script.setAttribute('data-request-access', 'write');
-      script.async = true;
-      widgetRef.current?.appendChild(script);
+  // Один клик: берём URL авторизации с бэка и уводим на Telegram.
+  async function startLogin() {
+    setStatus('pending');
+    try {
+      const res = await fetch(`${API_URL}/auth/telegram/login-url`);
+      if (!res.ok) throw new Error();
+      const { url } = await res.json();
+      window.location.href = url;
+    } catch {
+      setStatus('error');
     }
-    setShowWidget(true);
   }
 
   return (
@@ -103,30 +123,22 @@ export default function LoginPage() {
         </div>
 
         <div className="w-full max-w-[296px] flex flex-col gap-[12px]">
-          {/* Брендовая кнопка; прозрачный виджет Telegram накладывается поверх
-              после ленивой загрузки (по клику) и перехватывает следующий тап. */}
-          <div className="relative w-full min-h-[40px]">
-            <button
-              type="button"
-              onClick={loadWidget}
-              className="w-full flex items-center justify-center min-h-[40px] px-[24px] py-[10px] rounded-lg bg-[#78350f] text-[#fafaf9] text-[14px] font-medium leading-[20px]"
-            >
-              Регистрация через Telegram
-            </button>
-            <div
-              ref={widgetRef}
-              className="absolute inset-0 opacity-0 [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:block"
-              style={{ pointerEvents: showWidget ? 'auto' : 'none' }}
-            />
-          </div>
+          <button
+            type="button"
+            onClick={startLogin}
+            disabled={status === 'pending'}
+            className="w-full flex items-center justify-center min-h-[40px] px-[24px] py-[10px] rounded-lg bg-[#78350f] text-[#fafaf9] text-[14px] font-medium leading-[20px] disabled:opacity-80"
+          >
+            {status === 'pending' ? 'Входим…' : 'Регистрация через Telegram'}
+          </button>
 
           {/* Место под подсказку зарезервировано (opacity), чтобы её появление
               не сдвигало раскладку и текст не наезжал на лого. */}
           <p
-            aria-hidden={!showWidget}
-            className={`text-[12px] leading-[16px] text-white/80 text-center transition-opacity ${showWidget ? 'opacity-100' : 'opacity-0'}`}
+            aria-hidden={status !== 'error'}
+            className={`text-[12px] leading-[16px] text-white/80 text-center transition-opacity ${status === 'error' ? 'opacity-100' : 'opacity-0'}`}
           >
-            Если окно Telegram не открывается — попробуйте другую сеть или зайдите позже.
+            Не удалось войти — попробуйте другую сеть или зайдите позже.
           </p>
         </div>
       </div>

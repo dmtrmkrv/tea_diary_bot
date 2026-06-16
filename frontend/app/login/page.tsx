@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 declare global {
@@ -28,7 +28,11 @@ const botUrl = `https://t.me/${BOT_USERNAME}?start=login`;
 
 export default function LoginPage() {
   const router = useRouter();
+  const [showWidget, setShowWidget] = useState(false);
+  const widgetRef = useRef<HTMLDivElement>(null);
+  const widgetLoaded = useRef(false);
 
+  // Только присваиваем колбэк виджета — без обращений к сети.
   useEffect(() => {
     window.onTelegramAuth = async (user: TelegramUser) => {
       const res = await fetch(`${API_URL}/auth/telegram`, {
@@ -45,18 +49,24 @@ export default function LoginPage() {
         alert('Ошибка авторизации. Попробуй ещё раз.');
       }
     };
+  }, [router]);
 
-    const script = document.createElement('script');
-    script.src = 'https://telegram.org/js/telegram-widget.js?22';
-    script.setAttribute('data-telegram-login', BOT_USERNAME);
-    script.setAttribute('data-size', 'large');
-    script.setAttribute('data-onauth', 'onTelegramAuth(user)');
-    script.setAttribute('data-request-access', 'write');
-    script.async = true;
-
-    const container = document.getElementById('telegram-login');
-    if (container) container.appendChild(script);
-  }, []);
+  // Скрипт виджета грузится с telegram.org только по клику, а не при открытии
+  // страницы — иначе в РФ (telegram.org режется ТСПУ) страница входа зависает.
+  function loadWidget() {
+    if (!widgetLoaded.current) {
+      widgetLoaded.current = true;
+      const script = document.createElement('script');
+      script.src = 'https://telegram.org/js/telegram-widget.js?22';
+      script.setAttribute('data-telegram-login', BOT_USERNAME);
+      script.setAttribute('data-size', 'large');
+      script.setAttribute('data-onauth', 'onTelegramAuth(user)');
+      script.setAttribute('data-request-access', 'write');
+      script.async = true;
+      widgetRef.current?.appendChild(script);
+    }
+    setShowWidget(true);
+  }
 
   return (
     <main
@@ -94,18 +104,34 @@ export default function LoginPage() {
         </div>
 
         <div className="w-full max-w-[296px] flex flex-col gap-[16px] mt-[40px]">
-          {/* Наша кнопка поверх прозрачного Telegram виджета */}
-          <div className="relative w-full min-h-[40px]">
-            <div className="w-full flex items-center justify-center min-h-[40px] px-[24px] py-[10px] rounded-lg bg-[#451a03] text-[#fafafa] text-[14px] font-medium leading-[20px] pointer-events-none select-none">
-              Регистрация через Telegram
-            </div>
-            {/* Telegram виджет прозрачно поверх кнопки */}
-            <div
-              id="telegram-login"
-              className="absolute inset-0 opacity-0 cursor-pointer [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:block"
-            />
-          </div>
+          {/* Основной вход — через бота (обходит telegram.org) */}
+          <a
+            href={botUrl}
+            className="w-full flex items-center justify-center min-h-[40px] px-[24px] py-[10px] rounded-lg bg-[#451a03] text-[#fafafa] text-[14px] font-medium leading-[20px]"
+          >
+            Войти через бота
+          </a>
 
+          {/* Вторичный вход — виджет Telegram, грузится по клику */}
+          {!showWidget ? (
+            <button
+              type="button"
+              onClick={loadWidget}
+              className="w-full text-[14px] font-medium leading-[20px] text-white/90 underline underline-offset-4"
+            >
+              Войти через виджет Telegram
+            </button>
+          ) : (
+            <div className="flex flex-col items-center gap-[8px]">
+              <div
+                ref={widgetRef}
+                className="min-h-[40px] [&>iframe]:block"
+              />
+              <p className="text-[12px] leading-[16px] text-white/80">
+                Если кнопка не появилась — откройте через VPN
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </main>

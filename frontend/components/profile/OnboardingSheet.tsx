@@ -101,9 +101,11 @@ export default function OnboardingSheet({
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
         >
-          {/* Иллюстрация слайда (ассеты подъедут позже) */}
-          {/* Аспект = размеру ассетов (716×848), чтобы object-cover ничего не резал */}
-          <div className="w-full aspect-[716/848] max-h-[420px] rounded-2xl overflow-hidden bg-surface-sunken flex items-center justify-center">
+          {/* Иллюстрация слайда. Аспект = размеру ассетов (716×848): при совпадении
+              аспекта object-cover ничего не режет. Ограничиваем ШИРИНУ (не высоту) —
+              иначе кап высоты ломает аспект, картинка кадрируется по-разному и блок
+              текста ниже скачет между слайдами/экранами. */}
+          <div className="w-full max-w-[360px] mx-auto aspect-[716/848] rounded-2xl overflow-hidden bg-surface-sunken flex items-center justify-center">
             {slide.image ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={slide.image} alt={slide.title} className="w-full h-full object-cover" />

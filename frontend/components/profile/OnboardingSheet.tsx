@@ -101,13 +101,13 @@ export default function OnboardingSheet({
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
         >
-          {/* Фиксированная рамка иллюстрации с аспектом ассета 716×848.
-              Аспект задан padding-hack'ом (848/716 = 118.44%) — надёжно, без
-              зависимости от поддержки aspect-ratio. Шторка сужена до телефонной
-              ширины, поэтому рамка полноширинная и одинаковой высоты на всех
-              экранах: object-cover ничего не режет, текст ниже не скачет. */}
+          {/* Фиксированная рамка иллюстрации, аспект 3:2 (ассеты — альбомные;
+              портретный скрин телефона слишком высокий и текст уходит под скролл).
+              pb 66.67% = 2/3 высоты от ширины — padding-hack держит аспект без
+              зависимости от aspect-ratio. object-cover не режет при совпадении
+              аспекта; shrink-0 — чтобы рамка не сжималась на коротких экранах. */}
           <div className="relative w-full shrink-0 overflow-hidden rounded-2xl bg-surface-sunken">
-            <div className="pb-[118.44%]" />
+            <div className="pb-[66.67%]" />
             {slide.image ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img

@@ -78,7 +78,7 @@ export default function OnboardingSheet({
   return (
     <>
       <div className="fixed inset-0 z-[60] bg-overlay-scrim backdrop-blur-sm" onClick={handleClose} />
-      <div className="fixed left-1/2 -translate-x-1/2 bottom-0 w-full max-w-2xl z-[70] bg-card rounded-t-3xl flex flex-col max-h-[calc(100svh-48px)] overflow-hidden">
+      <div className="fixed left-1/2 -translate-x-1/2 bottom-0 w-full max-w-[440px] z-[70] bg-card rounded-t-3xl flex flex-col max-h-[calc(100svh-48px)] overflow-hidden">
         <div className="flex justify-center pt-2 pb-1">
           <span className="w-9 h-1 rounded-full bg-border-strong" />
         </div>
@@ -101,16 +101,24 @@ export default function OnboardingSheet({
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
         >
-          {/* Иллюстрация слайда. Аспект = размеру ассетов (716×848): при совпадении
-              аспекта object-cover ничего не режет. Ограничиваем ШИРИНУ (не высоту) —
-              иначе кап высоты ломает аспект, картинка кадрируется по-разному и блок
-              текста ниже скачет между слайдами/экранами. */}
-          <div className="w-full max-w-[360px] mx-auto aspect-[716/848] rounded-2xl overflow-hidden bg-surface-sunken flex items-center justify-center">
+          {/* Фиксированная рамка иллюстрации с аспектом ассета 716×848.
+              Аспект задан padding-hack'ом (848/716 = 118.44%) — надёжно, без
+              зависимости от поддержки aspect-ratio. Шторка сужена до телефонной
+              ширины, поэтому рамка полноширинная и одинаковой высоты на всех
+              экранах: object-cover ничего не режет, текст ниже не скачет. */}
+          <div className="relative w-full overflow-hidden rounded-2xl bg-surface-sunken">
+            <div className="pb-[118.44%]" />
             {slide.image ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={slide.image} alt={slide.title} className="w-full h-full object-cover" />
+              <img
+                src={slide.image}
+                alt={slide.title}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
             ) : (
-              <ImageSquareIcon size={64} className="text-placeholder-tea-icon" />
+              <span className="absolute inset-0 flex items-center justify-center">
+                <ImageSquareIcon size={64} className="text-placeholder-tea-icon" />
+              </span>
             )}
           </div>
 

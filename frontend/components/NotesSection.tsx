@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { CaretDownIcon, CaretUpIcon } from '@phosphor-icons/react';
 
 const LIMIT = 160;
 
@@ -18,7 +19,8 @@ export default function NotesSection({ text }: { text: string }) {
           onClick={() => setExpanded(v => !v)}
           className="flex items-center gap-1 text-[12px] font-medium text-primary self-start"
         >
-          {expanded ? 'Скрыть ↑' : 'Показать еще >'}
+          {expanded ? 'Скрыть' : 'Показать еще'}
+          {expanded ? <CaretUpIcon size={16} /> : <CaretDownIcon size={16} />}
         </button>
       )}
     </div>

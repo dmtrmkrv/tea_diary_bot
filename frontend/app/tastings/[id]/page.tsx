@@ -35,6 +35,20 @@ function formatDatetime(dateStr: string | null): string {
   return `${date}, ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
+// Теги-CSV (Ощущения/Сценарии): предопределённые пункты разделяем « · »,
+// а свободный текст «Другое: …» показываем как есть — его запятые это не
+// разделители, а часть текста. Маркер «Другое:» форма всегда ставит последним
+// элементом (richCheckboxToCsv), поэтому граница определяется надёжно.
+function formatTagsCsv(csv: string | null | undefined): string | null {
+  if (!csv) return null;
+  const parts = csv.split(',').map((s) => s.trim()).filter(Boolean);
+  const otherIdx = parts.findIndex((p) => p.startsWith('Другое:'));
+  if (otherIdx === -1) return parts.join(' · ');
+  const tags = parts.slice(0, otherIdx);
+  const other = parts.slice(otherIdx).join(', ');
+  return [...tags, other].join(' · ');
+}
+
 function DataRow({
   icon,
   label,
@@ -78,8 +92,8 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
   const t = await getTasting(Number(id));
 
   const datetime = formatDatetime(t.created_at ?? null);
-  const effects = t.effects_csv ? t.effects_csv.split(',').map((s: string) => s.trim()).join(' · ') : null;
-  const scenarios = t.scenarios_csv ? t.scenarios_csv.split(',').map((s: string) => s.trim()).join(' · ') : null;
+  const effects = formatTagsCsv(t.effects_csv);
+  const scenarios = formatTagsCsv(t.scenarios_csv);
 
   return (
     <main className="min-h-screen bg-background">

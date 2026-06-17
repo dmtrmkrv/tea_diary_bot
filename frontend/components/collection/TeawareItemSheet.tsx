@@ -201,7 +201,7 @@ export default function TeawareItemSheet({
           {item.notes && item.notes.trim() && (
             <div className="flex flex-col gap-2 w-full">
               <div className="h-px bg-border-default" />
-              <NotesSection text={item.notes} />
+              <NotesSection text={item.notes} limit={87} />
               <div className="h-px bg-border-default" />
             </div>
           )}

@@ -3,16 +3,14 @@
 import { useState } from 'react';
 import { CaretDownIcon, CaretUpIcon } from '@phosphor-icons/react';
 
-const LIMIT = 160;
-
-export default function NotesSection({ text }: { text: string }) {
+export default function NotesSection({ text, limit = 160 }: { text: string; limit?: number }) {
   const [expanded, setExpanded] = useState(false);
-  const long = text.length > LIMIT;
+  const long = text.length > limit;
 
   return (
     <div className="flex flex-col gap-2">
       <p className="text-[14px] leading-[20px] text-foreground">
-        {long && !expanded ? text.slice(0, LIMIT) + '…' : text}
+        {long && !expanded ? text.slice(0, limit) + '…' : text}
       </p>
       {long && (
         <button

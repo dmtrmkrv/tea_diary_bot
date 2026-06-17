@@ -136,8 +136,8 @@ export default function InfusionsAccordion({ infusions }: { infusions: Infusion[
                 : <CaretDownIcon size={16} className="text-muted-foreground" />
               }
             </button>
-            {!isLast && !open && <div className="h-px bg-border-default" />}
             {open && <InfusionContent inf={inf} />}
+            {!isLast && <div className="h-px bg-border-default" />}
           </div>
         );
       })}

@@ -22,6 +22,7 @@ import {
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import PaginationButtons from '@/components/PaginationButtons';
+import NotesSection from '@/components/NotesSection';
 
 const PAGE_SIZE = 4;
 
@@ -195,6 +196,15 @@ export default function TeawareItemSheet({
             </div>
           )}
           </div>
+
+          {/* Заметка по посуде (макет 116:5503) */}
+          {item.notes && item.notes.trim() && (
+            <div className="flex flex-col gap-2 w-full">
+              <div className="h-px bg-border-default" />
+              <NotesSection text={item.notes} limit={87} />
+              <div className="h-px bg-border-default" />
+            </div>
+          )}
 
           <div className="flex items-center gap-2">
             <h3 className="text-[16px] font-medium text-foreground">Дегустации</h3>

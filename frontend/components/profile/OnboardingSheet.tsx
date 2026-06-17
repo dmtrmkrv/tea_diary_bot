@@ -101,14 +101,24 @@ export default function OnboardingSheet({
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
         >
-          {/* Иллюстрация слайда (ассеты подъедут позже) */}
-          {/* Аспект = размеру ассетов (716×848), чтобы object-cover ничего не резал */}
-          <div className="w-full aspect-[716/848] max-h-[420px] rounded-2xl overflow-hidden bg-surface-sunken flex items-center justify-center">
+          {/* Фиксированная рамка иллюстрации, аспект 3:2 (ассеты — альбомные;
+              портретный скрин телефона слишком высокий и текст уходит под скролл).
+              pb 66.67% = 2/3 высоты от ширины — padding-hack держит аспект без
+              зависимости от aspect-ratio. object-cover не режет при совпадении
+              аспекта; shrink-0 — чтобы рамка не сжималась на коротких экранах. */}
+          <div className="relative w-full shrink-0 overflow-hidden rounded-2xl bg-surface-sunken">
+            <div className="pb-[66.67%]" />
             {slide.image ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={slide.image} alt={slide.title} className="w-full h-full object-cover" />
+              <img
+                src={slide.image}
+                alt={slide.title}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
             ) : (
-              <ImageSquareIcon size={64} className="text-placeholder-tea-icon" />
+              <span className="absolute inset-0 flex items-center justify-center">
+                <ImageSquareIcon size={64} className="text-placeholder-tea-icon" />
+              </span>
             )}
           </div>
 

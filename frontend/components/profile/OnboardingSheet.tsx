@@ -106,7 +106,7 @@ export default function OnboardingSheet({
               зависимости от поддержки aspect-ratio. Шторка сужена до телефонной
               ширины, поэтому рамка полноширинная и одинаковой высоты на всех
               экранах: object-cover ничего не режет, текст ниже не скачет. */}
-          <div className="relative w-full overflow-hidden rounded-2xl bg-surface-sunken">
+          <div className="relative w-full shrink-0 overflow-hidden rounded-2xl bg-surface-sunken">
             <div className="pb-[118.44%]" />
             {slide.image ? (
               // eslint-disable-next-line @next/next/no-img-element

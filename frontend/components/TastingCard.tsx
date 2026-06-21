@@ -22,15 +22,22 @@ export interface TastingItem {
   tea_item_cover_url: string | null;
 }
 
-function formatDatetime(isoString: string | null): string | null {
+function formatDatetime(isoString: string | null, offsetMin: number): string | null {
   if (!isoString) return null;
   const iso = isoString.endsWith('Z') ? isoString : isoString + 'Z';
   const date = new Date(iso);
+  // Бэкдейт-маркер: полночь UTC → только дата, без сдвига (дата уже = выбранной).
+  if (date.getUTCHours() === 0 && date.getUTCMinutes() === 0) {
+    return new Intl.DateTimeFormat('ru-RU', {
+      day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+    }).format(date);
+  }
+  // Обычная запись: показываем в часовом поясе пользователя.
+  const local = new Date(date.getTime() + offsetMin * 60000);
   const datePart = new Intl.DateTimeFormat('ru-RU', {
     day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
-  }).format(date);
-  const h = date.getUTCHours(), m = date.getUTCMinutes();
-  if (h === 0 && m === 0) return datePart;
+  }).format(local);
+  const h = local.getUTCHours(), m = local.getUTCMinutes();
   return `${datePart}, ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
@@ -97,8 +104,8 @@ function BadgeRow({ item }: { item: TastingItem }) {
   );
 }
 
-export default function TastingCard({ item }: { item: TastingItem }) {
-  const datetime = formatDatetime(item.created_at);
+export default function TastingCard({ item, tzOffset = 0 }: { item: TastingItem; tzOffset?: number }) {
+  const datetime = formatDatetime(item.created_at, tzOffset);
   const isQuick = item.entry_mode === 'quick';
   const hasRating = item.rating > 0;
   const hasTeaItem = item.tea_item_id != null;

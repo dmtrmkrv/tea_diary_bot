@@ -26,6 +26,10 @@ class UserStatsOut(BaseModel):
     top_categories: List[str]
 
 
+class TzUpdate(BaseModel):
+    tz_offset_min: int
+
+
 @router.get("/me", response_model=UserOut)
 def get_me(
     db: Session = Depends(get_db),
@@ -67,3 +71,21 @@ def get_my_stats(
         teaware=teaware,
         top_categories=top_categories,
     )
+
+
+@router.patch("/me/tz", response_model=UserOut)
+def update_my_tz(
+    data: TzUpdate,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),
+):
+    """Автоопределение часового пояса с веба: фронт шлёт UTC-сдвиг браузера."""
+    if not -720 <= data.tz_offset_min <= 840:
+        raise HTTPException(status_code=400, detail="Некорректный часовой пояс")
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Не найдено")
+    user.tz_offset_min = data.tz_offset_min
+    db.commit()
+    db.refresh(user)
+    return user

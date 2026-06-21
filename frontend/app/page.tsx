@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { Suspense } from 'react';
+import { unstable_rethrow } from 'next/navigation';
 import { getTastings, getTeawareList } from '@/lib/api';
 import TastingCard, { TastingItem } from '@/components/TastingCard';
 import PaginationLinks from '@/components/PaginationLinks';
@@ -36,7 +37,7 @@ export default async function Home({
 
   const [data, teawareData] = await Promise.all([
     getTastings(PAGE_SIZE, offset, filter) as Promise<{ items: TastingItem[]; total: number }>,
-    getTeawareList().catch(() => ({ items: [] })) as Promise<{ items: TeawareFilterItem[] }>,
+    getTeawareList().catch((e) => { unstable_rethrow(e); return { items: [] }; }) as Promise<{ items: TeawareFilterItem[] }>,
   ]);
   const totalPages = Math.max(1, Math.ceil(data.total / PAGE_SIZE));
 

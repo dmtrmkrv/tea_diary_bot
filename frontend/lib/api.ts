@@ -1,3 +1,5 @@
+import { redirect } from 'next/navigation';
+
 const API_URL = process.env.API_URL || 'https://dmtrmkrv-tea-diary-bot-03bd.twc1.net';
 
 async function getServerToken(): Promise<string> {
@@ -12,16 +14,15 @@ async function getServerToken(): Promise<string> {
 
 async function apiFetch(path: string) {
   const token = await getServerToken();
-
-  const headers: Record<string, string> = {};
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
+  // Нет сессии — сразу на вход, без запроса к API (иначе SSR падал бы 500 на 401).
+  if (!token) redirect('/login');
 
   const res = await fetch(`${API_URL}${path}`, {
-    headers,
+    headers: { Authorization: `Bearer ${token}` },
     next: { revalidate: 0 },
   });
+  // Кука есть, но протухла/невалидна — тоже на вход.
+  if (res.status === 401) redirect('/login');
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json();
 }

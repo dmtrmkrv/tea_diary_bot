@@ -4,6 +4,11 @@ import type { NextRequest } from 'next/server';
 export function proxy(request: NextRequest) {
   const token = request.cookies.get('token')?.value;
   const pathname = request.nextUrl.pathname;
+
+  // /logout сам чистит куку и уводит на /login — пропускаем без проверок,
+  // иначе при наличии (протухшей) куки proxy увёл бы его на / и была бы петля.
+  if (pathname === '/logout') return NextResponse.next();
+
   const isPublic = pathname === '/login' || pathname.startsWith('/auth');
 
   if (!token && !isPublic) {

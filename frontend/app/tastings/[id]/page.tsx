@@ -15,7 +15,8 @@ import {
   LightningIcon,
   CompassIcon,
 } from '@phosphor-icons/react/dist/ssr';
-import { getTasting } from '@/lib/api';
+import { unstable_rethrow } from 'next/navigation';
+import { getTasting, getMe } from '@/lib/api';
 import CategoryBadge from '@/components/CategoryBadge';
 import NotesSection from '@/components/NotesSection';
 import InfusionsAccordion from '@/components/InfusionsAccordion';
@@ -24,14 +25,22 @@ import PhotoCarousel from '@/components/PhotoCarousel';
 import TeaItemTrigger from '@/components/collection/TeaItemTrigger';
 import TeawareItemTrigger from '@/components/collection/TeawareItemTrigger';
 
-function formatDatetime(dateStr: string | null): string {
+function formatDatetime(dateStr: string | null, offsetMin: number): string {
   if (!dateStr) return '';
-  const d = new Date(dateStr);
+  const iso = dateStr.endsWith('Z') ? dateStr : dateStr + 'Z';
+  const d = new Date(iso);
+  // Бэкдейт-маркер: полночь UTC → только дата, без сдвига (дата уже = выбранной).
+  if (d.getUTCHours() === 0 && d.getUTCMinutes() === 0) {
+    return new Intl.DateTimeFormat('ru-RU', {
+      day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+    }).format(d);
+  }
+  // Обычная запись: показываем в часовом поясе пользователя.
+  const local = new Date(d.getTime() + offsetMin * 60000);
   const date = new Intl.DateTimeFormat('ru-RU', {
     day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
-  }).format(d);
-  const h = d.getUTCHours(), m = d.getUTCMinutes();
-  if (h === 0 && m === 0) return date;
+  }).format(local);
+  const h = local.getUTCHours(), m = local.getUTCMinutes();
   return `${date}, ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
@@ -89,9 +98,13 @@ function DataRow({
 
 export default async function TastingPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const t = await getTasting(Number(id));
+  const [t, me] = await Promise.all([
+    getTasting(Number(id)),
+    getMe().catch((e) => { unstable_rethrow(e); return null; }) as Promise<{ tz_offset_min: number } | null>,
+  ]);
+  const tzOffset = me?.tz_offset_min ?? 0;
 
-  const datetime = formatDatetime(t.created_at ?? null);
+  const datetime = formatDatetime(t.created_at ?? null, tzOffset);
   const effects = formatTagsCsv(t.effects_csv);
   const scenarios = formatTagsCsv(t.scenarios_csv);
 

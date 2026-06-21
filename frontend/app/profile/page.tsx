@@ -3,7 +3,6 @@
 export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import {
   SignOutIcon,
   UserIcon,
@@ -17,7 +16,6 @@ import { getMe, getMyStats, downloadTastingsCsv, type Me, type MyStats } from '@
 const FEEDBACK_EMAIL = 'dmitryidentity@gmail.com';
 
 export default function ProfilePage() {
-  const router = useRouter();
   const [me, setMe] = useState<Me | null>(null);
   const [stats, setStats] = useState<MyStats | null>(null);
   const [themeSheetOpen, setThemeSheetOpen] = useState(false);
@@ -35,8 +33,9 @@ export default function ProfilePage() {
   }, []);
 
   function logout() {
-    document.cookie = 'token=; path=/; max-age=0';
-    router.push('/login');
+    // Серверный /logout чистит куку (Set-Cookie) и редиректит на /login.
+    // Полная навигация — без отскока от proxy и без устаревшего кэша роутера.
+    window.location.href = '/logout';
   }
 
   const displayName = me?.first_name || me?.username || 'Чайный человек';

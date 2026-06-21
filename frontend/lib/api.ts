@@ -21,8 +21,9 @@ async function apiFetch(path: string) {
     headers: { Authorization: `Bearer ${token}` },
     next: { revalidate: 0 },
   });
-  // Кука есть, но протухла/невалидна — тоже на вход.
-  if (res.status === 401) redirect('/login');
+  // Кука есть, но протухла/невалидна — чистим её через /logout и уводим на вход.
+  // Через /login был бы цикл: proxy гонит /login → / при наличии куки.
+  if (res.status === 401) redirect('/logout');
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json();
 }

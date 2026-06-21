@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 from app.api.deps import get_db
 from app.api.auth import get_current_user_id
-from app.db.models import Tasting, Infusion, Photo, TeaItem, Teaware
+from app.db.models import Tasting, Infusion, Photo, TeaItem, Teaware, User
 from app.services.storage import get_presigned_url, save_photo_bytes, delete_object
 
 router = APIRouter(prefix="/tastings", tags=["tastings"])
@@ -204,12 +204,18 @@ def create_tasting_api(
         year = tea_item.year
         region = tea_item.region
 
-    tasted_at = data.tasted_at or datetime.datetime.utcnow().strftime("%H:%M")
+    # Часовой пояс пользователя (автоопределяется на вебе): время и «сегодня»
+    # считаем в его локальной зоне, а не в серверной (UTC/Amsterdam).
+    user = db.get(User, user_id)
+    tz_offset = (user.tz_offset_min if user else 0) or 0
+    user_now = datetime.datetime.utcnow() + datetime.timedelta(minutes=tz_offset)
 
-    # Бэкдейтинг: прошлая дата сохраняется с временем 00:00 —
-    # фронт в этом случае показывает только дату, без времени.
+    tasted_at = data.tasted_at or user_now.strftime("%H:%M")
+
+    # Бэкдейтинг: прошлая дата (относительно локального «сегодня» юзера)
+    # сохраняется с временем 00:00 — фронт показывает только дату, без времени.
     created_at: Optional[datetime.datetime] = None
-    if data.tasted_date is not None and data.tasted_date != datetime.date.today():
+    if data.tasted_date is not None and data.tasted_date != user_now.date():
         created_at = datetime.datetime.combine(data.tasted_date, datetime.time.min)
 
     tasting_data = {

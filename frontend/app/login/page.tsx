@@ -61,7 +61,7 @@ export default function LoginPage() {
     fetch(`${API_URL}/auth/telegram`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(user),
+      body: JSON.stringify({ ...user, tz_offset_min: -new Date().getTimezoneOffset() }),
     })
       .then((res) => {
         if (!res.ok) throw new Error();

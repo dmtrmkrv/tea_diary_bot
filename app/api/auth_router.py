@@ -33,12 +33,14 @@ class TelegramAuthData(BaseModel):
     photo_url: Optional[str] = None
     auth_date: int
     hash: str
+    # Не входит в подпись Telegram — исключается в verify_telegram_auth.
+    tz_offset_min: Optional[int] = None
 
 
 def verify_telegram_auth(data: TelegramAuthData) -> bool:
     """Проверяем подпись от Телеграма."""
     check_hash = data.hash
-    data_dict = data.model_dump(exclude={"hash"})
+    data_dict = data.model_dump(exclude={"hash", "tz_offset_min"})
     data_check_string = "\n".join(
         f"{k}={v}" for k, v in sorted(data_dict.items()) if v is not None
     )
@@ -84,6 +86,8 @@ def telegram_auth(data: TelegramAuthData):
                 user.first_name = data.first_name[:64]
             if data.photo_url:
                 user.photo_url = data.photo_url
+            if data.tz_offset_min is not None:
+                user.tz_offset_min = data.tz_offset_min
             session.commit()
 
     token = create_jwt_token(data.id, data.username)

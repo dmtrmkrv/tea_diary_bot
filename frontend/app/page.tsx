@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { Suspense } from 'react';
 import { unstable_rethrow } from 'next/navigation';
-import { getTastings, getTeawareList } from '@/lib/api';
+import { getTastings, getTeawareList, getMe } from '@/lib/api';
 import TastingCard, { TastingItem } from '@/components/TastingCard';
 import PaginationLinks from '@/components/PaginationLinks';
 import SearchControls, { type TeawareFilterItem } from '@/components/SearchControls';
@@ -35,10 +35,12 @@ export default async function Home({
   };
   const hasFilter = Boolean(filter.q || filter.categories || filter.teawareIds || filter.ratingMin);
 
-  const [data, teawareData] = await Promise.all([
+  const [data, teawareData, me] = await Promise.all([
     getTastings(PAGE_SIZE, offset, filter) as Promise<{ items: TastingItem[]; total: number }>,
     getTeawareList().catch((e) => { unstable_rethrow(e); return { items: [] }; }) as Promise<{ items: TeawareFilterItem[] }>,
+    getMe().catch((e) => { unstable_rethrow(e); return null; }) as Promise<{ tz_offset_min: number } | null>,
   ]);
+  const tzOffset = me?.tz_offset_min ?? 0;
   const totalPages = Math.max(1, Math.ceil(data.total / PAGE_SIZE));
 
   // Пагинация сохраняет активный поиск/фильтры
@@ -82,7 +84,7 @@ export default async function Home({
           <>
             <div className="flex flex-col gap-3 mt-4 pb-4">
               {data.items.map((item) => (
-                <TastingCard key={item.id} item={item} />
+                <TastingCard key={item.id} item={item} tzOffset={tzOffset} />
               ))}
 
               {data.items.length === 0 && (

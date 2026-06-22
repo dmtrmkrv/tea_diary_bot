@@ -82,6 +82,11 @@ export default function SearchControls({ teaware }: { teaware: TeawareFilterItem
     router.replace(buildUrl({ [key]: values.join(',') }), { scroll: false });
   }
 
+  // Сброс фильтров (категория/посуда/рейтинг). Текст поиска не трогаем — у него свой крестик.
+  function clearFilters() {
+    router.replace(buildUrl({ cat: '', tw: '', rating: '' }), { scroll: false });
+  }
+
   const teawareNames = new Map(teaware.map((t) => [String(t.id), t.name]));
 
   function chipLabel(base: string, values: string[], single?: boolean): string {
@@ -151,6 +156,17 @@ export default function SearchControls({ teaware }: { teaware: TeawareFilterItem
               active={rating.length > 0}
               onClick={() => setSheet('rating')}
             />
+            {(cats.length > 0 || tws.length > 0 || rating.length > 0) && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                aria-label="Сбросить фильтры"
+                className="shrink-0 h-9 px-3 rounded-lg text-[14px] font-medium text-text-secondary flex items-center gap-1"
+              >
+                Сбросить
+                <XIcon size={14} weight="bold" />
+              </button>
+            )}
           </div>
         </div>
       )}

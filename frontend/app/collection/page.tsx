@@ -14,6 +14,7 @@ import TeawareItemSheet from '@/components/collection/TeawareItemSheet';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
 import PaginationButtons from '@/components/PaginationButtons';
 import { Skeleton } from '@/components/ui/skeleton';
+import EmptySearch from '@/components/EmptySearch';
 import {
   getTeaCollection,
   getTeawareCollection,
@@ -137,11 +138,7 @@ function CollectionInner() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const wTotalPages = Math.max(1, Math.ceil(teawareTotal / PAGE_SIZE));
   const hasFilter = Boolean(debouncedQuery) || teaCats.length > 0;
-  const notFound = (
-    <p className="text-center text-[14px] text-muted-foreground pt-8">
-      Ничего не найдено. Измените запрос или фильтры.
-    </p>
-  );
+  const notFound = <EmptySearch />;
 
   return (
     <main className="min-h-screen bg-background">

@@ -13,6 +13,8 @@ import TeawareCard from '@/components/collection/TeawareCard';
 import TeawareItemSheet from '@/components/collection/TeawareItemSheet';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
 import PaginationButtons from '@/components/PaginationButtons';
+import { Skeleton } from '@/components/ui/skeleton';
+import EmptySearch from '@/components/EmptySearch';
 import {
   getTeaCollection,
   getTeawareCollection,
@@ -47,6 +49,7 @@ function CollectionInner() {
   const [teawareTotal, setTeawareTotal] = useState(0);
   const [wPage, setWPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [firstLoad, setFirstLoad] = useState(true); // скелетон только на первой загрузке
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [teaCats, setTeaCats] = useState<string[]>([]);
@@ -84,6 +87,7 @@ function CollectionInner() {
       setTeawareTotal(teaware.total);
     } finally {
       setLoading(false);
+      setFirstLoad(false);
     }
   }, [page, wPage, debouncedQuery, teaCats]);
 
@@ -134,11 +138,7 @@ function CollectionInner() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const wTotalPages = Math.max(1, Math.ceil(teawareTotal / PAGE_SIZE));
   const hasFilter = Boolean(debouncedQuery) || teaCats.length > 0;
-  const notFound = (
-    <p className="text-center text-[14px] text-muted-foreground pt-8">
-      Ничего не найдено. Измените запрос или фильтры.
-    </p>
-  );
+  const notFound = <EmptySearch />;
 
   return (
     <main className="min-h-screen bg-background">
@@ -203,8 +203,12 @@ function CollectionInner() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 mt-4 pb-4">
-        {loading ? (
-          <p className="text-center text-[14px] text-muted-foreground pt-8">Загрузка…</p>
+        {loading && firstLoad ? (
+          <div className="flex flex-col gap-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-20 w-full rounded-2xl" />
+            ))}
+          </div>
         ) : tab === 'teaware' ? (
           wItems.length === 0 && hasFilter ? (
             notFound

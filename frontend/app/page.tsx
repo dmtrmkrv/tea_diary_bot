@@ -7,6 +7,7 @@ import TastingCard, { TastingItem } from '@/components/TastingCard';
 import PaginationLinks from '@/components/PaginationLinks';
 import SearchControls, { type TeawareFilterItem } from '@/components/SearchControls';
 import EmptyTastings from '@/components/EmptyTastings';
+import EmptySearch from '@/components/EmptySearch';
 
 const PAGE_SIZE = 10;
 
@@ -87,11 +88,7 @@ export default async function Home({
                 <TastingCard key={item.id} item={item} tzOffset={tzOffset} />
               ))}
 
-              {data.items.length === 0 && (
-                <p className="text-muted-foreground text-[14px] text-center py-12">
-                  Ничего не найдено. Измените запрос или фильтры.
-                </p>
-              )}
+              {data.items.length === 0 && <EmptySearch />}
             </div>
 
             <PaginationLinks

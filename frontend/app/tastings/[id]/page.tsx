@@ -21,7 +21,7 @@ import CategoryBadge from '@/components/CategoryBadge';
 import NotesSection from '@/components/NotesSection';
 import InfusionsAccordion from '@/components/InfusionsAccordion';
 import TastingActions from '@/components/TastingActions';
-import PhotoCarousel from '@/components/PhotoCarousel';
+import TastingHero from '@/components/TastingHero';
 import TeaItemTrigger from '@/components/collection/TeaItemTrigger';
 import TeawareItemTrigger from '@/components/collection/TeawareItemTrigger';
 
@@ -105,74 +105,86 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
   const tzOffset = me?.tz_offset_min ?? 0;
 
   const datetime = formatDatetime(t.created_at ?? null, tzOffset);
+  const hasPhoto = Boolean(t.photo_urls && t.photo_urls.length > 0);
   const effects = formatTagsCsv(t.effects_csv);
   const scenarios = formatTagsCsv(t.scenarios_csv);
 
   return (
     <main className="min-h-screen bg-background">
-      <div className="max-w-2xl mx-auto flex flex-col gap-5 px-4 pt-12">
-
-        {/* Header buttons */}
-        <div className="flex items-center justify-between">
-          <Link
-            href="/"
-            className="bg-button-icon-bg border border-button-icon-border flex items-center justify-center h-9 w-9 rounded-full text-foreground"
-          >
-            <ArrowLeftIcon size={16} />
-          </Link>
-          <TastingActions tastingId={t.id} />
+      {hasPhoto ? (
+        /* С фото: hero — фото-фон + overlay (кнопки, дата/рейтинг/заголовок, бейджи) */
+        <div className="max-w-2xl mx-auto sm:px-4">
+          <TastingHero
+            id={t.id}
+            photos={t.photo_urls}
+            name={t.name}
+            datetime={datetime}
+            rating={t.rating ?? null}
+            isQuick={t.entry_mode === 'quick'}
+            category={!t.tea_item_name ? t.category : null}
+            year={!t.tea_item_name ? t.year : null}
+            region={!t.tea_item_name ? t.region : null}
+          />
         </div>
+      ) : (
+        /* Без фото: обычная шапка + заголовок */
+        <div className="max-w-2xl mx-auto flex flex-col gap-5 px-4 pt-12">
 
-        {/* Title group */}
-        <div className="flex flex-col gap-2">
-          {/* Date + rating/quick badges */}
+          {/* Header buttons */}
           <div className="flex items-center justify-between">
-            <p className="text-[12px] font-medium leading-[16px] text-muted-foreground">
-              {datetime}
-            </p>
-            <div className="flex gap-1 items-center">
-              {t.entry_mode === 'quick' && (
-                <span className="border border-badge-rating-border rounded-full px-1 py-0.5 flex items-center justify-center min-w-[20px] min-h-[20px]">
-                  <LightningIcon size={16} className="text-badge-quick-text" />
-                </span>
-              )}
-              {t.rating != null && (
-                <span className="border border-badge-rating-border rounded-full px-2 py-0.5 flex items-center gap-1 min-h-[20px]">
-                  <StarIcon size={16} className="text-badge-rating-text" />
-                  <span className="text-[12px] font-medium text-badge-rating-text leading-[16px]">{t.rating}/10</span>
-                </span>
-              )}
-            </div>
+            <Link
+              href="/"
+              className="bg-button-icon-bg border border-button-icon-border flex items-center justify-center h-9 w-9 rounded-full text-foreground"
+            >
+              <ArrowLeftIcon size={16} />
+            </Link>
+            <TastingActions tastingId={t.id} />
           </div>
 
-          {/* Title */}
-          <h1 className="text-[24px] font-semibold leading-[1.2] tracking-[-1px] text-foreground">
-            {t.name}
-          </h1>
-
-          {/* Badges — скрываем если привязан сорт из коллекции (там уже есть тип/год/регион) */}
-          {!t.tea_item_name && (
-            <div className="flex flex-wrap gap-1">
-              {t.category && <CategoryBadge category={t.category} />}
-              {t.year && (
-                <span className="border border-badge-tag-border bg-badge-tag-bg rounded-full px-2 py-0.5 text-[12px] font-semibold leading-[16px] text-badge-tag-text">
-                  {t.year}
-                </span>
-              )}
-              {t.region && (
-                <span className="border border-badge-tag-border bg-badge-tag-bg rounded-full px-2 py-0.5 text-[12px] font-semibold leading-[16px] text-badge-tag-text">
-                  {t.region}
-                </span>
-              )}
+          {/* Title group */}
+          <div className="flex flex-col gap-2">
+            {/* Date + rating/quick badges */}
+            <div className="flex items-center justify-between">
+              <p className="text-[12px] font-medium leading-[16px] text-muted-foreground">
+                {datetime}
+              </p>
+              <div className="flex gap-1 items-center">
+                {t.entry_mode === 'quick' && (
+                  <span className="border border-badge-rating-border rounded-full px-1 py-0.5 flex items-center justify-center min-w-[20px] min-h-[20px]">
+                    <LightningIcon size={16} className="text-badge-quick-text" />
+                  </span>
+                )}
+                {t.rating != null && (
+                  <span className="border border-badge-rating-border rounded-full px-2 py-0.5 flex items-center gap-1 min-h-[20px]">
+                    <StarIcon size={16} className="text-badge-rating-text" />
+                    <span className="text-[12px] font-medium text-badge-rating-text leading-[16px]">{t.rating}/10</span>
+                  </span>
+                )}
+              </div>
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* Image carousel */}
-      {t.photo_urls && t.photo_urls.length > 0 && (
-        <div className="max-w-2xl mx-auto px-4 mt-5">
-          <PhotoCarousel urls={t.photo_urls} alt={t.name} />
+            {/* Title */}
+            <h1 className="text-[24px] font-semibold leading-[1.2] tracking-[-1px] text-foreground">
+              {t.name}
+            </h1>
+
+            {/* Badges — скрываем если привязан сорт из коллекции (там уже есть тип/год/регион) */}
+            {!t.tea_item_name && (
+              <div className="flex flex-wrap gap-1">
+                {t.category && <CategoryBadge category={t.category} />}
+                {t.year && (
+                  <span className="border border-badge-tag-border bg-badge-tag-bg rounded-full px-2 py-0.5 text-[12px] font-semibold leading-[16px] text-badge-tag-text">
+                    {t.year}
+                  </span>
+                )}
+                {t.region && (
+                  <span className="border border-badge-tag-border bg-badge-tag-bg rounded-full px-2 py-0.5 text-[12px] font-semibold leading-[16px] text-badge-tag-text">
+                    {t.region}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
 

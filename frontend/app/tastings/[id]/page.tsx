@@ -113,7 +113,7 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
     <main className="min-h-screen bg-background">
       {hasPhoto ? (
         /* С фото: hero — фото-фон + overlay (кнопки, дата/рейтинг/заголовок, бейджи) */
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto sm:px-4">
           <TastingHero
             id={t.id}
             photos={t.photo_urls}

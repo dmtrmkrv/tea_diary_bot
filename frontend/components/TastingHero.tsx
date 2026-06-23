@@ -83,7 +83,7 @@ export default function TastingHero({
       </div>
 
       {/* Нижний блок: дата/рейтинг, заголовок, бейджи, контролы */}
-      <div className="absolute bottom-0 left-4 right-4 flex flex-col gap-2 pb-2">
+      <div className="absolute bottom-0 left-4 right-4 flex flex-col gap-2 pb-4">
         <div className="flex items-center justify-between">
           <p className="text-text-light text-[12px] font-medium leading-[16px]">{datetime}</p>
           <div className="flex items-center gap-1">
@@ -124,7 +124,7 @@ export default function TastingHero({
 
         {/* Контролы карусели */}
         {multi && (
-          <div className="flex items-center justify-between py-2">
+          <div className="flex items-center justify-between">
             <button
               type="button"
               onClick={() => setCurrent((i) => Math.max(i - 1, 0))}

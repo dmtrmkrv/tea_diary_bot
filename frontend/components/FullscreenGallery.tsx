@@ -40,6 +40,18 @@ export default function FullscreenGallery({ photos, startIndex, alt, onClose, on
     return () => { api.off('select', onSelect); };
   }, [api, onIndexChange]);
 
+  // Десктоп: листание стрелками ←/→ (на мобилке клавиш нет — конфликта нет; Esc закрывает Dialog).
+  useEffect(() => {
+    if (!api) return;
+    const a = api;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'ArrowLeft') a.scrollPrev();
+      else if (e.key === 'ArrowRight') a.scrollNext();
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [api]);
+
   return (
     <DialogPrimitive.Root open onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogPrimitive.Portal>
@@ -64,7 +76,7 @@ export default function FullscreenGallery({ photos, startIndex, alt, onClose, on
           <div className="relative flex-1 min-h-0 flex items-center">
             <Carousel
               className="w-full"
-              opts={{ align: 'center', startIndex, loop: false }}
+              opts={{ align: 'center', startIndex, loop: false, containScroll: false }}
               setApi={setApi}
             >
               <CarouselContent>

@@ -6,6 +6,7 @@ import BottomNav from "@/components/BottomNav";
 import AddTeaSheetController from "@/components/AddTeaSheetController";
 import { Toaster } from "@/components/ui/sonner";
 import TzSync from "@/components/TzSync";
+import YandexMetrika from "@/components/YandexMetrika";
 import { Providers } from "./providers";
 
 const inter = Inter({
@@ -36,6 +37,7 @@ export default function RootLayout({
           <AddTeaSheetController />
           <Toaster position="top-center" />
           <TzSync />
+          <YandexMetrika />
         </Providers>
       </body>
     </html>

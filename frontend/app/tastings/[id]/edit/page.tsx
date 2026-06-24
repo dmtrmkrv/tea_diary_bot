@@ -39,7 +39,7 @@ export default async function EditTastingPage({ params }: { params: Promise<{ id
     rating: t.rating ?? 0,
     summary: t.summary ?? null,
     infusions: t.infusions ?? [],
-    photos: t.photos ?? [],
+    photos: t.photo_list ?? [],
   };
 
   return (

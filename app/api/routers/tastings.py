@@ -83,7 +83,10 @@ class TastingDetail(TastingOut):
     infusions: List[InfusionOut] = []
     photo_count: int = 0
     photo_urls: List[str] = []
-    photos: List[PhotoOut] = []
+    # Не называть это поле `photos`: у ORM-модели Tasting есть relationship
+    # `photos`, и model_validate(from_attributes) попытался бы провалидировать
+    # ORM-объекты Photo как PhotoOut (без url) → ValidationError/500.
+    photo_list: List[PhotoOut] = []
 
 
 class TastingListOut(BaseModel):
@@ -379,7 +382,7 @@ def get_tasting(
     result.infusions = list(infusions)
     result.photo_count = len(photos)
     result.photo_urls = photo_urls
-    result.photos = photo_items
+    result.photo_list = photo_items
 
     if tasting.tea_item_id:
         tea_item = db.get(TeaItem, tasting.tea_item_id)

@@ -13,7 +13,7 @@ import ThemeSheet from '@/components/profile/ThemeSheet';
 import OnboardingSheet from '@/components/profile/OnboardingSheet';
 import { getMe, getMyStats, downloadTastingsCsv, type Me, type MyStats } from '@/lib/apiClient';
 
-const FEEDBACK_EMAIL = 'dmitryidentity@gmail.com';
+const FEEDBACK_EMAIL = 'info@leafpulse.ru';
 
 export default function ProfilePage() {
   const [me, setMe] = useState<Me | null>(null);

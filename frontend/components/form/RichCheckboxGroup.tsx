@@ -22,6 +22,19 @@ export function richCheckboxToCsv(s: RichCheckboxState): string {
   return parts.join(', ');
 }
 
+// Обратное преобразование (для предзаполнения формы при редактировании).
+// Конвенция: «Другое: …» — всегда последний элемент, его запятые относятся к
+// свободному тексту, а не разделяют пункты (та же логика, что на детальной).
+export function csvToRichCheckboxState(csv: string | null | undefined): RichCheckboxState {
+  if (!csv || !csv.trim()) return { selected: [], other: '', otherEnabled: false };
+  const parts = csv.split(',').map((s) => s.trim()).filter(Boolean);
+  const otherIdx = parts.findIndex((p) => p.startsWith('Другое:'));
+  if (otherIdx === -1) return { selected: parts, other: '', otherEnabled: false };
+  const selected = parts.slice(0, otherIdx);
+  const other = parts.slice(otherIdx).join(', ').replace(/^Другое:\s*/, '');
+  return { selected, other, otherEnabled: true };
+}
+
 function CheckboxIndicator({ active }: { active: boolean }) {
   return (
     <span className="relative shrink-0 size-4">

@@ -47,7 +47,12 @@ export default function TastingActions({ tastingId }: { tastingId: number }) {
       </button>
       {open && (
         <div className="absolute right-0 top-10 bg-popover rounded-lg shadow-lg z-50 overflow-hidden min-w-[160px]">
-          {/* «Редактировать» появится после релиза — пока только удаление */}
+          <button
+            className="w-full text-left px-4 py-3 text-[14px] text-foreground hover:bg-surface-sunken transition-colors border-b border-border-default"
+            onClick={() => { setOpen(false); router.push(`/tastings/${tastingId}/edit`); }}
+          >
+            Редактировать
+          </button>
           <button
             className="w-full text-left px-4 py-3 text-[14px] text-destructive hover:bg-surface-sunken transition-colors disabled:opacity-50"
             disabled={deleting}

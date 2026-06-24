@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any, Sequence
+from typing import Any, Optional, Sequence
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 
 from app.db.engine import SessionLocal
@@ -131,3 +131,53 @@ def create_tasting(
                 if attempts >= _MAX_CREATE_ATTEMPTS:
                     raise
     raise RuntimeError("Failed to create tasting after retries")
+
+
+def update_tasting(
+    tasting_id: int,
+    user_id: int,
+    fields: dict,
+    infusions: Sequence[dict],
+) -> Optional[Tasting]:
+    """Обновляет дегустацию и её проливы.
+
+    Остаток сорта НЕ трогаем: списание происходит только при создании,
+    возврат — только при удалении. Редактирование (в т.ч. смена грамма
+    или сорта) на остаток в коллекции не влияет — иначе ретроспективная
+    правка старых записей рассинхронизировала бы учёт.
+
+    Возвращает обновлённую дегустацию или ``None``, если запись не найдена
+    либо принадлежит другому пользователю.
+    """
+
+    with SessionLocal() as session:
+        with session.begin():
+            tasting = session.get(Tasting, tasting_id)
+            if tasting is None or tasting.user_id != user_id:
+                return None
+
+            for key, value in fields.items():
+                setattr(tasting, key, value)
+
+            # Полная замена проливов: форма всегда присылает актуальный
+            # список целиком, поэтому удаляем старые и вставляем заново.
+            session.execute(
+                delete(Infusion).where(Infusion.tasting_id == tasting_id)
+            )
+            for infusion in infusions:
+                session.add(
+                    Infusion(
+                        tasting_id=tasting_id,
+                        n=infusion.get("n"),
+                        seconds=infusion.get("seconds"),
+                        liquor_color=infusion.get("liquor_color"),
+                        taste=infusion.get("taste"),
+                        special_notes=infusion.get("special_notes"),
+                        body=infusion.get("body"),
+                        aftertaste=infusion.get("aftertaste"),
+                        note=infusion.get("note"),
+                    )
+                )
+
+        session.refresh(tasting)
+        return tasting

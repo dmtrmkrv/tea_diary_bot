@@ -190,6 +190,17 @@ export function createTasting(data: TastingCreateInput) {
   });
 }
 
+// Редактирование: без entry_mode (бэкенд сохраняет режим записи как был).
+export type TastingUpdateInput = Omit<TastingCreateInput, 'entry_mode' | 'aroma_after'>;
+
+export function updateTasting(tastingId: number, data: TastingUpdateInput) {
+  return apiCall<Record<string, unknown>>(`/tastings/${tastingId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+}
+
 export type Me = {
   id: number;
   username: string | null;
@@ -240,4 +251,10 @@ export async function uploadTastingPhotos(tastingId: number, files: File[]): Pro
   const fd = new FormData();
   for (const f of files) fd.append('files', f);
   await apiCall(`/tastings/${tastingId}/photos`, { method: 'POST', body: fd });
+}
+
+export function deleteTastingPhoto(tastingId: number, photoId: number) {
+  return apiCall<{ ok: boolean }>(`/tastings/${tastingId}/photos/${photoId}`, {
+    method: 'DELETE',
+  });
 }

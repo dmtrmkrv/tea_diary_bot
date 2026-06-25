@@ -230,6 +230,11 @@ def create_tasting_api(
         year = tea_item.year
         region = tea_item.region
 
+    if data.teaware_id is not None:
+        teaware = db.get(Teaware, data.teaware_id)
+        if not teaware or teaware.user_id != user_id:
+            raise HTTPException(status_code=400, detail="Посуда не найдена")
+
     # Часовой пояс пользователя (автоопределяется на вебе): время и «сегодня»
     # считаем в его локальной зоне, а не в серверной (UTC/Amsterdam).
     user = db.get(User, user_id)
@@ -468,6 +473,11 @@ def update_tasting_api(
         fields["category"] = tea_item.category or ""
         fields["year"] = tea_item.year
         fields["region"] = tea_item.region
+
+    if data.teaware_id is not None:
+        teaware = db.get(Teaware, data.teaware_id)
+        if not teaware or teaware.user_id != user_id:
+            raise HTTPException(status_code=400, detail="Посуда не найдена")
 
     # Дата дегустации (бэкдейтинг). Сдвиг даты считаем в зоне пользователя.
     # Прошлая дата → created_at = 00:00 (фронт покажет только дату). Возврат на

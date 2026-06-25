@@ -74,10 +74,19 @@ class TastingOut(BaseModel):
     class Config:
         from_attributes = True
 
+class PhotoOut(BaseModel):
+    id: int
+    url: str
+
+
 class TastingDetail(TastingOut):
     infusions: List[InfusionOut] = []
     photo_count: int = 0
     photo_urls: List[str] = []
+    # Не называть это поле `photos`: у ORM-модели Tasting есть relationship
+    # `photos`, и model_validate(from_attributes) попытался бы провалидировать
+    # ORM-объекты Photo как PhotoOut (без url) → ValidationError/500.
+    photo_list: List[PhotoOut] = []
 
 
 class TastingListOut(BaseModel):
@@ -101,6 +110,23 @@ class TastingCreate(BaseModel):
     rating: int = 0
     summary: Optional[str] = None
     entry_mode: str = "web"
+    infusions: List[InfusionCreate] = []
+
+
+class TastingUpdate(BaseModel):
+    # entry_mode намеренно не редактируется (web/quick/full остаётся как был).
+    name: str
+    tasted_date: Optional[datetime.date] = None
+    tea_item_id: Optional[int] = None
+    teaware_id: Optional[int] = None
+    grams: Optional[float] = None
+    temp_c: Optional[int] = None
+    aroma_dry: Optional[str] = None
+    aroma_warmed: Optional[str] = None
+    effects_csv: Optional[str] = None
+    scenarios_csv: Optional[str] = None
+    rating: int = 0
+    summary: Optional[str] = None
     infusions: List[InfusionCreate] = []
 
 
@@ -203,6 +229,11 @@ def create_tasting_api(
         category = tea_item.category or ""
         year = tea_item.year
         region = tea_item.region
+
+    if data.teaware_id is not None:
+        teaware = db.get(Teaware, data.teaware_id)
+        if not teaware or teaware.user_id != user_id:
+            raise HTTPException(status_code=400, detail="Посуда не найдена")
 
     # Часовой пояс пользователя (автоопределяется на вебе): время и «сегодня»
     # считаем в его локальной зоне, а не в серверной (UTC/Amsterdam).
@@ -342,11 +373,13 @@ def get_tasting(
     ).scalars().all()
 
     photo_urls = []
+    photo_items: List[PhotoOut] = []
     for photo in photos:
         if photo.storage_backend == "s3" and photo.object_key:
             try:
                 url = get_presigned_url(photo.object_key)
                 photo_urls.append(url)
+                photo_items.append(PhotoOut(id=photo.id, url=url))
             except Exception:
                 pass
 
@@ -354,6 +387,7 @@ def get_tasting(
     result.infusions = list(infusions)
     result.photo_count = len(photos)
     result.photo_urls = photo_urls
+    result.photo_list = photo_items
 
     if tasting.tea_item_id:
         tea_item = db.get(TeaItem, tasting.tea_item_id)
@@ -384,6 +418,92 @@ def get_tasting(
                     pass
 
     return result
+
+
+def _effective_date(
+    created_at: Optional[datetime.datetime], tz_offset: int
+) -> Optional[datetime.date]:
+    """Дата дегустации с учётом бэкдейт-маркера.
+
+    created_at в 00:00 UTC — это маркер «только дата» (бэкдейт): дата берётся
+    как есть. Иначе — обычная запись, дату считаем в зоне пользователя.
+    """
+    if created_at is None:
+        return None
+    if created_at.hour == 0 and created_at.minute == 0:
+        return created_at.date()
+    local = created_at + datetime.timedelta(minutes=tz_offset)
+    return local.date()
+
+
+@router.patch("/{tasting_id}", response_model=TastingDetail)
+def update_tasting_api(
+    tasting_id: int,
+    data: TastingUpdate,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),
+):
+    from app.services.tastings import update_tasting
+
+    existing = db.get(Tasting, tasting_id)
+    if not existing or existing.user_id != user_id:
+        raise HTTPException(status_code=404, detail="Не найдено")
+
+    fields: dict = {
+        "name": data.name,
+        "tea_item_id": data.tea_item_id,
+        "teaware_id": data.teaware_id,
+        "grams": data.grams,
+        "temp_c": data.temp_c,
+        "aroma_dry": data.aroma_dry,
+        "aroma_warmed": data.aroma_warmed,
+        "effects_csv": data.effects_csv,
+        "scenarios_csv": data.scenarios_csv,
+        "rating": data.rating,
+        "summary": data.summary,
+    }
+
+    # Денормализованные category/year/region берём из карточки сорта — только
+    # когда привязка задана. Без привязки эти поля не трогаем, чтобы не затереть
+    # ручные значения у legacy-записей из бота.
+    if data.tea_item_id is not None:
+        tea_item = db.get(TeaItem, data.tea_item_id)
+        if not tea_item or tea_item.user_id != user_id:
+            raise HTTPException(status_code=400, detail="Сорт не найден")
+        fields["category"] = tea_item.category or ""
+        fields["year"] = tea_item.year
+        fields["region"] = tea_item.region
+
+    if data.teaware_id is not None:
+        teaware = db.get(Teaware, data.teaware_id)
+        if not teaware or teaware.user_id != user_id:
+            raise HTTPException(status_code=400, detail="Посуда не найдена")
+
+    # Дата дегустации (бэкдейтинг). Сдвиг даты считаем в зоне пользователя.
+    # Прошлая дата → created_at = 00:00 (фронт покажет только дату). Возврат на
+    # сегодня → created_at = текущее время. Дата не изменилась → не трогаем
+    # created_at (иначе каждое сохранение сбивало бы время записи).
+    if data.tasted_date is not None:
+        user = db.get(User, user_id)
+        tz_offset = (user.tz_offset_min if user else 0) or 0
+        user_now = datetime.datetime.utcnow() + datetime.timedelta(minutes=tz_offset)
+        if data.tasted_date != _effective_date(existing.created_at, tz_offset):
+            if data.tasted_date == user_now.date():
+                fields["created_at"] = datetime.datetime.utcnow()
+            else:
+                fields["created_at"] = datetime.datetime.combine(
+                    data.tasted_date, datetime.time.min
+                )
+
+    infusions = [inf.model_dump() for inf in data.infusions]
+    updated = update_tasting(tasting_id, user_id, fields, infusions)
+    if updated is None:
+        raise HTTPException(status_code=404, detail="Не найдено")
+
+    # update_tasting коммитит в отдельной сессии — сбрасываем кэш request-сессии,
+    # иначе get_tasting вернёт устаревший объект из identity-map.
+    db.expire_all()
+    return get_tasting(tasting_id, db, user_id)
 
 
 @router.delete("/{tasting_id}")
@@ -453,3 +573,31 @@ async def upload_tasting_photos(
     db.commit()
 
     return get_tasting(tasting_id, db, user_id)
+
+
+@router.delete("/{tasting_id}/photos/{photo_id}")
+def delete_tasting_photo(
+    tasting_id: int,
+    photo_id: int,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),
+):
+    tasting = db.get(Tasting, tasting_id)
+    if not tasting or tasting.user_id != user_id:
+        raise HTTPException(status_code=404, detail="Не найдено")
+
+    photo = db.get(Photo, photo_id)
+    if not photo or photo.tasting_id != tasting_id:
+        raise HTTPException(status_code=404, detail="Фото не найдено")
+
+    # Сначала фиксируем удаление в БД, и только потом — файл из хранилища
+    # (best-effort). Иначе при упавшем commit после успешного S3-delete
+    # осталась бы строка Photo без объекта → битая картинка на детальной.
+    # Сбой удаления файла оставит лишь осиротевший объект в S3 (мусор), что
+    # безопаснее для пользователя.
+    object_key = photo.object_key
+    storage_backend = photo.storage_backend
+    db.delete(photo)
+    db.commit()
+    delete_object(object_key, storage_backend)
+    return {"ok": True}

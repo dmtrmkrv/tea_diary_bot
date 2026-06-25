@@ -8,18 +8,12 @@ import { toast } from 'sonner';
 import { XIcon, LeafIcon, BowlSteamIcon, CaretRightIcon, DotsThreeIcon, MinusIcon, PlusIcon } from '@phosphor-icons/react';
 import CategoryBadge from '@/components/CategoryBadge';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
-import { getTeaItemTastings, deleteTeaItem, updateTeaAmount, type TeaItem, type TastingShort } from '@/lib/apiClient';
+import { getTeaItemTastings, deleteTeaItem, updateTeaAmount, getMe, type TeaItem, type TastingShort } from '@/lib/apiClient';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import PaginationButtons from '@/components/PaginationButtons';
+import { formatTastingDatetime } from '@/lib/datetime';
 
 const PAGE_SIZE = 4;
-
-function formatDate(s: string): string {
-  const d = new Date(s);
-  return new Intl.DateTimeFormat('ru-RU', {
-    day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
-  }).format(d) + ', ' + String(d.getUTCHours()).padStart(2, '0') + ':' + String(d.getUTCMinutes()).padStart(2, '0');
-}
 
 type LoadedData = { key: string; items: TastingShort[]; total: number };
 
@@ -132,6 +126,15 @@ export default function TeaDetailSheet({
 
   const loadKey = item ? `${item.id}-${page}` : null;
   const [data, setData] = useState<LoadedData | null>(null);
+
+  // Часовой пояс пользователя — чтобы время совпадало с карточкой/списком
+  // (тот же формат, что в TastingCard и на детальной).
+  const [tzOffset, setTzOffset] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    getMe().then((me) => { if (!cancelled) setTzOffset(me.tz_offset_min ?? 0); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (!item || !loadKey) return;
@@ -300,7 +303,7 @@ export default function TeaDetailSheet({
                     </div>
                     <div className="flex-1 min-w-0 flex flex-col gap-2">
                       <p className="text-[12px] leading-[16px] font-medium text-muted-foreground">
-                        {formatDate(t.created_at)}
+                        {formatTastingDatetime(t.created_at, tzOffset)}
                       </p>
                       <p className="text-[14px] leading-[20px] font-semibold text-foreground truncate">
                         {t.name}

@@ -12,6 +12,7 @@ import RichRadioGroup from '@/components/form/RichRadioGroup';
 import ToggleChips from '@/components/form/ToggleChips';
 import { createTeaware, uploadTeawarePhoto, type Teaware } from '@/lib/apiClient';
 import { compressImage } from '@/lib/imageCompression';
+import { Spinner } from '@/components/ui/spinner';
 import ConfirmDiscardDialog from '@/components/ConfirmDiscardDialog';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
@@ -342,9 +343,9 @@ export default function AddTeawareSheet({
             type="button"
             onClick={handleSave}
             disabled={!canSave}
-            className="flex-1 h-10 rounded-full bg-primary text-[14px] font-medium text-primary-foreground disabled:opacity-50"
+            className="flex-1 h-10 rounded-full bg-primary text-[14px] font-medium text-primary-foreground disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {submitting ? 'Сохранение…' : 'Сохранить'}
+            {submitting ? (<><Spinner className="size-4" />Сохранение…</>) : 'Сохранить посуду'}
           </button>
         </div>
       </div>

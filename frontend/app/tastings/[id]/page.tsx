@@ -24,25 +24,7 @@ import TastingActions from '@/components/TastingActions';
 import TastingHero from '@/components/TastingHero';
 import TeaItemTrigger from '@/components/collection/TeaItemTrigger';
 import TeawareItemTrigger from '@/components/collection/TeawareItemTrigger';
-
-function formatDatetime(dateStr: string | null, offsetMin: number): string {
-  if (!dateStr) return '';
-  const iso = dateStr.endsWith('Z') ? dateStr : dateStr + 'Z';
-  const d = new Date(iso);
-  // Бэкдейт-маркер: полночь UTC → только дата, без сдвига (дата уже = выбранной).
-  if (d.getUTCHours() === 0 && d.getUTCMinutes() === 0) {
-    return new Intl.DateTimeFormat('ru-RU', {
-      day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
-    }).format(d);
-  }
-  // Обычная запись: показываем в часовом поясе пользователя.
-  const local = new Date(d.getTime() + offsetMin * 60000);
-  const date = new Intl.DateTimeFormat('ru-RU', {
-    day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
-  }).format(local);
-  const h = local.getUTCHours(), m = local.getUTCMinutes();
-  return `${date}, ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-}
+import { formatTastingDatetime } from '@/lib/datetime';
 
 // Теги-CSV (Ощущения/Сценарии): предопределённые пункты разделяем « · »,
 // а свободный текст «Другое: …» показываем как есть — его запятые это не
@@ -104,7 +86,7 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
   ]);
   const tzOffset = me?.tz_offset_min ?? 0;
 
-  const datetime = formatDatetime(t.created_at ?? null, tzOffset);
+  const datetime = formatTastingDatetime(t.created_at ?? null, tzOffset);
   const hasPhoto = Boolean(t.photo_urls && t.photo_urls.length > 0);
   const effects = formatTagsCsv(t.effects_csv);
   const scenarios = formatTagsCsv(t.scenarios_csv);

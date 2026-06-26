@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { XIcon } from '@phosphor-icons/react';
+import { XIcon, EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { authLogin, authRegister, type AuthError } from '@/lib/apiClient';
@@ -15,6 +15,39 @@ type Mode = 'login' | 'register';
 
 function setSessionCookie(token: string) {
   document.cookie = `token=${token}; path=/; max-age=${60 * 60 * 24 * 180}`;
+}
+
+// Поле пароля с переключателем видимости («глазик»). Отдельно от Input,
+// чтобы не толпиться с его крестиком-очисткой.
+function PasswordInput({
+  value, onChange, placeholder, autoComplete,
+}: {
+  value: string;
+  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  placeholder?: string;
+  autoComplete?: string;
+}) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative w-full">
+      <input
+        type={show ? 'text' : 'password'}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        className="h-11 w-full min-w-0 rounded-lg border border-border-input bg-surface-input pl-4 pr-10 py-1 text-[14px] shadow-xs transition-colors outline-none placeholder:text-text-placeholder focus-visible:border-accent-default focus-visible:ring-[3px] focus-visible:ring-ring-focus"
+      />
+      <button
+        type="button"
+        onClick={() => setShow((s) => !s)}
+        aria-label={show ? 'Скрыть пароль' : 'Показать пароль'}
+        className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-7 h-7 text-text-secondary hover:text-foreground transition-colors"
+      >
+        {show ? <EyeSlashIcon size={18} /> : <EyeIcon size={18} />}
+      </button>
+    </div>
+  );
 }
 
 export default function AuthSheet({
@@ -120,8 +153,7 @@ export default function AuthSheet({
 
           <div className="flex flex-col gap-1.5">
             <Label className="text-[14px] font-medium text-foreground">Пароль</Label>
-            <Input
-              type="password"
+            <PasswordInput
               autoComplete={isRegister ? 'new-password' : 'current-password'}
               value={password}
               onChange={(e) => { setPassword(e.target.value); setError(null); }}
@@ -132,8 +164,7 @@ export default function AuthSheet({
           {isRegister && (
             <div className="flex flex-col gap-1.5">
               <Label className="text-[14px] font-medium text-foreground">Пароль ещё раз</Label>
-              <Input
-                type="password"
+              <PasswordInput
                 autoComplete="new-password"
                 value={password2}
                 onChange={(e) => { setPassword2(e.target.value); setError(null); }}

@@ -5,8 +5,8 @@ export const dynamic = 'force-dynamic';
 import { useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { LeafIcon } from '@phosphor-icons/react';
 import AuthSheet from '@/components/auth/AuthSheet';
+import LeafPulseLogo from '@/components/LeafPulseLogo';
 
 type Tab = 'login' | 'register';
 
@@ -51,16 +51,13 @@ export default function LoginPreviewPage() {
   return (
     <>
       <main
-        className="fixed inset-0 overflow-y-auto flex flex-col items-center px-4 py-[clamp(24px,6vh,64px)]"
+        className="fixed inset-0 overflow-y-auto"
         style={{ background: 'linear-gradient(204.8deg, rgb(148, 232, 125) 0%, rgb(222, 203, 105) 33.875%, rgb(241, 136, 63) 100%)' }}
       >
+        <div className="min-h-full flex flex-col items-center justify-center px-4 py-8">
         <div className="w-full max-w-[400px] bg-card rounded-3xl shadow-xl px-5 py-7 flex flex-col items-center">
           {/* Лого */}
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-3"
-            style={{ background: 'linear-gradient(135deg, rgb(241,136,63), rgb(222,203,105))' }}>
-            <LeafIcon size={28} weight="fill" className="text-white" />
-          </div>
-          <p className="text-[15px] font-bold tracking-wide text-foreground leading-[1.1] text-center mb-5">LEAF<br />PULSE</p>
+          <LeafPulseLogo className="h-[72px] w-auto mb-5" />
 
           <h1 className="text-[24px] font-semibold leading-[1.2] tracking-[-0.5px] text-foreground text-center">
             Твой чайный дневник<br />и коллекция
@@ -125,6 +122,7 @@ export default function LoginPreviewPage() {
               </Link>
             </span>
           </label>
+        </div>
         </div>
       </main>
 

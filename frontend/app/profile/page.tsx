@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   SignOutIcon,
   UserIcon,
@@ -16,6 +17,7 @@ import { getMe, getMyStats, downloadTastingsCsv, type Me, type MyStats } from '@
 const FEEDBACK_EMAIL = 'info@leafpulse.ru';
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [me, setMe] = useState<Me | null>(null);
   const [stats, setStats] = useState<MyStats | null>(null);
   const [themeSheetOpen, setThemeSheetOpen] = useState(false);
@@ -131,6 +133,11 @@ export default function ProfilePage() {
             onClick={() => {
               window.location.href = `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent('LeafPulse: сообщение об ошибке')}`;
             }}
+          />
+          <div className="h-px bg-border-default mx-4" />
+          <MenuRow
+            label="Политика конфиденциальности"
+            onClick={() => router.push('/privacy')}
           />
         </div>
       </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -50,6 +51,7 @@ function parseTelegramAuth(): TelegramUser | null {
 export default function LoginPage() {
   const router = useRouter();
   const [status, setStatus] = useState<'idle' | 'pending' | 'error'>('idle');
+  const [consented, setConsented] = useState(false);
 
   // Возврат от Telegram: разбираем подписанные данные и логинимся.
   useEffect(() => {
@@ -123,11 +125,26 @@ export default function LoginPage() {
         </div>
 
         <div className="w-full max-w-[296px] flex flex-col gap-[12px]">
+          <label className="flex items-start gap-2 text-left cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={consented}
+              onChange={(e) => setConsented(e.target.checked)}
+              className="mt-0.5 size-4 shrink-0 accent-[#78350f]"
+            />
+            <span className="text-[12px] leading-[16px] text-white/90">
+              Я принимаю{' '}
+              <Link href="/privacy" className="underline underline-offset-2">
+                Политику конфиденциальности
+              </Link>{' '}
+              и даю согласие на обработку персональных данных
+            </span>
+          </label>
           <button
             type="button"
             onClick={startLogin}
-            disabled={status === 'pending'}
-            className="w-full flex items-center justify-center min-h-[40px] px-[24px] py-[10px] rounded-lg bg-[#78350f] text-[#fafaf9] text-[14px] font-medium leading-[20px] disabled:opacity-80"
+            disabled={status === 'pending' || !consented}
+            className="w-full flex items-center justify-center min-h-[40px] px-[24px] py-[10px] rounded-lg bg-[#78350f] text-[#fafaf9] text-[14px] font-medium leading-[20px] disabled:opacity-80 disabled:cursor-not-allowed"
           >
             {status === 'pending' ? 'Входим…' : 'Регистрация через Telegram'}
           </button>

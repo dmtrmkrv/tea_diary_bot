@@ -8,11 +8,11 @@ export default function CookieBanner() {
   const { consent, ready } = useCookieConsent();
   const pathname = usePathname();
 
-  // Показываем только пока выбор не сделан. Не на логине/auth — там аналитика
-  // всё равно не грузится (гейтится согласием), а на экране логина уже есть
-  // отдельный чекбокс согласия на ПДн.
+  // Показываем, пока выбор не сделан. Скрываем только на /auth (транзитный
+  // редирект-callback). На /login показываем — для анонимного посетителя это
+  // единственный экран, где он может дать/отклонить согласие на аналитику.
   if (!ready || consent !== null) return null;
-  if (pathname === '/login' || pathname.startsWith('/auth')) return null;
+  if (pathname.startsWith('/auth')) return null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[60] p-3">

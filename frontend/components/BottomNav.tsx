@@ -36,6 +36,7 @@ export default function BottomNav() {
   if (
     pathname === '/login' || pathname.startsWith('/auth')
     || pathname === '/new' || pathname.endsWith('/edit')
+    || pathname === '/privacy'
   ) return null;
 
   function openSheet(name: 'tea' | 'teaware') {

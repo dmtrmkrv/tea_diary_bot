@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useCookieConsent } from '@/lib/cookieConsent';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -52,6 +53,10 @@ export default function LoginPage() {
   const router = useRouter();
   const [status, setStatus] = useState<'idle' | 'pending' | 'error'>('idle');
   const [consented, setConsented] = useState(false);
+  // Когда показывается куки-баннер (снизу), даём логину доп. нижний отступ,
+  // чтобы баннер не перекрывал кнопку входа.
+  const { consent: cookieConsent, ready: cookieReady } = useCookieConsent();
+  const cookieBannerVisible = cookieReady && cookieConsent === null;
 
   // Возврат от Telegram: разбираем подписанные данные и логинимся.
   useEffect(() => {
@@ -91,7 +96,11 @@ export default function LoginPage() {
 
   return (
     <main
-      className="fixed inset-0 overflow-hidden flex flex-col items-center px-4 pt-[clamp(56px,12vh,138px)] pb-[max(env(safe-area-inset-bottom),clamp(40px,6vh,56px))] text-white text-center"
+      className={`fixed inset-0 overflow-hidden flex flex-col items-center px-4 pt-[clamp(56px,12vh,138px)] text-white text-center ${
+        cookieBannerVisible
+          ? 'pb-[200px]'
+          : 'pb-[max(env(safe-area-inset-bottom),clamp(40px,6vh,56px))]'
+      }`}
       style={{ background: 'linear-gradient(204.8deg, rgb(148, 232, 125) 0%, rgb(222, 203, 105) 33.875%, rgb(241, 136, 63) 100%)' }}
     >
       {/* Логотип */}

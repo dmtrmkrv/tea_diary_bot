@@ -143,7 +143,13 @@ export default function LoginPage() {
             />
             <span className="text-[12px] leading-[16px] text-white/90">
               Я принимаю{' '}
-              <Link href="/privacy" className="underline underline-offset-2">
+              <Link
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="underline underline-offset-2"
+              >
                 Политику конфиденциальности
               </Link>{' '}
               и даю согласие на обработку персональных данных

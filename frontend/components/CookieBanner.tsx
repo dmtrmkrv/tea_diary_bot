@@ -21,7 +21,12 @@ export default function CookieBanner() {
           На сайте используются файлы cookie. Часть из них необходима для работы входа
           и сессии, часть — для аналитики (Яндекс.Метрика), которая помогает улучшать
           сервис. Аналитику можно отключить. Подробнее в{' '}
-          <Link href="/privacy" className="text-foreground underline underline-offset-2">
+          <Link
+            href="/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-foreground underline underline-offset-2"
+          >
             Политике конфиденциальности
           </Link>.
         </p>

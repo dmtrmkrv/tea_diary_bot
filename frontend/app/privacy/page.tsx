@@ -1,5 +1,4 @@
-import Link from 'next/link';
-import { ArrowLeftIcon } from '@phosphor-icons/react/dist/ssr';
+import PrivacyBackButton from '@/components/PrivacyBackButton';
 
 export const metadata = {
   title: 'Политика конфиденциальности',
@@ -12,13 +11,7 @@ export default function PrivacyPage() {
     <main className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-4 pt-6 pb-16">
         <div className="flex items-center gap-3 mb-6">
-          <Link
-            href="/"
-            className="w-9 h-9 rounded-full bg-button-icon-bg border border-button-icon-border flex items-center justify-center shrink-0"
-            aria-label="Назад"
-          >
-            <ArrowLeftIcon size={16} className="text-foreground" />
-          </Link>
+          <PrivacyBackButton />
           <h1 className="text-[20px] font-semibold text-foreground">
             Политика конфиденциальности
           </h1>

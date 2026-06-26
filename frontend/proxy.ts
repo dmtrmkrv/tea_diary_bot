@@ -13,6 +13,10 @@ export function proxy(request: NextRequest) {
   // входа (ссылка с логина), и после. Без редиректов в обе стороны.
   if (pathname === '/privacy') return NextResponse.next();
 
+  // /login-preview — превью нового логина (Bundle B). Публичная, чтобы можно
+  // было смотреть без входа. Временная: после готовности заменит /login.
+  if (pathname === '/login-preview') return NextResponse.next();
+
   const isPublic = pathname === '/login' || pathname.startsWith('/auth');
 
   if (!token && !isPublic) {

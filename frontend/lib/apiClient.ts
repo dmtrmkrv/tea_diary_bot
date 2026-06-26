@@ -258,3 +258,30 @@ export function deleteTastingPhoto(tastingId: number, photoId: number) {
     method: 'DELETE',
   });
 }
+
+// --- Вход по email (Arch 1). Бэк отдаёт структурную ошибку {detail:{code,message}}. ---
+export type AuthError = { status: number; code?: string; message?: string };
+
+async function authCall(path: string, body: unknown): Promise<{ access_token: string }> {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    const detail = (data as { detail?: { code?: string; message?: string } }).detail;
+    const err: AuthError = { status: res.status, code: detail?.code, message: detail?.message };
+    throw err;
+  }
+  return res.json();
+}
+
+export function authRegister(email: string, password: string, consent: boolean) {
+  return authCall('/auth/register', { email, password, consent });
+}
+
+export function authLogin(email: string, password: string) {
+  return authCall('/auth/login', { email, password });
+}

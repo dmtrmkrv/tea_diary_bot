@@ -1,6 +1,7 @@
 import datetime
 import hashlib
 import hmac
+import re
 import secrets
 import time
 from typing import Optional
@@ -11,10 +12,12 @@ import os
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from app.db.engine import SessionLocal
 from app.db.models import LoginCode, User
-from app.services.users import get_or_create_user
+from app.services.passwords import hash_password, verify_password
+from app.services.users import create_email_user, find_user_by_email, get_or_create_user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -162,4 +165,55 @@ def code_auth(data: CodeAuthData):
 
     user = get_or_create_user(telegram_id)
     token = create_jwt_token(telegram_id, user.username)
+    return {"access_token": token, "token_type": "bearer"}
+
+
+# --- Email + пароль ---
+
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+_MIN_PASSWORD_LEN = 8
+
+
+class RegisterData(BaseModel):
+    email: str
+    password: str
+    consent: bool = False
+
+
+class LoginData(BaseModel):
+    email: str
+    password: str
+
+
+@router.post("/register")
+def register(data: RegisterData):
+    email = data.email.strip().lower()
+    if not _EMAIL_RE.match(email):
+        raise HTTPException(status_code=422, detail={"code": "invalid_email", "message": "Некорректный email"})
+    if len(data.password) < _MIN_PASSWORD_LEN:
+        raise HTTPException(status_code=422, detail={"code": "weak_password", "message": "Пароль не короче 8 символов"})
+    # Согласие на ПДн обязательно при создании аккаунта (фиксируем consented_at).
+    if not data.consent:
+        raise HTTPException(status_code=422, detail={"code": "consent_required", "message": "Требуется согласие на обработку персональных данных"})
+    if find_user_by_email(email) is not None:
+        raise HTTPException(status_code=409, detail={"code": "email_taken", "message": "Этот email уже зарегистрирован"})
+    try:
+        user = create_email_user(email, hash_password(data.password))
+    except IntegrityError:
+        # Гонка: email заняли между проверкой и вставкой.
+        raise HTTPException(status_code=409, detail={"code": "email_taken", "message": "Этот email уже зарегистрирован"})
+    token = create_jwt_token(user.id)
+    return {"access_token": token, "token_type": "bearer"}
+
+
+@router.post("/login")
+def login(data: LoginData):
+    user = find_user_by_email(data.email)
+    if user is None:
+        # Различаем «нет аккаунта» и «неверный пароль» — фронт подсказывает
+        # зарегистрироваться (осознанный трейд-офф энумерации email ради UX).
+        raise HTTPException(status_code=401, detail={"code": "account_not_found", "message": "Аккаунт не найден"})
+    if not user.password_hash or not verify_password(user.password_hash, data.password):
+        raise HTTPException(status_code=401, detail={"code": "wrong_password", "message": "Неверный пароль"})
+    token = create_jwt_token(user.id, user.username)
     return {"access_token": token, "token_type": "bearer"}

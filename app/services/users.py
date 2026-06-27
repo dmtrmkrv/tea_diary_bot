@@ -242,19 +242,13 @@ def claim_telegram(current_user_id: int, telegram_id: int) -> User:
                 raise AuthConflict(
                     "already_linked", "Этот Telegram уже привязан к вашему аккаунту"
                 )
-            # У Telegram-аккаунта уже есть ДРУГОЙ логин — не перетираем чужой вход.
-            if (
-                current.email
-                and telegram_user.email
-                and current.email != telegram_user.email
-            ) or (
-                current.yandex_id
-                and telegram_user.yandex_id
-                and current.yandex_id != telegram_user.yandex_id
-            ):
+            # Telegram уже привязан к аккаунту с durable-входом (почта/Яндекс) —
+            # это самостоятельный аккаунт. Повторный перенос в третий аккаунт
+            # запрещаем: нужно войти в тот аккаунт, а не вливать его в новый.
+            if telegram_user.email is not None or telegram_user.yandex_id is not None:
                 raise AuthConflict(
                     "telegram_account_has_login",
-                    "К этому Telegram уже привязан другой вход",
+                    "Этот Telegram уже привязан к другому аккаунту — войдите в него.",
                 )
 
             # Снимаем ключи текущего аккаунта, чтобы перенести их на Telegram-строку.

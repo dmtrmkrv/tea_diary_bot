@@ -13,7 +13,7 @@ import { authClaim, type AuthError } from '@/lib/apiClient';
 const ERROR_BY_CODE: Record<string, string> = {
   no_bot_records: 'Для этого Telegram не нашлось записей бота.',
   already_linked: 'Этот Telegram уже привязан к вашему аккаунту.',
-  telegram_account_has_login: 'К этому Telegram уже привязан другой вход.',
+  telegram_account_has_login: 'Этот Telegram уже привязан к другому аккаунту — войдите в него.',
   merge_conflict: 'Не удалось объединить аккаунты — возможно, эти данные уже привязаны.',
 };
 

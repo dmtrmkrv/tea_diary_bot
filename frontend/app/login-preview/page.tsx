@@ -57,7 +57,7 @@ export default function LoginPreviewPage() {
         <div className="min-h-full flex flex-col items-center justify-center px-4 py-8">
         <div className="w-full max-w-[400px] bg-card rounded-3xl shadow-xl px-5 py-7 flex flex-col items-center">
           {/* Лого */}
-          <LeafPulseLogo className="h-[72px] w-auto mb-5" />
+          <LeafPulseLogo className="h-[72px] w-auto mb-8 text-text-secondary" />
 
           <h1 className="text-[24px] font-semibold leading-[1.2] tracking-[-0.5px] text-foreground text-center">
             Твой чайный дневник<br />и коллекция

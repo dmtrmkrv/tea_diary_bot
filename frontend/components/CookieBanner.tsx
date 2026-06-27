@@ -18,9 +18,8 @@ export default function CookieBanner() {
     <div className="fixed bottom-0 left-0 right-0 z-[60] p-3">
       <div className="max-w-2xl mx-auto bg-card border border-border-default rounded-2xl shadow-lg p-4 flex flex-col gap-3">
         <p className="text-[13px] leading-[18px] text-muted-foreground">
-          На сайте используются файлы cookie. Часть из них необходима для работы входа
-          и сессии, часть — для аналитики (Яндекс.Метрика), которая помогает улучшать
-          сервис. Аналитику можно отключить. Подробнее в{' '}
+          На сайте используются cookie и сервис аналитики. Аналитику можно отключить.
+          Подробнее в{' '}
           <Link
             href="/privacy"
             target="_blank"

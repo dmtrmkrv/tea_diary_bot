@@ -13,10 +13,6 @@ export function proxy(request: NextRequest) {
   // входа (ссылка с логина), и после. Без редиректов в обе стороны.
   if (pathname === '/privacy') return NextResponse.next();
 
-  // /login-preview — превью нового логина (Bundle B). Публичная, чтобы можно
-  // было смотреть без входа. Временная: после готовности заменит /login.
-  if (pathname === '/login-preview') return NextResponse.next();
-
   // /auth/yandex/callback — приём ответа Яндекса. Пропускаем без проверок:
   // нужен и для входа (токена ещё нет), и для будущей привязки (токен есть).
   if (pathname === '/auth/yandex/callback') return NextResponse.next();

@@ -36,7 +36,7 @@ export default function BottomNav() {
   if (
     pathname === '/login' || pathname.startsWith('/auth')
     || pathname === '/new' || pathname.endsWith('/edit')
-    || pathname === '/privacy' || pathname === '/login-preview'
+    || pathname === '/privacy'
     || pathname === '/link-telegram'
   ) return null;
 

@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import AuthSheet from '@/components/auth/AuthSheet';
 import LeafPulseLogo from '@/components/LeafPulseLogo';
+import { Spinner } from '@/components/ui/spinner';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -18,6 +19,7 @@ export default function LoginPage() {
   const [sheet, setSheet] = useState<Tab | null>(null);
   const [prefillEmail, setPrefillEmail] = useState('');
   const [shakeKey, setShakeKey] = useState(0); // меняем → область согласия «подёргивается»
+  const [yandexLoading, setYandexLoading] = useState(false);
 
   // Тап по кнопке, которой нужно согласие, без галочки: трясём чекбокс + подсказка.
   function nudgeConsent() {
@@ -41,12 +43,14 @@ export default function LoginPage() {
       nudgeConsent();
       return;
     }
+    setYandexLoading(true);
     try {
       const res = await fetch(`${API_URL}/auth/yandex/login-url`);
       if (!res.ok) throw new Error();
       const { url } = await res.json();
       window.location.href = url;
     } catch {
+      setYandexLoading(false);
       toast.error('Не удалось открыть вход через Яндекс. Попробуйте позже.');
     }
   }
@@ -106,9 +110,10 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={onYandex}
-            className={`w-full h-11 rounded-lg border border-border-default bg-background text-[14px] font-medium text-foreground transition-opacity ${yandexMuted ? 'opacity-50' : ''}`}
+            disabled={yandexLoading}
+            className={`w-full h-11 rounded-lg border border-border-default bg-background text-[14px] font-medium text-foreground transition-opacity flex items-center justify-center gap-2 ${yandexMuted ? 'opacity-50' : ''}`}
           >
-            Войти через Яндекс
+            {yandexLoading ? (<><Spinner className="size-4" />Минуту…</>) : 'Войти через Яндекс'}
           </button>
 
           {/* Согласие */}

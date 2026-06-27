@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { XIcon, EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
 import { authLinkEmail, type AuthError } from '@/lib/apiClient';
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -142,9 +143,9 @@ export default function LinkEmailSheet({
             type="button"
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="h-11 rounded-lg bg-primary text-[14px] font-medium text-primary-foreground disabled:opacity-50 flex items-center justify-center"
+            className="h-11 rounded-lg bg-primary text-[14px] font-medium text-primary-foreground disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {submitting ? 'Минуту…' : 'Добавить'}
+            {submitting ? (<><Spinner className="size-4" />Минуту…</>) : 'Добавить'}
           </button>
         </div>
       </div>

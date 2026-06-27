@@ -14,6 +14,7 @@ const ERROR_BY_CODE: Record<string, string> = {
   no_bot_records: 'Для этого Telegram не нашлось записей бота.',
   already_linked: 'Этот Telegram уже привязан к вашему аккаунту.',
   telegram_account_has_login: 'К этому Telegram уже привязан другой вход.',
+  merge_conflict: 'Не удалось объединить аккаунты — возможно, эти данные уже привязаны.',
 };
 
 export default function LinkTelegramPage() {

@@ -272,5 +272,9 @@ def claim(data: TelegramAuthData, user_id: int = Depends(get_current_user_id)):
         user = claim_telegram(user_id, data.id)
     except AuthConflict as exc:
         raise HTTPException(status_code=409, detail={"code": exc.code, "message": exc.message})
+    except IntegrityError:
+        # Неожиданный конфликт данных при слиянии — отдаём читаемую ошибку
+        # (с CORS), а не голый 500 без заголовков.
+        raise HTTPException(status_code=409, detail={"code": "merge_conflict", "message": "Не удалось объединить аккаунты — возможно, эти данные уже привязаны."})
     token = create_jwt_token(user.id, user.username)
     return {"access_token": token, "token_type": "bearer"}

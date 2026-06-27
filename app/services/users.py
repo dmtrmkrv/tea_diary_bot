@@ -32,7 +32,9 @@ def get_or_create_user(user_id: int, username: Optional[str] = None) -> User:
     with SessionLocal() as session:
         user = session.get(User, user_id)
         if user is None:
-            user = User(id=user_id, username=normalized_username)
+            # telegram_id = id: строка узнаётся как telegram-юзер и удовлетворяет
+            # CHECK ck_users_identifier (PG) — иначе новый юзер не создастся.
+            user = User(id=user_id, telegram_id=user_id, username=normalized_username)
             session.add(user)
             session.commit()
             session.refresh(user)
@@ -51,7 +53,7 @@ def set_user_timezone(user_id: int, offset_min: int) -> User:
     with SessionLocal() as session:
         user = session.get(User, user_id)
         if user is None:
-            user = User(id=user_id, tz_offset_min=offset_min)
+            user = User(id=user_id, telegram_id=user_id, tz_offset_min=offset_min)
             session.add(user)
         else:
             user.tz_offset_min = offset_min
@@ -216,17 +218,19 @@ def claim_telegram(current_user_id: int, telegram_id: int) -> User:
                     "К этому Telegram уже привязан другой вход",
                 )
 
-            # Освобождаем уникальные значения текущего аккаунта до переноса на
-            # Telegram-строку, чтобы не столкнуться на уникальном индексе.
+            # Снимаем ключи текущего аккаунта, чтобы перенести их на Telegram-строку.
             cur_email = current.email
             cur_password = current.password_hash
             cur_yandex = current.yandex_id
             cur_consent = current.consented_at
-            current.email = None
-            current.yandex_id = None
-            session.flush()
 
+            # Переносим записи и УДАЛЯЕМ строку целиком (не обнуляем поля):
+            # иначе на PG строка без единого идентификатора нарушает CHECK
+            # ck_users_identifier. Удаление заодно освобождает уникальные
+            # email/yandex для переноса на Telegram-строку.
             _move_user_records(session, src_id=current.id, dst_id=telegram_user.id)
+            session.delete(current)
+            session.flush()
 
             if cur_email and not telegram_user.email:
                 telegram_user.email = cur_email
@@ -237,7 +241,5 @@ def claim_telegram(current_user_id: int, telegram_id: int) -> User:
                 telegram_user.telegram_id = telegram_id
             if telegram_user.consented_at is None:
                 telegram_user.consented_at = cur_consent or datetime.datetime.utcnow()
-
-            session.delete(current)
         session.refresh(telegram_user)
         return telegram_user

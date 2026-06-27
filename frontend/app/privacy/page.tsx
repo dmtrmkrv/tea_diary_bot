@@ -1,11 +1,10 @@
 import PrivacyBackButton from '@/components/PrivacyBackButton';
+import PrivacyContent from '@/components/PrivacyContent';
 
 export const metadata = {
   title: 'Политика конфиденциальности',
 };
 
-// Каркас страницы. ВСТАВИТЬ финальный текст Политики обработки ПДн вместо
-// плейсхолдера ниже (структура и стили уже готовы).
 export default function PrivacyPage() {
   return (
     <main className="min-h-screen bg-background">
@@ -17,13 +16,7 @@ export default function PrivacyPage() {
           </h1>
         </div>
 
-        <div className="flex flex-col gap-4 text-[14px] leading-[22px] text-foreground">
-          {/* TODO: заменить плейсхолдер на финальный текст Политики */}
-          <p className="text-muted-foreground">
-            Здесь будет размещена Политика обработки персональных данных сервиса
-            LeafPulse. Текст готовится.
-          </p>
-        </div>
+        <PrivacyContent />
       </div>
     </main>
   );

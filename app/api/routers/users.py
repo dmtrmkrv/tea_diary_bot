@@ -19,6 +19,7 @@ class UserOut(BaseModel):
     email: Optional[str] = None
     has_telegram: bool = False
     has_yandex: bool = False
+    has_password: bool = False
     class Config:
         from_attributes = True
 
@@ -33,6 +34,7 @@ def _user_out(user: User) -> UserOut:
         email=user.email,
         has_telegram=user.telegram_id is not None,
         has_yandex=user.yandex_id is not None,
+        has_password=user.password_hash is not None,
     )
 
 
@@ -45,6 +47,10 @@ class UserStatsOut(BaseModel):
 
 class TzUpdate(BaseModel):
     tz_offset_min: int
+
+
+class NameUpdate(BaseModel):
+    name: str
 
 
 @router.get("/me", response_model=UserOut)
@@ -103,6 +109,26 @@ def update_my_tz(
     if not user:
         raise HTTPException(status_code=404, detail="Не найдено")
     user.tz_offset_min = data.tz_offset_min
+    db.commit()
+    db.refresh(user)
+    return _user_out(user)
+
+
+@router.patch("/me/name", response_model=UserOut)
+def update_my_name(
+    data: NameUpdate,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),
+):
+    """Инлайн-смена отображаемого имени. Пишем в first_name (профиль показывает
+    его первым; username оставляем под telegram-хэндл)."""
+    name = data.name.strip()
+    if not 1 <= len(name) <= 64:
+        raise HTTPException(status_code=422, detail={"code": "invalid_name", "message": "Имя должно быть от 1 до 64 символов"})
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Не найдено")
+    user.first_name = name
     db.commit()
     db.refresh(user)
     return _user_out(user)

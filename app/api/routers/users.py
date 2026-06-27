@@ -6,6 +6,7 @@ from typing import List, Optional
 from app.api.deps import get_db
 from app.api.auth import get_current_user_id
 from app.db.models import User, Tasting, TeaItem, Teaware
+from app.services.users import delete_user
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -132,3 +133,11 @@ def update_my_name(
     db.commit()
     db.refresh(user)
     return _user_out(user)
+
+
+@router.delete("/me")
+def delete_me(user_id: int = Depends(get_current_user_id)):
+    """Полное удаление аккаунта (право на удаление, 152-ФЗ). Сносит все данные
+    пользователя и файлы. После — фронт разлогинивает."""
+    delete_user(user_id)
+    return {"ok": True}

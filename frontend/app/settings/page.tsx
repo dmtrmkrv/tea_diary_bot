@@ -10,12 +10,13 @@ import ThemeSheet from '@/components/profile/ThemeSheet';
 import OnboardingSheet from '@/components/profile/OnboardingSheet';
 import LinkEmailSheet from '@/components/profile/LinkEmailSheet';
 import ChangePasswordSheet from '@/components/profile/ChangePasswordSheet';
+import DeleteAccountSheet from '@/components/profile/DeleteAccountSheet';
 import { getMe, downloadTastingsCsv, type Me } from '@/lib/apiClient';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 const FEEDBACK_EMAIL = 'info@leafpulse.ru';
 
-type Sheet = 'theme' | 'onboarding' | 'linkEmail' | 'changePassword' | null;
+type Sheet = 'theme' | 'onboarding' | 'linkEmail' | 'changePassword' | 'deleteAccount' | null;
 type Row = { key: string; label: string; value?: string; onClick?: () => void };
 
 export default function SettingsPage() {
@@ -101,10 +102,10 @@ export default function SettingsPage() {
           <Section title="Настройки аккаунта" rows={accountRows} />
           <Card rows={serviceRows} />
 
-          {/* Удаление аккаунта — функциональность в Шаге 3 */}
+          {/* Удаление аккаунта */}
           <button
             type="button"
-            onClick={() => toast('Удаление аккаунта появится скоро.')}
+            onClick={() => setSheet('deleteAccount')}
             className="w-full min-h-[40px] flex items-center justify-center px-6 py-[10px] rounded-full bg-button-destructive-bg border border-text-destructive shadow-xs text-[14px] font-medium text-text-destructive"
           >
             Удалить аккаунт
@@ -125,6 +126,9 @@ export default function SettingsPage() {
           onClose={() => setSheet(null)}
           onChanged={() => { setSheet(null); toast.success('Пароль изменён ✓'); }}
         />
+      )}
+      {sheet === 'deleteAccount' && (
+        <DeleteAccountSheet onClose={() => setSheet(null)} />
       )}
     </main>
   );

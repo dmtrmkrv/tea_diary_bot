@@ -235,6 +235,11 @@ export function updateMyName(name: string) {
   });
 }
 
+// Полное удаление аккаунта (необратимо). После — фронт разлогинивает.
+export function deleteMyAccount() {
+  return apiCall<{ ok: boolean }>('/users/me', { method: 'DELETE' });
+}
+
 export function getMyStats() {
   return apiCall<MyStats>('/users/me/stats');
 }

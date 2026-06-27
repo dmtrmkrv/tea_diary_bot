@@ -8,7 +8,8 @@ from typing import Optional
 from sqlalchemy import func, select, text
 
 from app.db.engine import SessionLocal
-from app.db.models import Tasting, TeaItem, Teaware, User
+from app.db.models import Photo, Tasting, TeaItem, Teaware, User
+from app.services.storage import delete_object
 
 # Floor для web-id на SQLite (в проде id берём из sequence users_web_id_seq).
 # 10^12 — выше любого telegram_id, чтобы пространства id не пересекались.
@@ -276,3 +277,50 @@ def claim_telegram(current_user_id: int, telegram_id: int) -> User:
                 telegram_user.consented_at = cur_consent or datetime.datetime.utcnow()
         session.refresh(telegram_user)
         return telegram_user
+
+
+def delete_user(user_id: int) -> None:
+    """Полностью удаляет аккаунт: строки в БД (каскадом по FK) + файлы в S3.
+
+    Порядок: собрать ключи файлов → удалить юзера (commit) → удалить файлы
+    (best-effort). Каскад ondelete=CASCADE снесёт дегустации, проливы, фото и
+    коллекцию. Файлы (фото, обложки) удаляем явно — каскад их не трогает.
+    """
+    with SessionLocal() as session:
+        user = session.get(User, user_id)
+        if user is None:
+            return
+        # Ключи собираем ДО удаления — после каскада строк уже не будет.
+        photo_rows = session.execute(
+            select(Photo.object_key, Photo.storage_backend)
+            .join(Tasting, Photo.tasting_id == Tasting.id)
+            .where(Tasting.user_id == user_id, Photo.object_key.isnot(None))
+        ).all()
+        tea_covers = (
+            session.execute(
+                select(TeaItem.cover_object_key).where(
+                    TeaItem.user_id == user_id, TeaItem.cover_object_key.isnot(None)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        teaware_covers = (
+            session.execute(
+                select(Teaware.cover_object_key).where(
+                    Teaware.user_id == user_id, Teaware.cover_object_key.isnot(None)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        session.delete(user)
+        session.commit()
+
+    # Файлы — ПОСЛЕ коммита БД (best-effort; осиротевший файл не критичен).
+    for object_key, backend in photo_rows:
+        delete_object(object_key, backend or "s3")
+    for object_key in tea_covers:
+        delete_object(object_key)
+    for object_key in teaware_covers:
+        delete_object(object_key)

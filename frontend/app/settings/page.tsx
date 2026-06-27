@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeftIcon, CaretRightIcon } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import ThemeSheet from '@/components/profile/ThemeSheet';
+import OnboardingSheet from '@/components/profile/OnboardingSheet';
 import LinkEmailSheet from '@/components/profile/LinkEmailSheet';
 import ChangePasswordSheet from '@/components/profile/ChangePasswordSheet';
 import { getMe, downloadTastingsCsv, type Me } from '@/lib/apiClient';
@@ -14,7 +15,7 @@ import { getMe, downloadTastingsCsv, type Me } from '@/lib/apiClient';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 const FEEDBACK_EMAIL = 'info@leafpulse.ru';
 
-type Sheet = 'theme' | 'linkEmail' | 'changePassword' | null;
+type Sheet = 'theme' | 'onboarding' | 'linkEmail' | 'changePassword' | null;
 type Row = { key: string; label: string; value?: string; onClick?: () => void };
 
 export default function SettingsPage() {
@@ -51,6 +52,7 @@ export default function SettingsPage() {
 
   const appRows: Row[] = [
     { key: 'theme', label: 'Настройки темы', onClick: () => setSheet('theme') },
+    { key: 'features', label: 'Возможности приложения', onClick: () => setSheet('onboarding') },
   ];
 
   const accountRows: Row[] = [];
@@ -111,6 +113,7 @@ export default function SettingsPage() {
       </div>
 
       <ThemeSheet open={sheet === 'theme'} onClose={() => setSheet(null)} />
+      <OnboardingSheet open={sheet === 'onboarding'} onClose={() => setSheet(null)} />
       {sheet === 'linkEmail' && (
         <LinkEmailSheet
           onClose={() => setSheet(null)}

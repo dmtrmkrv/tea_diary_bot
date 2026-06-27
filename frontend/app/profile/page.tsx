@@ -12,6 +12,7 @@ import {
   TrophyIcon,
 } from '@phosphor-icons/react';
 import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
 import { getMe, getMyStats, updateMyName, type Me, type MyStats } from '@/lib/apiClient';
 
 export default function ProfilePage() {
@@ -21,6 +22,7 @@ export default function ProfilePage() {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [saving, setSaving] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -29,6 +31,7 @@ export default function ProfilePage() {
         if (cancelled) return;
         setMe(meRes);
         setStats(statsRes);
+        setLoaded(true);
       });
     return () => { cancelled = true; };
   }, []);
@@ -104,7 +107,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Карандаш правки имени */}
-          {!editing && (
+          {loaded && !editing && (
             <button
               type="button"
               onClick={startEdit}
@@ -116,50 +119,57 @@ export default function ProfilePage() {
           )}
 
           {/* Имя + идентификатор */}
-          <div className="flex flex-col items-center gap-1 w-full">
-            {editing ? (
-              <div className="flex items-center justify-center gap-2 w-full">
-                <input
-                  autoFocus
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') saveName();
-                    if (e.key === 'Escape') setEditing(false);
-                  }}
-                  maxLength={64}
-                  placeholder="Ваше имя"
-                  className="min-w-0 max-w-[240px] text-center font-semibold text-foreground bg-transparent border-b border-border-strong outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={saveName}
-                  disabled={saving}
-                  aria-label="Сохранить имя"
-                  className="shrink-0 text-accent-default disabled:opacity-50"
-                >
-                  <CheckIcon size={22} weight="bold" />
-                </button>
-              </div>
-            ) : (
-              <p className="text-[24px] leading-[30px] font-semibold tracking-[-0.5px] text-foreground text-center">
-                {displayName}
-              </p>
-            )}
-            {identifier && (
-              <p className="text-[12px] leading-[16px] text-muted-foreground text-center break-all">
-                {identifier}
-              </p>
-            )}
-          </div>
+          {!loaded ? (
+            <div className="flex flex-col items-center gap-2 w-full">
+              <Skeleton className="h-7 w-44" />
+              <Skeleton className="h-4 w-36" />
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-1 w-full">
+              {editing ? (
+                <div className="flex items-center justify-center gap-2 w-full">
+                  <input
+                    autoFocus
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') saveName();
+                      if (e.key === 'Escape') setEditing(false);
+                    }}
+                    maxLength={64}
+                    placeholder="Ваше имя"
+                    className="min-w-0 max-w-[240px] text-center font-semibold text-foreground bg-transparent border-b border-border-strong outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={saveName}
+                    disabled={saving}
+                    aria-label="Сохранить имя"
+                    className="shrink-0 text-accent-default disabled:opacity-50"
+                  >
+                    <CheckIcon size={22} weight="bold" />
+                  </button>
+                </div>
+              ) : (
+                <p className="text-[24px] leading-[30px] font-semibold tracking-[-0.5px] text-foreground text-center">
+                  {displayName}
+                </p>
+              )}
+              {identifier && (
+                <p className="text-[12px] leading-[16px] text-muted-foreground text-center break-all">
+                  {identifier}
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="h-px bg-border-default w-full" />
 
           {/* Статистика */}
           <div className="flex gap-9">
-            <Stat value={stats?.tastings} label="Дегустаций" />
-            <Stat value={stats?.tea_items} label="Сортов" />
-            <Stat value={stats?.teaware} label="Посуда" />
+            <Stat value={stats?.tastings} label="Дегустаций" loading={!loaded} />
+            <Stat value={stats?.tea_items} label="Сортов" loading={!loaded} />
+            <Stat value={stats?.teaware} label="Посуда" loading={!loaded} />
           </div>
 
           <div className="h-px bg-border-default w-full" />
@@ -167,17 +177,21 @@ export default function ProfilePage() {
           {/* Топ категории */}
           <div className="flex flex-col items-center gap-2 w-full">
             <p className="text-[12px] leading-[16px] text-muted-foreground">Топ категории</p>
-            <p
-              className={`text-[18px] leading-[24px] text-center ${
-                stats && stats.top_categories.length > 0
-                  ? 'text-foreground font-medium'
-                  : 'text-text-disabled'
-              }`}
-            >
-              {stats && stats.top_categories.length > 0
-                ? stats.top_categories.join(', ')
-                : 'Пока не достаточно данных'}
-            </p>
+            {!loaded ? (
+              <Skeleton className="h-6 w-48" />
+            ) : (
+              <p
+                className={`text-[18px] leading-[24px] text-center ${
+                  stats && stats.top_categories.length > 0
+                    ? 'text-foreground font-medium'
+                    : 'text-text-disabled'
+                }`}
+              >
+                {stats && stats.top_categories.length > 0
+                  ? stats.top_categories.join(', ')
+                  : 'Пока не достаточно данных'}
+              </p>
+            )}
           </div>
 
           <div className="h-px bg-border-default w-full" />
@@ -216,12 +230,24 @@ export default function ProfilePage() {
   );
 }
 
-function Stat({ value, label }: { value: number | undefined; label: string }) {
+function Stat({
+  value,
+  label,
+  loading,
+}: {
+  value: number | undefined;
+  label: string;
+  loading: boolean;
+}) {
   return (
     <div className="flex flex-col items-center gap-2 w-[72px]">
-      <span className="text-[32px] leading-[32px] font-semibold text-text-secondary tracking-[-1px]">
-        {value ?? '—'}
-      </span>
+      {loading ? (
+        <Skeleton className="h-8 w-10" />
+      ) : (
+        <span className="text-[32px] leading-[32px] font-semibold text-text-secondary tracking-[-1px]">
+          {value ?? '—'}
+        </span>
+      )}
       <span className="text-[12px] leading-[16px] text-muted-foreground">{label}</span>
     </div>
   );

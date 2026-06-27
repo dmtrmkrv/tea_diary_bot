@@ -15,8 +15,25 @@ class UserOut(BaseModel):
     first_name: Optional[str] = None
     photo_url: Optional[str] = None
     tz_offset_min: int
+    # Какие способы входа привязаны — фронт по ним решает, что показать в профиле.
+    email: Optional[str] = None
+    has_telegram: bool = False
+    has_yandex: bool = False
     class Config:
         from_attributes = True
+
+
+def _user_out(user: User) -> UserOut:
+    return UserOut(
+        id=user.id,
+        username=user.username,
+        first_name=user.first_name,
+        photo_url=user.photo_url,
+        tz_offset_min=user.tz_offset_min,
+        email=user.email,
+        has_telegram=user.telegram_id is not None,
+        has_yandex=user.yandex_id is not None,
+    )
 
 
 class UserStatsOut(BaseModel):
@@ -38,7 +55,7 @@ def get_me(
     user = db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="Не найдено")
-    return user
+    return _user_out(user)
 
 
 @router.get("/me/stats", response_model=UserStatsOut)
@@ -88,4 +105,4 @@ def update_my_tz(
     user.tz_offset_min = data.tz_offset_min
     db.commit()
     db.refresh(user)
-    return user
+    return _user_out(user)

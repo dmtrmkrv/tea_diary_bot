@@ -12,9 +12,11 @@ import {
 import { toast } from 'sonner';
 import ThemeSheet from '@/components/profile/ThemeSheet';
 import OnboardingSheet from '@/components/profile/OnboardingSheet';
+import LinkEmailSheet from '@/components/profile/LinkEmailSheet';
 import { getMe, getMyStats, downloadTastingsCsv, type Me, type MyStats } from '@/lib/apiClient';
 
 const FEEDBACK_EMAIL = 'info@leafpulse.ru';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -22,6 +24,7 @@ export default function ProfilePage() {
   const [stats, setStats] = useState<MyStats | null>(null);
   const [themeSheetOpen, setThemeSheetOpen] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [linkEmailOpen, setLinkEmailOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -33,6 +36,31 @@ export default function ProfilePage() {
       });
     return () => { cancelled = true; };
   }, []);
+
+  // Возврат с переноса записей (/link-telegram → /profile?linked=1).
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get('linked') === '1') {
+      toast.success('Записи из бота перенесены ✓');
+      window.history.replaceState(null, '', '/profile');
+    }
+  }, []);
+
+  function reloadMe() {
+    getMe().then(setMe).catch(() => {});
+  }
+
+  // Перенос: уводим на Telegram, ответ вернётся на /link-telegram.
+  async function startClaim() {
+    try {
+      const res = await fetch(`${API_URL}/auth/telegram/login-url?return_to=/link-telegram`);
+      if (!res.ok) throw new Error();
+      const { url } = await res.json();
+      window.location.href = url;
+    } catch {
+      toast.error('Не удалось начать перенос. Попробуйте позже.');
+    }
+  }
 
   function logout() {
     // Серверный /logout чистит куку (Set-Cookie) и редиректит на /login.
@@ -110,6 +138,24 @@ export default function ProfilePage() {
           </p>
         </div>
 
+        {/* Вход в аккаунт — показываем только недостающие способы входа */}
+        {me && (!me.email || !me.has_telegram) && (
+          <div className="mt-4">
+            <p className="text-[12px] leading-[16px] text-muted-foreground px-1 mb-1.5">
+              Вход в аккаунт
+            </p>
+            <div className="bg-card rounded-2xl shadow-sm overflow-hidden">
+              {!me.email && (
+                <MenuRow label="Добавить вход по почте" onClick={() => setLinkEmailOpen(true)} />
+              )}
+              {!me.email && !me.has_telegram && <div className="h-px bg-border-default mx-4" />}
+              {!me.has_telegram && (
+                <MenuRow label="Перенести записи из бота" onClick={startClaim} />
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Меню */}
         <div className="bg-card rounded-2xl shadow-sm mt-4 overflow-hidden">
           <MenuRow label="Настройки темы" onClick={() => setThemeSheetOpen(true)} />
@@ -144,6 +190,16 @@ export default function ProfilePage() {
 
       <ThemeSheet open={themeSheetOpen} onClose={() => setThemeSheetOpen(false)} />
       <OnboardingSheet open={onboardingOpen} onClose={() => setOnboardingOpen(false)} />
+      {linkEmailOpen && (
+        <LinkEmailSheet
+          onClose={() => setLinkEmailOpen(false)}
+          onLinked={() => {
+            setLinkEmailOpen(false);
+            reloadMe();
+            toast.success('Вход по почте добавлен ✓');
+          }}
+        />
+      )}
     </main>
   );
 }

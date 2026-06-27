@@ -1,5 +1,7 @@
 'use client';
 
+import type { TelegramUser } from './telegramAuth';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 function getToken(): string {
@@ -207,6 +209,9 @@ export type Me = {
   first_name: string | null;
   photo_url: string | null;
   tz_offset_min: number;
+  email: string | null;
+  has_telegram: boolean;
+  has_yandex: boolean;
 };
 
 export type MyStats = {
@@ -284,4 +289,37 @@ export function authRegister(email: string, password: string, consent: boolean) 
 
 export function authLogin(email: string, password: string) {
   return authCall('/auth/login', { email, password });
+}
+
+// Те же ошибки {detail:{code,message}}, но с токеном текущего пользователя
+// (привязка ключа входа к своему аккаунту / перенос записей из бота).
+async function authCallAuthed<T>(path: string, body: unknown): Promise<T> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    const detail = (data as { detail?: { code?: string; message?: string } }).detail;
+    const err: AuthError = { status: res.status, code: detail?.code, message: detail?.message };
+    throw err;
+  }
+  return res.json();
+}
+
+// Путь 2: добавить email+пароль к текущему аккаунту.
+export function authLinkEmail(email: string, password: string, consent: boolean) {
+  return authCallAuthed<{ ok: boolean }>('/auth/link-email', { email, password, consent });
+}
+
+// Путь 1: перенести записи из бота (подтверждение — подписанные данные Telegram).
+// Возвращает новый токен: главным становится Telegram-аккаунт.
+export function authClaim(tg: TelegramUser & { tz_offset_min?: number }) {
+  return authCallAuthed<{ access_token: string }>('/auth/claim', tg);
 }

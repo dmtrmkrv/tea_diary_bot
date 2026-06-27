@@ -106,20 +106,26 @@ def telegram_auth(data: TelegramAuthData):
 
 
 @router.get("/telegram/login-url")
-def telegram_login_url():
+def telegram_login_url(return_to: str = "/login"):
     """URL для входа через Telegram в один клик (redirect, без JS-виджета).
 
     Фронт по клику уводит пользователя на этот URL; после авторизации Telegram
-    возвращает его на {WEB_URL}/login с подписанными данными, которые фронт
-    отправляет в POST /auth/telegram. Домен WEB_URL должен быть прописан у бота
-    через BotFather /setdomain.
+    возвращает его на {WEB_URL}{return_to} с подписанными данными. По умолчанию
+    это /login (обычный вход). Для переноса записей фронт передаёт
+    return_to=/link-telegram — там данные уходят в POST /auth/claim.
+    Домен WEB_URL должен быть прописан у бота через BotFather /setdomain.
+
+    return_to — только относительный путь на нашем домене (защита от
+    open-redirect): должен начинаться с одиночного «/».
     """
+    if not return_to.startswith("/") or return_to.startswith("//"):
+        return_to = "/login"
     bot_id = BOT_TOKEN.split(":", 1)[0] if BOT_TOKEN else ""
     params = {
         "bot_id": bot_id,
         "origin": WEB_URL,
         "request_access": "write",
-        "return_to": f"{WEB_URL}/login",
+        "return_to": f"{WEB_URL}{return_to}",
     }
     return {"url": "https://oauth.telegram.org/auth?" + urlencode(params)}
 

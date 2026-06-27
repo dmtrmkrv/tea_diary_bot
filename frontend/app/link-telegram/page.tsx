@@ -32,7 +32,10 @@ export default function LinkTelegramPage() {
     authClaim({ ...user, tz_offset_min: -new Date().getTimezoneOffset() })
       .then(({ access_token }) => {
         document.cookie = `token=${access_token}; path=/; max-age=${60 * 60 * 24 * 180}`;
-        router.replace('/profile?linked=1');
+        // Сигнал «только что перенесли» — одноразовый флажок в sessionStorage,
+        // чтобы не оставлять его в URL (там он залипал и повторял тост).
+        sessionStorage.setItem('justLinked', '1');
+        router.replace('/profile');
       })
       .catch((e: AuthError) => {
         setError((e.code && ERROR_BY_CODE[e.code]) || 'Не удалось перенести записи. Попробуйте позже.');

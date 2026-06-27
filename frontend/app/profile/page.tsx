@@ -37,12 +37,11 @@ export default function ProfilePage() {
     return () => { cancelled = true; };
   }, []);
 
-  // Возврат с переноса записей (/link-telegram → /profile?linked=1).
+  // Возврат с переноса записей — одноразовый флажок (см. /link-telegram).
   useEffect(() => {
-    const sp = new URLSearchParams(window.location.search);
-    if (sp.get('linked') === '1') {
+    if (sessionStorage.getItem('justLinked') === '1') {
+      sessionStorage.removeItem('justLinked');
       toast.success('Записи из бота перенесены ✓');
-      window.history.replaceState(null, '', '/profile');
     }
   }, []);
 

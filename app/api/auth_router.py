@@ -366,3 +366,26 @@ def yandex_auth(data: YandexCodeData):
                 raise HTTPException(status_code=502, detail={"code": "yandex_failed", "message": "Не удалось войти через Яндекс"})
     token = create_jwt_token(user.id, user.username)
     return {"access_token": token, "token_type": "bearer"}
+
+
+# --- Смена пароля (из настроек) ---
+
+
+class ChangePasswordData(BaseModel):
+    current_password: str
+    new_password: str
+
+
+@router.post("/change-password")
+def change_password(data: ChangePasswordData, user_id: int = Depends(get_current_user_id)):
+    if len(data.new_password) < _MIN_PASSWORD_LEN:
+        raise HTTPException(status_code=422, detail={"code": "weak_password", "message": "Пароль не короче 8 символов"})
+    with SessionLocal() as session:
+        user = session.get(User, user_id)
+        if user is None:
+            raise HTTPException(status_code=404, detail={"code": "account_not_found", "message": "Аккаунт не найден"})
+        if not user.password_hash or not verify_password(user.password_hash, data.current_password):
+            raise HTTPException(status_code=401, detail={"code": "wrong_password", "message": "Текущий пароль неверный"})
+        user.password_hash = hash_password(data.new_password)
+        session.commit()
+    return {"ok": True}

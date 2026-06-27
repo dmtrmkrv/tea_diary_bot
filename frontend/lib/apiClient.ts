@@ -333,6 +333,14 @@ export function authLinkEmail(email: string, password: string, consent: boolean)
   return authCallAuthed<{ ok: boolean }>('/auth/link-email', { email, password, consent });
 }
 
+// Смена пароля из настроек (нужен текущий пароль).
+export function authChangePassword(currentPassword: string, newPassword: string) {
+  return authCallAuthed<{ ok: boolean }>('/auth/change-password', {
+    current_password: currentPassword,
+    new_password: newPassword,
+  });
+}
+
 // Путь 1: перенести записи из бота (подтверждение — подписанные данные Telegram).
 // Возвращает новый токен: главным становится Telegram-аккаунт.
 export function authClaim(tg: TelegramUser & { tz_offset_min?: number }) {

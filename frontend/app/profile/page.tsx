@@ -33,6 +33,14 @@ export default function ProfilePage() {
     return () => { cancelled = true; };
   }, []);
 
+  // Возврат с переноса записей (/link-telegram → /profile) — одноразовый тост.
+  useEffect(() => {
+    if (sessionStorage.getItem('justLinked') === '1') {
+      sessionStorage.removeItem('justLinked');
+      toast.success('Записи из бота перенесены ✓');
+    }
+  }, []);
+
   const displayName = me?.first_name || me?.username || 'Чайный человек';
   // Идентификатор под именем: почта; если её нет (чистый Telegram) — @username.
   const identifier = me?.email || (me?.username ? `@${me.username}` : null);

@@ -9,15 +9,23 @@ from urllib.parse import urlencode
 
 import jwt
 import os
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
+from app.api.auth import get_current_user_id
 from app.db.engine import SessionLocal
 from app.db.models import LoginCode, User
 from app.services.passwords import hash_password, verify_password
-from app.services.users import create_email_user, find_user_by_email, get_or_create_user
+from app.services.users import (
+    AuthConflict,
+    claim_telegram,
+    create_email_user,
+    find_user_by_email,
+    get_or_create_user,
+    link_email_login,
+)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -215,5 +223,48 @@ def login(data: LoginData):
         raise HTTPException(status_code=401, detail={"code": "account_not_found", "message": "Аккаунт не найден"})
     if not user.password_hash or not verify_password(user.password_hash, data.password):
         raise HTTPException(status_code=401, detail={"code": "wrong_password", "message": "Неверный пароль"})
+    token = create_jwt_token(user.id, user.username)
+    return {"access_token": token, "token_type": "bearer"}
+
+
+# --- Привязка durable-входа к текущему аккаунту / перенос из бота ---
+
+
+class LinkEmailData(BaseModel):
+    email: str
+    password: str
+    consent: bool = False
+
+
+@router.post("/link-email")
+def link_email(data: LinkEmailData, user_id: int = Depends(get_current_user_id)):
+    """Путь 2: добавить email+пароль к текущему аккаунту (для вошедших, напр.,
+    через Telegram). Записи не двигаются — это тот же аккаунт."""
+    email = data.email.strip().lower()
+    if not _EMAIL_RE.match(email):
+        raise HTTPException(status_code=422, detail={"code": "invalid_email", "message": "Некорректный email"})
+    if len(data.password) < _MIN_PASSWORD_LEN:
+        raise HTTPException(status_code=422, detail={"code": "weak_password", "message": "Пароль не короче 8 символов"})
+    if not data.consent:
+        raise HTTPException(status_code=422, detail={"code": "consent_required", "message": "Требуется согласие на обработку персональных данных"})
+    try:
+        link_email_login(user_id, email, hash_password(data.password))
+    except AuthConflict as exc:
+        raise HTTPException(status_code=409, detail={"code": exc.code, "message": exc.message})
+    except IntegrityError:
+        raise HTTPException(status_code=409, detail={"code": "email_taken", "message": "Этот email уже зарегистрирован"})
+    return {"ok": True}
+
+
+@router.post("/claim")
+def claim(data: TelegramAuthData, user_id: int = Depends(get_current_user_id)):
+    """Путь 1: перенести записи из бота. Подтверждение владения = подпись
+    Telegram. Telegram-аккаунт становится главным → возвращаем новый токен."""
+    if not verify_telegram_auth(data):
+        raise HTTPException(status_code=401, detail="Неверная подпись Telegram")
+    try:
+        user = claim_telegram(user_id, data.id)
+    except AuthConflict as exc:
+        raise HTTPException(status_code=409, detail={"code": exc.code, "message": exc.message})
     token = create_jwt_token(user.id, user.username)
     return {"access_token": token, "token_type": "bearer"}

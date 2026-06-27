@@ -101,6 +101,45 @@ def create_email_user(
         return user
 
 
+def find_user_by_yandex_id(yandex_id: str) -> Optional[User]:
+    with SessionLocal() as session:
+        return session.execute(
+            select(User).where(User.yandex_id == yandex_id)
+        ).scalar_one_or_none()
+
+
+def create_yandex_user(
+    yandex_id: str,
+    email: Optional[str],
+    first_name: Optional[str],
+    consented_at: Optional[datetime.datetime] = None,
+) -> User:
+    """Создаёт web-юзера, вошедшего через Яндекс.
+
+    email прицепляем, только если он ещё не занят другим аккаунтом (иначе
+    оставляем пустым — yandex_id всё равно удовлетворяет CHECK ck_users_identifier).
+    """
+    with SessionLocal() as session:
+        with session.begin():
+            email_norm = _normalize_email(email) if email else None
+            if email_norm is not None:
+                taken = session.execute(
+                    select(User.id).where(User.email == email_norm)
+                ).first()
+                if taken is not None:
+                    email_norm = None  # чужую/занятую почту не цепляем
+            user = User(
+                id=_next_web_user_id(session),
+                yandex_id=yandex_id,
+                email=email_norm,
+                first_name=(first_name[:64] if first_name else None),
+                consented_at=consented_at or datetime.datetime.utcnow(),
+            )
+            session.add(user)
+        session.refresh(user)
+        return user
+
+
 class AuthConflict(Exception):
     """Бизнес-конфликт при привязке/слиянии аккаунтов (роутер мапит в HTTP)."""
 

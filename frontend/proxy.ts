@@ -17,6 +17,10 @@ export function proxy(request: NextRequest) {
   // было смотреть без входа. Временная: после готовности заменит /login.
   if (pathname === '/login-preview') return NextResponse.next();
 
+  // /auth/yandex/callback — приём ответа Яндекса. Пропускаем без проверок:
+  // нужен и для входа (токена ещё нет), и для будущей привязки (токен есть).
+  if (pathname === '/auth/yandex/callback') return NextResponse.next();
+
   const isPublic = pathname === '/login' || pathname.startsWith('/auth');
 
   if (!token && !isPublic) {

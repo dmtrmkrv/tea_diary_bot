@@ -8,6 +8,8 @@ import { toast } from 'sonner';
 import AuthSheet from '@/components/auth/AuthSheet';
 import LeafPulseLogo from '@/components/LeafPulseLogo';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+
 type Tab = 'login' | 'register';
 
 export default function LoginPreviewPage() {
@@ -33,12 +35,19 @@ export default function LoginPreviewPage() {
     }
   }
 
-  function onYandex() {
+  async function onYandex() {
     // Яндекс = find-or-create (может создать аккаунт) → нужно согласие на обеих вкладках.
-    if (consented) {
-      toast('Вход через Яндекс скоро появится.');
-    } else {
+    if (!consented) {
       nudgeConsent();
+      return;
+    }
+    try {
+      const res = await fetch(`${API_URL}/auth/yandex/login-url`);
+      if (!res.ok) throw new Error();
+      const { url } = await res.json();
+      window.location.href = url;
+    } catch {
+      toast.error('Не удалось открыть вход через Яндекс. Попробуйте позже.');
     }
   }
 

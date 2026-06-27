@@ -291,6 +291,11 @@ export function authLogin(email: string, password: string) {
   return authCall('/auth/login', { email, password });
 }
 
+// Вход через Яндекс: обмен кода (от callback) на сессию. Токена ещё нет.
+export function authYandex(code: string) {
+  return authCall('/auth/yandex', { code });
+}
+
 // Те же ошибки {detail:{code,message}}, но с токеном текущего пользователя
 // (привязка ключа входа к своему аккаунту / перенос записей из бота).
 async function authCallAuthed<T>(path: string, body: unknown): Promise<T> {

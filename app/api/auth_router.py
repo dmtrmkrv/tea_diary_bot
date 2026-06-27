@@ -1,9 +1,11 @@
 import datetime
 import hashlib
 import hmac
+import json
 import re
 import secrets
 import time
+import urllib.request
 from typing import Optional
 from urllib.parse import urlencode
 
@@ -22,7 +24,9 @@ from app.services.users import (
     AuthConflict,
     claim_telegram,
     create_email_user,
+    create_yandex_user,
     find_user_by_email,
+    find_user_by_yandex_id,
     get_or_create_user,
     link_email_login,
 )
@@ -32,6 +36,8 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 SECRET_KEY = os.getenv("JWT_SECRET", "dev-secret-change-in-prod")
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 WEB_URL = os.getenv("WEB_URL", "http://localhost:3000")
+YANDEX_CLIENT_ID = os.getenv("YANDEX_CLIENT_ID", "")
+YANDEX_CLIENT_SECRET = os.getenv("YANDEX_CLIENT_SECRET", "")
 ALGORITHM = "HS256"
 TOKEN_EXPIRE_SECONDS = 60 * 60 * 24 * 180  # 180 дней — редкий перелогин (вход завязан на Telegram, который в РФ нестабилен)
 
@@ -276,5 +282,87 @@ def claim(data: TelegramAuthData, user_id: int = Depends(get_current_user_id)):
         # Неожиданный конфликт данных при слиянии — отдаём читаемую ошибку
         # (с CORS), а не голый 500 без заголовков.
         raise HTTPException(status_code=409, detail={"code": "merge_conflict", "message": "Не удалось объединить аккаунты — возможно, эти данные уже привязаны."})
+    token = create_jwt_token(user.id, user.username)
+    return {"access_token": token, "token_type": "bearer"}
+
+
+# --- Вход через Яндекс (OAuth 2.0, код авторизации) ---
+
+_YANDEX_REDIRECT_PATH = "/auth/yandex/callback"
+
+
+def _yandex_exchange_code(code: str) -> str:
+    """Меняем одноразовый code на access_token (server-side, с client_secret)."""
+    data = urlencode(
+        {
+            "grant_type": "authorization_code",
+            "code": code,
+            "client_id": YANDEX_CLIENT_ID,
+            "client_secret": YANDEX_CLIENT_SECRET,
+        }
+    ).encode()
+    req = urllib.request.Request(
+        "https://oauth.yandex.ru/token",
+        data=data,
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        payload = json.loads(resp.read().decode())
+    return payload["access_token"]
+
+
+def _yandex_userinfo(access_token: str) -> dict:
+    req = urllib.request.Request(
+        "https://login.yandex.ru/info?format=json",
+        headers={"Authorization": f"OAuth {access_token}"},
+    )
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        return json.loads(resp.read().decode())
+
+
+@router.get("/yandex/login-url")
+def yandex_login_url():
+    """URL авторизации Яндекса. Фронт уводит на него; Яндекс возвращает
+    пользователя на {WEB_URL}/auth/yandex/callback с ?code=…"""
+    if not YANDEX_CLIENT_ID:
+        raise HTTPException(status_code=503, detail={"code": "yandex_not_configured", "message": "Вход через Яндекс временно недоступен"})
+    params = {
+        "response_type": "code",
+        "client_id": YANDEX_CLIENT_ID,
+        "redirect_uri": f"{WEB_URL}{_YANDEX_REDIRECT_PATH}",
+    }
+    return {"url": "https://oauth.yandex.ru/authorize?" + urlencode(params)}
+
+
+class YandexCodeData(BaseModel):
+    code: str
+
+
+@router.post("/yandex")
+def yandex_auth(data: YandexCodeData):
+    """Обмениваем code на профиль Яндекса и входим/создаём по yandex_id."""
+    if not YANDEX_CLIENT_ID or not YANDEX_CLIENT_SECRET:
+        raise HTTPException(status_code=503, detail={"code": "yandex_not_configured", "message": "Вход через Яндекс временно недоступен"})
+    try:
+        access_token = _yandex_exchange_code(data.code)
+        info = _yandex_userinfo(access_token)
+    except Exception:
+        raise HTTPException(status_code=502, detail={"code": "yandex_failed", "message": "Не удалось получить данные от Яндекса"})
+
+    yandex_id = str(info.get("id") or "")
+    if not yandex_id:
+        raise HTTPException(status_code=502, detail={"code": "yandex_failed", "message": "Яндекс не вернул идентификатор"})
+    email = info.get("default_email") or (info.get("emails") or [None])[0]
+    name = info.get("display_name") or info.get("first_name")
+
+    user = find_user_by_yandex_id(yandex_id)
+    if user is None:
+        try:
+            user = create_yandex_user(yandex_id, email, name)
+        except IntegrityError:
+            # Гонка по yandex_id — кто-то успел создать; берём существующего.
+            user = find_user_by_yandex_id(yandex_id)
+            if user is None:
+                raise HTTPException(status_code=502, detail={"code": "yandex_failed", "message": "Не удалось войти через Яндекс"})
     token = create_jwt_token(user.id, user.username)
     return {"access_token": token, "token_type": "bearer"}

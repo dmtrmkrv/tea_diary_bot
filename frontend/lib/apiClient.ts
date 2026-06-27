@@ -212,6 +212,7 @@ export type Me = {
   email: string | null;
   has_telegram: boolean;
   has_yandex: boolean;
+  has_password: boolean;
 };
 
 export type MyStats = {
@@ -223,6 +224,15 @@ export type MyStats = {
 
 export function getMe() {
   return apiCall<Me>('/users/me');
+}
+
+// Инлайн-смена отображаемого имени (пишется в first_name на бэке).
+export function updateMyName(name: string) {
+  return apiCall<Me>('/users/me/name', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
 }
 
 export function getMyStats() {

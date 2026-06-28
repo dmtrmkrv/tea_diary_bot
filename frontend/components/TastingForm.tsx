@@ -430,8 +430,13 @@ export default function TastingForm(props: TastingFormProps) {
     try {
       if (mode === 'edit') await handleEdit();
       else await handleCreate();
-    } catch {
-      toast.error('Не удалось сохранить дегустацию. Проверьте подключение и попробуйте ещё раз.');
+    } catch (e) {
+      const err = e as { status?: number };
+      toast.error(
+        err.status === 422
+          ? 'Проверьте введённые значения и попробуйте ещё раз.'
+          : 'Не удалось сохранить дегустацию. Проверьте подключение и попробуйте ещё раз.'
+      );
       setSubmitting(false);
     }
   }

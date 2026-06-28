@@ -17,6 +17,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from app.api.auth import get_current_user_id
+from app.config import JWT_ALGORITHM, get_jwt_secret
 from app.db.engine import SessionLocal
 from app.db.models import LoginCode, User
 from app.services.passwords import hash_password, verify_password
@@ -39,12 +40,12 @@ from app.api.ratelimit import (
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-SECRET_KEY = os.getenv("JWT_SECRET", "dev-secret-change-in-prod")
+SECRET_KEY = get_jwt_secret()
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 WEB_URL = os.getenv("WEB_URL", "http://localhost:3000")
 YANDEX_CLIENT_ID = os.getenv("YANDEX_CLIENT_ID", "")
 YANDEX_CLIENT_SECRET = os.getenv("YANDEX_CLIENT_SECRET", "")
-ALGORITHM = "HS256"
+ALGORITHM = JWT_ALGORITHM
 TOKEN_EXPIRE_SECONDS = 60 * 60 * 24 * 180  # 180 дней — редкий перелогин (вход завязан на Telegram, который в РФ нестабилен)
 
 
@@ -62,6 +63,10 @@ class TelegramAuthData(BaseModel):
 
 def verify_telegram_auth(data: TelegramAuthData) -> bool:
     """Проверяем подпись от Телеграма."""
+    if not BOT_TOKEN:
+        # Без токена secret_key = sha256(b'') — общеизвестная константа, и подпись
+        # стала бы подделываемой. Не проверяем против пустого ключа.
+        raise HTTPException(status_code=503, detail="Telegram-вход временно недоступен")
     check_hash = data.hash
     data_dict = data.model_dump(exclude={"hash", "tz_offset_min"})
     data_check_string = "\n".join(

@@ -1,10 +1,11 @@
-import os
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
 
-SECRET_KEY = os.getenv("JWT_SECRET", "dev-secret-change-in-prod")
-ALGORITHM = "HS256"
+from app.config import JWT_ALGORITHM, get_jwt_secret
+
+SECRET_KEY = get_jwt_secret()
+ALGORITHM = JWT_ALGORITHM
 
 security = HTTPBearer(auto_error=False)
 

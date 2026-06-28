@@ -9,15 +9,21 @@ from app.api.routers import tastings, users, collection
 from app.api import auth_router
 from app.api.ratelimit import limiter
 from app.db.engine import create_sa_engine
-from app.config import get_db_url
+from app.config import get_db_url, is_production
 
 logger = logging.getLogger("teanotes.api")
 
 create_sa_engine(get_db_url())
 
+# В production прячем интерактивную доку и схему OpenAPI — чтобы не светить
+# карту API публично (вне прода оставляем для удобства разработки).
+_docs_disabled = is_production()
 app = FastAPI(
     title="TeaNotes API",
     version="0.1.0",
+    docs_url=None if _docs_disabled else "/docs",
+    redoc_url=None if _docs_disabled else "/redoc",
+    openapi_url=None if _docs_disabled else "/openapi.json",
 )
 # Rate limiter (slowapi) — нужен в app.state, чтобы работали декораторы лимитов.
 app.state.limiter = limiter

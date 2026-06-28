@@ -101,7 +101,8 @@ def decode_jwt_token(token: str) -> dict:
 
 
 @router.post("/telegram")
-def telegram_auth(data: TelegramAuthData):
+@limiter.limit("10/minute")
+def telegram_auth(request: Request, data: TelegramAuthData):
     if not verify_telegram_auth(data):
         raise HTTPException(status_code=401, detail="Неверная подпись Telegram")
 
@@ -291,7 +292,8 @@ def link_email(data: LinkEmailData, user_id: int = Depends(get_current_user_id))
 
 
 @router.post("/claim")
-def claim(data: TelegramAuthData, user_id: int = Depends(get_current_user_id)):
+@limiter.limit("10/minute")
+def claim(request: Request, data: TelegramAuthData, user_id: int = Depends(get_current_user_id)):
     """Путь 1: перенести записи из бота. Подтверждение владения = подпись
     Telegram. Telegram-аккаунт становится главным → возвращаем новый токен."""
     if not verify_telegram_auth(data):

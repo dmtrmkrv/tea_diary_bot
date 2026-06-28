@@ -28,7 +28,7 @@ class InfusionOut(BaseModel):
 
 
 class InfusionCreate(BaseModel):
-    n: int
+    n: int = Field(ge=1, le=100)
     seconds: Optional[int] = Field(None, ge=0, le=86400)  # ≤24ч, анти-overflow
     liquor_color: Optional[str] = None
     taste: Optional[str] = None
@@ -110,7 +110,7 @@ class TastingCreate(BaseModel):
     rating: int = Field(0, ge=0, le=10)
     summary: Optional[str] = None
     entry_mode: str = Field("web", max_length=16)
-    infusions: List[InfusionCreate] = []
+    infusions: List[InfusionCreate] = Field(default=[], max_length=50)
 
 
 class TastingUpdate(BaseModel):
@@ -127,7 +127,7 @@ class TastingUpdate(BaseModel):
     scenarios_csv: Optional[str] = None
     rating: int = Field(0, ge=0, le=10)
     summary: Optional[str] = None
-    infusions: List[InfusionCreate] = []
+    infusions: List[InfusionCreate] = Field(default=[], max_length=50)
 
 
 @router.get("", response_model=TastingListOut)

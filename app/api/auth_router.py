@@ -11,7 +11,7 @@ from urllib.parse import urlencode
 
 import jwt
 import os
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -29,6 +29,12 @@ from app.services.users import (
     find_user_by_yandex_id,
     get_or_create_user,
     link_email_login,
+)
+from app.api.ratelimit import (
+    clear_login_failures,
+    email_login_blocked,
+    limiter,
+    register_login_failure,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -160,7 +166,8 @@ class CodeAuthData(BaseModel):
 
 
 @router.post("/code")
-def code_auth(data: CodeAuthData):
+@limiter.limit("10/minute")
+def code_auth(request: Request, data: CodeAuthData):
     """Авторизация по одноразовому коду от бота."""
     code = data.code.strip().upper()
     with SessionLocal() as session:
@@ -206,7 +213,8 @@ class LoginData(BaseModel):
 
 
 @router.post("/register")
-def register(data: RegisterData):
+@limiter.limit("10/hour")
+def register(request: Request, data: RegisterData):
     email = data.email.strip().lower()
     if not _EMAIL_RE.match(email):
         raise HTTPException(status_code=422, detail={"code": "invalid_email", "message": "Некорректный email"})
@@ -227,14 +235,23 @@ def register(data: RegisterData):
 
 
 @router.post("/login")
-def login(data: LoginData):
+@limiter.limit("20/minute")
+def login(request: Request, data: LoginData):
+    email = data.email.strip().lower()
+    # Спуф-устойчивая защита от перебора пароля конкретного аккаунта: лимит
+    # неудачных попыток по email (не обходится сменой IP). См. ratelimit.py.
+    if email_login_blocked(email):
+        raise HTTPException(status_code=429, detail={"code": "too_many_attempts", "message": "Слишком много попыток входа. Подождите несколько минут."})
     user = find_user_by_email(data.email)
     if user is None:
+        register_login_failure(email)
         # Различаем «нет аккаунта» и «неверный пароль» — фронт подсказывает
         # зарегистрироваться (осознанный трейд-офф энумерации email ради UX).
         raise HTTPException(status_code=401, detail={"code": "account_not_found", "message": "Аккаунт не найден"})
     if not user.password_hash or not verify_password(user.password_hash, data.password):
+        register_login_failure(email)
         raise HTTPException(status_code=401, detail={"code": "wrong_password", "message": "Неверный пароль"})
+    clear_login_failures(email)
     token = create_jwt_token(user.id, user.username)
     return {"access_token": token, "token_type": "bearer"}
 
@@ -346,7 +363,8 @@ class YandexCodeData(BaseModel):
 
 
 @router.post("/yandex")
-def yandex_auth(data: YandexCodeData):
+@limiter.limit("10/minute")
+def yandex_auth(request: Request, data: YandexCodeData):
     """Обмениваем code на профиль Яндекса и входим/создаём по yandex_id."""
     if not YANDEX_CLIENT_ID or not YANDEX_CLIENT_SECRET:
         raise HTTPException(status_code=503, detail={"code": "yandex_not_configured", "message": "Вход через Яндекс временно недоступен"})
@@ -384,7 +402,8 @@ class ChangePasswordData(BaseModel):
 
 
 @router.post("/change-password")
-def change_password(data: ChangePasswordData, user_id: int = Depends(get_current_user_id)):
+@limiter.limit("10/minute")
+def change_password(request: Request, data: ChangePasswordData, user_id: int = Depends(get_current_user_id)):
     if len(data.new_password) < _MIN_PASSWORD_LEN:
         raise HTTPException(status_code=422, detail={"code": "weak_password", "message": "Пароль не короче 8 символов"})
     with SessionLocal() as session:

@@ -4,8 +4,10 @@ import os
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from slowapi.errors import RateLimitExceeded
 from app.api.routers import tastings, users, collection
 from app.api import auth_router
+from app.api.ratelimit import limiter
 from app.db.engine import create_sa_engine
 from app.config import get_db_url
 
@@ -17,6 +19,8 @@ app = FastAPI(
     title="TeaNotes API",
     version="0.1.0",
 )
+# Rate limiter (slowapi) — нужен в app.state, чтобы работали декораторы лимитов.
+app.state.limiter = limiter
 
 # Разрешённые origin'ы фронта. На проде задаём CORS_ORIGINS (через запятую),
 # иначе — дефолт для staging-фронта и локальной разработки.
@@ -61,6 +65,17 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"detail": "Внутренняя ошибка сервера"},
         headers=headers,
+    )
+
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    # Превышен лимит запросов → 429 с понятным detail (фронт показывает
+    # detail.message). CORS-заголовки навешиваются автоматически: этот ответ
+    # проходит обратно через CORSMiddleware (обычный обработчик исключения).
+    return JSONResponse(
+        status_code=429,
+        content={"detail": {"code": "rate_limited", "message": "Слишком много запросов. Попробуйте чуть позже."}},
     )
 
 

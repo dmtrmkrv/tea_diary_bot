@@ -10,7 +10,7 @@ from typing import Optional, List
 from app.api.deps import get_db
 from app.api.auth import get_current_user_id
 from app.db.models import Tasting, Infusion, Photo, TeaItem, Teaware, User
-from app.services.storage import get_presigned_url, save_photo_bytes, delete_object
+from app.services.storage import get_presigned_url, save_photo_bytes, delete_object, ImageValidationError
 
 router = APIRouter(prefix="/tastings", tags=["tastings"])
 
@@ -554,12 +554,18 @@ async def upload_tasting_photos(
         body = await upload.read()
         if not body:
             continue
-        saved = save_photo_bytes(
-            user_id=user_id,
-            tasting_id=tasting.id,
-            body=body,
-            filename_hint=upload.filename or "photo.jpg",
-        )
+        try:
+            saved = save_photo_bytes(
+                user_id=user_id,
+                tasting_id=tasting.id,
+                body=body,
+                filename_hint=upload.filename or "photo.jpg",
+            )
+        except ImageValidationError as exc:
+            raise HTTPException(
+                status_code=413 if exc.code == "file_too_large" else 400,
+                detail={"code": exc.code, "message": exc.message},
+            )
         db.add(
             Photo(
                 tasting_id=tasting.id,

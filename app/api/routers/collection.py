@@ -13,6 +13,7 @@ from app.services.storage import (
     save_tea_item_photo_bytes,
     save_teaware_photo_bytes,
     delete_object,
+    ImageValidationError,
 )
 
 router = APIRouter(prefix="/collection", tags=["collection"])
@@ -188,12 +189,18 @@ async def upload_tea_photo(
     if not body:
         raise HTTPException(status_code=400, detail="Пустой файл")
 
-    saved = save_tea_item_photo_bytes(
-        user_id=user_id,
-        tea_item_id=item.id,
-        body=body,
-        filename_hint=file.filename or "photo.jpg",
-    )
+    try:
+        saved = save_tea_item_photo_bytes(
+            user_id=user_id,
+            tea_item_id=item.id,
+            body=body,
+            filename_hint=file.filename or "photo.jpg",
+        )
+    except ImageValidationError as exc:
+        raise HTTPException(
+            status_code=413 if exc.code == "file_too_large" else 400,
+            detail={"code": exc.code, "message": exc.message},
+        )
     # Старый cover больше не нужен — чистим из хранилища
     if item.cover_object_key and item.cover_object_key != saved.object_key:
         delete_object(item.cover_object_key)
@@ -384,12 +391,18 @@ async def upload_teaware_photo(
     if not body:
         raise HTTPException(status_code=400, detail="Пустой файл")
 
-    saved = save_teaware_photo_bytes(
-        user_id=user_id,
-        teaware_id=item.id,
-        body=body,
-        filename_hint=file.filename or "photo.jpg",
-    )
+    try:
+        saved = save_teaware_photo_bytes(
+            user_id=user_id,
+            teaware_id=item.id,
+            body=body,
+            filename_hint=file.filename or "photo.jpg",
+        )
+    except ImageValidationError as exc:
+        raise HTTPException(
+            status_code=413 if exc.code == "file_too_large" else 400,
+            detail={"code": exc.code, "message": exc.message},
+        )
     # Старый cover больше не нужен — чистим из хранилища
     if item.cover_object_key and item.cover_object_key != saved.object_key:
         delete_object(item.cover_object_key)

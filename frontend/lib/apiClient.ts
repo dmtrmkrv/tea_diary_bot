@@ -18,7 +18,16 @@ async function apiCall<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const res = await fetch(`${API_URL}${path}`, { ...init, headers, cache: 'no-store' });
-  if (!res.ok) throw new Error(`API ${res.status}`);
+  if (!res.ok) {
+    // Достаём понятную причину с бэка ({detail:{code,message}}), если она есть —
+    // например, при отклонённой загрузке фото (размер/тип). Иначе общий текст.
+    const data = await res.json().catch(() => null);
+    const detail = (data as { detail?: { code?: string; message?: string } } | null)?.detail;
+    const err = new Error(detail?.message || `API ${res.status}`) as Error & { status?: number; code?: string };
+    err.status = res.status;
+    if (detail?.code) err.code = detail.code;
+    throw err;
+  }
   return res.json();
 }
 

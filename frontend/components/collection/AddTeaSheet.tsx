@@ -136,10 +136,11 @@ export default function AddTeaSheet({
       if (photoFile) {
         try {
           await uploadTeaItemPhoto(created.id, photoFile);
-        } catch {
+        } catch (e) {
           // Чай уже создан, фото не приложилось — не блокируем onSaved,
-          // но сообщаем юзеру
-          toast.error('Чай добавлен, но фото не загрузилось');
+          // но сообщаем юзеру (с причиной, если бэк её прислал).
+          const err = e as { code?: string; message?: string };
+          toast.error(err.code ? `Чай добавлен, но фото не загрузилось: ${err.message}` : 'Чай добавлен, но фото не загрузилось');
         }
       }
       reset();

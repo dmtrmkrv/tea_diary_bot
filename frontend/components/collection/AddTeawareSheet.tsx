@@ -133,8 +133,9 @@ export default function AddTeawareSheet({
       if (photoFile) {
         try {
           await uploadTeawarePhoto(created.id, photoFile);
-        } catch {
-          toast.error('Посуда добавлена, но фото не загрузилось');
+        } catch (e) {
+          const err = e as { code?: string; message?: string };
+          toast.error(err.code ? `Посуда добавлена, но фото не загрузилось: ${err.message}` : 'Посуда добавлена, но фото не загрузилось');
         }
       }
       reset();

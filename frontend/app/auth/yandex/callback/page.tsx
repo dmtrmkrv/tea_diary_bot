@@ -15,9 +15,19 @@ export default function YandexCallbackPage() {
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
     const code = sp.get('code');
+    const returnedState = sp.get('state');
     const yandexError = sp.get('error');
+    // Метка, сохранённая при старте входа: сверяем и сразу гасим (одноразовая).
+    const savedState = sessionStorage.getItem('yandex_oauth_state');
+    sessionStorage.removeItem('yandex_oauth_state');
     if (yandexError || !code) {
       setError('Не получилось войти через Яндекс. Попробуйте ещё раз.');
+      return;
+    }
+    // CSRF-защита: метка от Яндекса должна совпасть с сохранённой в этом браузере.
+    // Не вернулась / не совпала / отсутствует — это не наш запрос на вход.
+    if (!returnedState || !savedState || returnedState !== savedState) {
+      setError('Вход через Яндекс не подтвердился. Откройте вход заново.');
       return;
     }
     // Убираем code из URL, чтобы не остался в истории.

@@ -47,7 +47,9 @@ export default function LoginPage() {
     try {
       const res = await fetch(`${API_URL}/auth/yandex/login-url`);
       if (!res.ok) throw new Error();
-      const { url } = await res.json();
+      const { url, state } = await res.json();
+      // Сохраняем метку — на возврате callback сверит её (CSRF-защита входа).
+      if (state) sessionStorage.setItem('yandex_oauth_state', state);
       window.location.href = url;
     } catch {
       setYandexLoading(false);

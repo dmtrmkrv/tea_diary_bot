@@ -323,15 +323,22 @@ def _yandex_userinfo(access_token: str) -> dict:
 @router.get("/yandex/login-url")
 def yandex_login_url():
     """URL авторизации Яндекса. Фронт уводит на него; Яндекс возвращает
-    пользователя на {WEB_URL}/auth/yandex/callback с ?code=…"""
+    пользователя на {WEB_URL}/auth/yandex/callback с ?code=…&state=…
+
+    state — случайная метка против CSRF на входе: фронт сохраняет её в начале
+    входа и сверяет с тем, что Яндекс вернул в callback. Чужой заранее
+    заготовленный code не подойдёт — метка не совпадёт с сохранённой в браузере.
+    """
     if not YANDEX_CLIENT_ID:
         raise HTTPException(status_code=503, detail={"code": "yandex_not_configured", "message": "Вход через Яндекс временно недоступен"})
+    state = secrets.token_urlsafe(32)
     params = {
         "response_type": "code",
         "client_id": YANDEX_CLIENT_ID,
         "redirect_uri": f"{WEB_URL}{_YANDEX_REDIRECT_PATH}",
+        "state": state,
     }
-    return {"url": "https://oauth.yandex.ru/authorize?" + urlencode(params)}
+    return {"url": "https://oauth.yandex.ru/authorize?" + urlencode(params), "state": state}
 
 
 class YandexCodeData(BaseModel):

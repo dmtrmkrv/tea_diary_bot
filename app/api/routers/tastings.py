@@ -1,7 +1,7 @@
 import csv
 import datetime
 import io
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
@@ -134,8 +134,8 @@ class TastingUpdate(BaseModel):
 def list_tastings(
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id),
-    limit: int = 20,
-    offset: int = 0,
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     q: str = "",
     categories: str = "",
     teaware_ids: str = "",

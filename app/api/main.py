@@ -1,11 +1,15 @@
+import logging
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from app.api.routers import tastings, users, collection
 from app.api import auth_router
 from app.db.engine import create_sa_engine
 from app.config import get_db_url
+
+logger = logging.getLogger("teanotes.api")
 
 create_sa_engine(get_db_url())
 
@@ -30,6 +34,35 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    """Необработанная ошибка → JSON-ответ 500 С CORS-заголовками.
+
+    CORSMiddleware не навешивает заголовки на ответы, которые рождаются из
+    необработанных исключений (они формируются внешним слоем, вне CORS).
+    Поэтому без этого фронт на другом домене видит «непрозрачную» сетевую
+    ошибку без кода и причины. Эхо разрешённого Origin + credentials повторяет
+    то, что CORSMiddleware добавил бы к обычному ответу. Обычные HTTPException
+    (4xx) сюда не попадают — у них свой обработчик, и заголовки им навешивает
+    сам CORSMiddleware.
+    """
+    logger.exception("Unhandled error: %s %s", request.method, request.url.path)
+    headers: dict[str, str] = {}
+    origin = request.headers.get("origin")
+    if origin and origin in allow_origins:
+        headers = {
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Credentials": "true",
+            "Vary": "Origin",
+        }
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Внутренняя ошибка сервера"},
+        headers=headers,
+    )
+
 
 app.include_router(tastings.router)
 app.include_router(users.router)

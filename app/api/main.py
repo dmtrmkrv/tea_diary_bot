@@ -35,6 +35,10 @@ _default_origins = [
     "http://localhost:3000",  # local dev
 ]
 _env_origins = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
+# В production CORS_ORIGINS обязателен — нельзя тихо отдать прод на дефолтный
+# список со staging/localhost. Вне прода дефолт остаётся для локальной разработки.
+if is_production() and not _env_origins:
+    raise SystemExit("CORS_ORIGINS обязателен в production — задайте домен(ы) фронта.")
 allow_origins = _env_origins or _default_origins
 
 app.add_middleware(

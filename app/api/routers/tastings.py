@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from app.api.deps import get_db
 from app.api.auth import get_current_user_id
@@ -29,7 +29,7 @@ class InfusionOut(BaseModel):
 
 class InfusionCreate(BaseModel):
     n: int
-    seconds: Optional[int] = None
+    seconds: Optional[int] = Field(None, ge=0, le=86400)  # ≤24ч, анти-overflow
     liquor_color: Optional[str] = None
     taste: Optional[str] = None
     special_notes: Optional[str] = None
@@ -95,37 +95,37 @@ class TastingListOut(BaseModel):
 
 
 class TastingCreate(BaseModel):
-    name: str
+    name: str = Field(max_length=200)
     tasted_date: Optional[datetime.date] = None  # бэкдейтинг: дата дегустации
     tea_item_id: Optional[int] = None
     teaware_id: Optional[int] = None
-    grams: Optional[float] = None
-    temp_c: Optional[int] = None
-    tasted_at: Optional[str] = None
+    grams: Optional[float] = Field(None, ge=0, le=10000)
+    temp_c: Optional[int] = Field(None, ge=0, le=120)
+    tasted_at: Optional[str] = Field(None, max_length=8)  # "HH:MM"
     aroma_dry: Optional[str] = None
     aroma_warmed: Optional[str] = None
     aroma_after: Optional[str] = None
     effects_csv: Optional[str] = None
     scenarios_csv: Optional[str] = None
-    rating: int = 0
+    rating: int = Field(0, ge=0, le=10)
     summary: Optional[str] = None
-    entry_mode: str = "web"
+    entry_mode: str = Field("web", max_length=16)
     infusions: List[InfusionCreate] = []
 
 
 class TastingUpdate(BaseModel):
     # entry_mode намеренно не редактируется (web/quick/full остаётся как был).
-    name: str
+    name: str = Field(max_length=200)
     tasted_date: Optional[datetime.date] = None
     tea_item_id: Optional[int] = None
     teaware_id: Optional[int] = None
-    grams: Optional[float] = None
-    temp_c: Optional[int] = None
+    grams: Optional[float] = Field(None, ge=0, le=10000)
+    temp_c: Optional[int] = Field(None, ge=0, le=120)
     aroma_dry: Optional[str] = None
     aroma_warmed: Optional[str] = None
     effects_csv: Optional[str] = None
     scenarios_csv: Optional[str] = None
-    rating: int = 0
+    rating: int = Field(0, ge=0, le=10)
     summary: Optional[str] = None
     infusions: List[InfusionCreate] = []
 
@@ -276,6 +276,15 @@ def create_tasting_api(
     return TastingOut.model_validate(tasting)
 
 
+def _csv_safe(value) -> str:
+    """Нейтрализует инъекцию формул в Excel/Sheets: значение, начинающееся с
+    = + - @ (или управляющего символа), получает ведущий апостроф."""
+    s = "" if value is None else str(value)
+    if s[:1] in ("=", "+", "-", "@", "\t", "\r", "\n"):
+        return "'" + s
+    return s
+
+
 @router.get("/export.csv")
 def export_tastings_csv(
     db: Session = Depends(get_db),
@@ -325,21 +334,21 @@ def export_tastings_csv(
         writer.writerow([
             tasting.seq_no,
             tasting.created_at.strftime("%Y-%m-%d %H:%M") if tasting.created_at else "",
-            tasting.name,
-            tasting.category or "",
+            _csv_safe(tasting.name),
+            _csv_safe(tasting.category or ""),
             tasting.year or "",
-            tasting.region or "",
-            tea_item.name if tea_item else "",
-            teaware.name if teaware else (tasting.gear or ""),
+            _csv_safe(tasting.region or ""),
+            _csv_safe(tea_item.name if tea_item else ""),
+            _csv_safe(teaware.name if teaware else (tasting.gear or "")),
             tasting.grams if tasting.grams is not None else "",
             tasting.temp_c if tasting.temp_c is not None else "",
             tasting.rating or "",
-            tasting.aroma_dry or "",
-            tasting.aroma_warmed or "",
-            tasting.effects_csv or "",
-            tasting.scenarios_csv or "",
-            tasting.summary or "",
-            infusions_text(infusions_map.get(tasting.id, [])),
+            _csv_safe(tasting.aroma_dry or ""),
+            _csv_safe(tasting.aroma_warmed or ""),
+            _csv_safe(tasting.effects_csv or ""),
+            _csv_safe(tasting.scenarios_csv or ""),
+            _csv_safe(tasting.summary or ""),
+            _csv_safe(infusions_text(infusions_map.get(tasting.id, []))),
         ])
 
     # BOM — чтобы Excel корректно открыл UTF-8

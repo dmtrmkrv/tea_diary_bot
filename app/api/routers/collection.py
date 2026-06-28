@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 import datetime
 
@@ -38,13 +38,13 @@ class TeaItemOut(BaseModel):
 
 
 class TeaItemCreate(BaseModel):
-    name: str
-    category: Optional[str] = None
-    year: Optional[int] = None
-    region: Optional[str] = None
-    vendor: Optional[str] = None
+    name: str = Field(max_length=200)
+    category: Optional[str] = Field(None, max_length=60)
+    year: Optional[int] = Field(None, ge=0, le=3000)
+    region: Optional[str] = Field(None, max_length=120)
+    vendor: Optional[str] = Field(None, max_length=200)
     notes: Optional[str] = None
-    amount_g: Optional[float] = None
+    amount_g: Optional[float] = Field(None, ge=0, le=1000000)
 
 
 class TeaItemAmountUpdate(BaseModel):
@@ -74,11 +74,11 @@ class TeawareOut(BaseModel):
 
 
 class TeawareCreate(BaseModel):
-    name: str
-    type: Optional[str] = None
-    volume_ml: Optional[int] = None
-    material: Optional[str] = None
-    region: Optional[str] = None
+    name: str = Field(max_length=200)
+    type: Optional[str] = Field(None, max_length=60)
+    volume_ml: Optional[int] = Field(None, ge=0, le=100000)
+    material: Optional[str] = Field(None, max_length=100)
+    region: Optional[str] = Field(None, max_length=120)
     suitable_csv: Optional[str] = None
     notes: Optional[str] = None
 

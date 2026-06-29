@@ -3,23 +3,26 @@
 export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
-  SignOutIcon,
+  GearSixIcon,
+  PencilSimpleLineIcon,
+  CheckIcon,
   UserIcon,
-  CaretRightIcon,
+  TrophyIcon,
 } from '@phosphor-icons/react';
 import { toast } from 'sonner';
-import ThemeSheet from '@/components/profile/ThemeSheet';
-import OnboardingSheet from '@/components/profile/OnboardingSheet';
-import { getMe, getMyStats, downloadTastingsCsv, type Me, type MyStats } from '@/lib/apiClient';
-
-const FEEDBACK_EMAIL = 'info@leafpulse.ru';
+import { Skeleton } from '@/components/ui/skeleton';
+import { getMe, getMyStats, updateMyName, type Me, type MyStats } from '@/lib/apiClient';
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [me, setMe] = useState<Me | null>(null);
   const [stats, setStats] = useState<MyStats | null>(null);
-  const [themeSheetOpen, setThemeSheetOpen] = useState(false);
-  const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -28,23 +31,50 @@ export default function ProfilePage() {
         if (cancelled) return;
         setMe(meRes);
         setStats(statsRes);
+        setLoaded(true);
       });
     return () => { cancelled = true; };
   }, []);
 
+  // Возврат с переноса записей (/link-telegram → /profile) — одноразовый тост.
+  useEffect(() => {
+    if (sessionStorage.getItem('justLinked') === '1') {
+      sessionStorage.removeItem('justLinked');
+      toast.success('Записи из бота перенесены ✓');
+    }
+  }, []);
+
+  const displayName = me?.first_name || me?.username || 'Чайный человек';
+  // Идентификатор под именем: почта; если её нет (чистый Telegram) — @username.
+  const identifier = me?.email || (me?.username ? `@${me.username}` : null);
+
+  function startEdit() {
+    setDraft(me?.first_name ?? '');
+    setEditing(true);
+  }
+
+  async function saveName() {
+    const name = draft.trim();
+    if (name.length < 1) { setEditing(false); return; }
+    setSaving(true);
+    try {
+      const updated = await updateMyName(name);
+      setMe(updated);
+      setEditing(false);
+    } catch {
+      toast.error('Не удалось сохранить имя. Попробуйте ещё раз.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   function logout() {
-    // Серверный /logout чистит куку (Set-Cookie) и редиректит на /login.
-    // Полная навигация — без отскока от proxy и без устаревшего кэша роутера.
     window.location.href = '/logout';
   }
 
-  const displayName = me?.first_name || me?.username || 'Чайный человек';
-
   return (
     <main className="min-h-screen bg-background">
-      {/* Cover — брендовая обложка (как градиент на /login, намеренно вне
-          токенов тем). Паттерн листьев + затемнение к низу, оба soft-light
-          поверх amber-600 — как в Figma (74:1395). Пока один для всех. */}
+      {/* Cover — брендовая обложка (амбер + паттерн листьев + затемнение к низу). */}
       <div
         className="relative h-[284px] rounded-b-2xl overflow-hidden"
         style={{
@@ -60,113 +90,165 @@ export default function ProfilePage() {
           </h1>
           <button
             type="button"
-            onClick={logout}
-            aria-label="Выйти"
-            className="w-9 h-9 rounded-full bg-white/30 flex items-center justify-center text-[#fafaf9] backdrop-blur-sm"
+            onClick={() => router.push('/settings')}
+            aria-label="Настройки"
+            className="w-9 h-9 rounded-full bg-button-icon-bg border border-button-icon-border flex items-center justify-center text-text-secondary backdrop-blur-sm"
           >
-            <SignOutIcon size={18} />
+            <GearSixIcon size={20} />
           </button>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 pb-8">
         {/* Карточка профиля — наезжает на cover, аватар торчит выше */}
-        <div className="relative bg-card rounded-2xl shadow-sm -mt-16 pt-12 pb-4 px-4">
-          <div className="absolute -top-9 left-1/2 -translate-x-1/2 w-[72px] h-[72px] rounded-full bg-card flex items-center justify-center overflow-hidden">
-            {me?.photo_url ? (
-              // Внешний CDN Telegram — обычный img, без next/image конфигурации
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={me.photo_url} alt={displayName} className="w-16 h-16 rounded-full object-cover" />
+        <div className="relative bg-card rounded-2xl shadow-sm -mt-16 pt-12 pb-6 px-4 flex flex-col items-center gap-[17px]">
+          <div className="absolute -top-9 left-1/2 -translate-x-1/2 size-[72px] rounded-full bg-card border border-border-default flex items-center justify-center">
+            <UserIcon size={40} className="text-accent-default" />
+          </div>
+
+          {/* Карандаш правки имени */}
+          {loaded && !editing && (
+            <button
+              type="button"
+              onClick={startEdit}
+              aria-label="Изменить имя"
+              className="absolute top-[46px] right-4 p-[5px] rounded-full text-text-secondary hover:text-foreground transition-colors"
+            >
+              <PencilSimpleLineIcon size={20} />
+            </button>
+          )}
+
+          {/* Имя + идентификатор */}
+          {!loaded ? (
+            <div className="flex flex-col items-center gap-2 w-full">
+              <Skeleton className="h-7 w-44" />
+              <Skeleton className="h-4 w-36" />
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-1 w-full">
+              {editing ? (
+                <div className="flex items-center justify-center gap-2 w-full">
+                  <input
+                    autoFocus
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') saveName();
+                      if (e.key === 'Escape') setEditing(false);
+                    }}
+                    maxLength={64}
+                    placeholder="Ваше имя"
+                    className="min-w-0 max-w-[240px] text-center font-semibold text-foreground bg-transparent border-b border-border-strong outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={saveName}
+                    disabled={saving}
+                    aria-label="Сохранить имя"
+                    className="shrink-0 text-accent-default disabled:opacity-50"
+                  >
+                    <CheckIcon size={22} weight="bold" />
+                  </button>
+                </div>
+              ) : (
+                <p className="text-[24px] leading-[30px] font-semibold tracking-[-0.5px] text-foreground text-center">
+                  {displayName}
+                </p>
+              )}
+              {identifier && (
+                <p className="text-[12px] leading-[16px] text-muted-foreground text-center break-all">
+                  {identifier}
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="h-px bg-border-default w-full" />
+
+          {/* Статистика */}
+          <div className="flex gap-9">
+            <Stat value={stats?.tastings} label="Дегустаций" loading={!loaded} />
+            <Stat value={stats?.tea_items} label="Сортов" loading={!loaded} />
+            <Stat value={stats?.teaware} label="Посуда" loading={!loaded} />
+          </div>
+
+          <div className="h-px bg-border-default w-full" />
+
+          {/* Топ категории */}
+          <div className="flex flex-col items-center gap-2 w-full">
+            <p className="text-[12px] leading-[16px] text-muted-foreground">Топ категории</p>
+            {!loaded ? (
+              <Skeleton className="h-6 w-48" />
             ) : (
-              <span className="w-16 h-16 rounded-full border-2 border-accent-default flex items-center justify-center">
-                <UserIcon size={28} className="text-accent-default" />
-              </span>
+              <p
+                className={`text-[18px] leading-[24px] text-center ${
+                  stats && stats.top_categories.length > 0
+                    ? 'text-foreground font-medium'
+                    : 'text-text-disabled'
+                }`}
+              >
+                {stats && stats.top_categories.length > 0
+                  ? stats.top_categories.join(', ')
+                  : 'Пока не достаточно данных'}
+              </p>
             )}
           </div>
 
-          <p className="text-[20px] leading-[24px] font-semibold text-foreground text-center">
-            {displayName}
-          </p>
+          <div className="h-px bg-border-default w-full" />
 
-          <div className="h-px bg-border-default my-4" />
-
-          <div className="grid grid-cols-3">
-            <Stat value={stats?.tastings} label="Дегустаций" />
-            <Stat value={stats?.tea_items} label="Сортов" />
-            <Stat value={stats?.teaware} label="Посуда" />
+          {/* Мои достижения — заглушка (CSS-плитки + бейдж «Скоро») */}
+          <div className="flex flex-col items-center gap-3 w-full">
+            <p className="text-[12px] leading-[16px] text-muted-foreground">Мои достижения</p>
+            <div className="relative w-full overflow-hidden">
+              <div className="flex gap-2 pl-4 blur-[5px] opacity-50" aria-hidden>
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className="shrink-0 flex flex-col items-center gap-2">
+                    <div className="size-[102px] rounded-xl bg-surface-app flex items-center justify-center">
+                      <TrophyIcon size={40} className="text-text-disabled" />
+                    </div>
+                    <span className="text-[12px] leading-[16px] text-text-disabled">Достижение</span>
+                  </div>
+                ))}
+              </div>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-badge-tag-bg border border-badge-tag-border rounded-full px-6 py-2 shadow-md">
+                <p className="text-[18px] leading-[24px] font-semibold text-badge-tag-text">Скоро</p>
+              </div>
+            </div>
           </div>
-
-          <div className="h-px bg-border-default my-4" />
-
-          <p className="text-[12px] leading-[16px] text-muted-foreground text-center mb-1">
-            Топ категории
-          </p>
-          <p className="text-[16px] leading-[24px] font-medium text-foreground text-center">
-            {stats && stats.top_categories.length > 0
-              ? stats.top_categories.join(', ')
-              : '—'}
-          </p>
         </div>
 
-        {/* Меню */}
-        <div className="bg-card rounded-2xl shadow-sm mt-4 overflow-hidden">
-          <MenuRow label="Настройки темы" onClick={() => setThemeSheetOpen(true)} />
-          <div className="h-px bg-border-default mx-4" />
-          <MenuRow
-            label="Возможности приложения"
-            onClick={() => setOnboardingOpen(true)}
-          />
-          <div className="h-px bg-border-default mx-4" />
-          <MenuRow
-            label="Экспорт данных (CSV)"
-            onClick={() => {
-              downloadTastingsCsv().catch(() =>
-                toast.error('Не удалось выгрузить данные. Попробуйте ещё раз.')
-              );
-            }}
-          />
-          <div className="h-px bg-border-default mx-4" />
-          <MenuRow
-            label="Сообщить об ошибке"
-            onClick={() => {
-              window.location.href = `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent('LeafPulse: сообщение об ошибке')}`;
-            }}
-          />
-        </div>
+        {/* Выйти */}
+        <button
+          type="button"
+          onClick={logout}
+          className="w-full mt-4 min-h-[40px] flex items-center justify-center px-6 py-[10px] rounded-full bg-surface-muted border border-border-strong shadow-xs text-[14px] font-medium text-text-secondary"
+        >
+          Выйти
+        </button>
       </div>
-
-      <ThemeSheet open={themeSheetOpen} onClose={() => setThemeSheetOpen(false)} />
-      <OnboardingSheet open={onboardingOpen} onClose={() => setOnboardingOpen(false)} />
     </main>
   );
 }
 
-function Stat({ value, label }: { value: number | undefined; label: string }) {
-  return (
-    <div className="flex flex-col items-center gap-0.5">
-      <span className="text-[28px] leading-[32px] font-semibold text-foreground">
-        {value ?? '—'}
-      </span>
-      <span className="text-[12px] leading-[16px] text-muted-foreground">{label}</span>
-    </div>
-  );
-}
-
-function MenuRow({
+function Stat({
+  value,
   label,
-  onClick,
+  loading,
 }: {
+  value: number | undefined;
   label: string;
-  onClick: () => void;
+  loading: boolean;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="w-full flex items-center justify-between px-4 h-14 text-left transition-colors hover:bg-surface-sunken outline-none focus-visible:ring-[3px] focus-visible:ring-ring-focus focus-visible:ring-inset"
-    >
-      <span className="text-[15px] text-foreground">{label}</span>
-      <CaretRightIcon size={18} className="text-muted-foreground shrink-0" />
-    </button>
+    <div className="flex flex-col items-center gap-2 w-[72px]">
+      {loading ? (
+        <Skeleton className="h-8 w-10" />
+      ) : (
+        <span className="text-[32px] leading-[32px] font-semibold text-text-secondary tracking-[-1px]">
+          {value ?? '—'}
+        </span>
+      )}
+      <span className="text-[12px] leading-[16px] text-muted-foreground">{label}</span>
+    </div>
   );
 }

@@ -432,8 +432,8 @@
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-xl: 0.75rem;   /* 12px — выровнено под Figma radius/xl (было 14px) */
+  --radius-2xl: 1rem;     /* 16px — выровнено под Figma radius/2xl (было 18px) */
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 
@@ -483,3 +483,11 @@ textarea,
 select {
   font-size: 16px !important;
 }
+
+/* Лёгкое «потряхивание» области согласия при попытке входа без галочки. */
+@keyframes lp-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+.lp-shake { animation: lp-shake 0.4s ease-in-out; }

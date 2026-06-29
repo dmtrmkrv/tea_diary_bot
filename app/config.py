@@ -57,6 +57,31 @@ def get_app_env() -> str:
     return os.getenv("APP_ENV", "production")
 
 
+def is_production() -> bool:
+    """Строгая проверка прод-режима (по соглашению: APP_ENV не задан = дев)."""
+    return os.getenv("APP_ENV", "").lower() == "production"
+
+
+JWT_ALGORITHM = "HS256"
+_JWT_DEV_SECRET = "dev-secret-change-in-prod"
+
+
+def get_jwt_secret() -> str:
+    """Единый источник ключа подписи JWT (раньше дублировался в auth.py и
+    auth_router.py). В production ключ обязателен и не должен быть дев-заглушкой —
+    иначе кто угодно выпишет себе токен под любым пользователем. Вне production
+    допускаем дефолт для локальной разработки."""
+    secret = os.getenv("JWT_SECRET")
+    if is_production():
+        if not secret or secret == _JWT_DEV_SECRET:
+            raise SystemExit(
+                "JWT_SECRET не задан или равен дев-заглушке в production — "
+                "выставьте надёжный секрет в переменных окружения."
+            )
+        return secret
+    return secret or _JWT_DEV_SECRET
+
+
 def get_tz() -> str:
     return os.getenv("TZ", "Europe/Amsterdam")
 

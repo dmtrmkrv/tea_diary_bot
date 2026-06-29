@@ -133,14 +133,20 @@ export default function AddTeawareSheet({
       if (photoFile) {
         try {
           await uploadTeawarePhoto(created.id, photoFile);
-        } catch {
-          toast.error('Посуда добавлена, но фото не загрузилось');
+        } catch (e) {
+          const err = e as { code?: string; message?: string };
+          toast.error(err.code ? `Посуда добавлена, но фото не загрузилось: ${err.message}` : 'Посуда добавлена, но фото не загрузилось');
         }
       }
       reset();
       onSaved(created);
-    } catch {
-      toast.error('Не удалось добавить посуду. Проверьте подключение и попробуйте ещё раз.');
+    } catch (e) {
+      const err = e as { status?: number };
+      toast.error(
+        err.status === 422
+          ? 'Проверьте введённые значения и попробуйте ещё раз.'
+          : 'Не удалось добавить посуду. Проверьте подключение и попробуйте ещё раз.'
+      );
       setSubmitting(false);
     }
   }

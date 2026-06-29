@@ -9,6 +9,14 @@ export function proxy(request: NextRequest) {
   // иначе при наличии (протухшей) куки proxy увёл бы его на / и была бы петля.
   if (pathname === '/logout') return NextResponse.next();
 
+  // /privacy — публичная страница (Политика конфиденциальности). Доступна и до
+  // входа (ссылка с логина), и после. Без редиректов в обе стороны.
+  if (pathname === '/privacy') return NextResponse.next();
+
+  // /auth/yandex/callback — приём ответа Яндекса. Пропускаем без проверок:
+  // нужен и для входа (токена ещё нет), и для будущей привязки (токен есть).
+  if (pathname === '/auth/yandex/callback') return NextResponse.next();
+
   const isPublic = pathname === '/login' || pathname.startsWith('/auth');
 
   if (!token && !isPublic) {

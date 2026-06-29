@@ -8,6 +8,7 @@ import PaginationLinks from '@/components/PaginationLinks';
 import SearchControls, { type TeawareFilterItem } from '@/components/SearchControls';
 import EmptyTastings from '@/components/EmptyTastings';
 import EmptySearch from '@/components/EmptySearch';
+import OnboardingGate from '@/components/OnboardingGate';
 
 const PAGE_SIZE = 10;
 
@@ -68,6 +69,7 @@ export default async function Home({
 
   return (
     <main className="min-h-screen bg-background">
+      <OnboardingGate />
       <div className="max-w-2xl mx-auto px-4">
         <Suspense fallback={null}>
           <SearchControls teaware={teawareItems} />

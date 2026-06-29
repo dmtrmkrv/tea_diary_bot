@@ -360,3 +360,14 @@ export function authChangePassword(currentPassword: string, newPassword: string)
 export function authClaim(tg: TelegramUser & { tz_offset_min?: number }) {
   return authCallAuthed<{ access_token: string }>('/auth/claim', tg);
 }
+
+// Старт переноса записей из бота: получаем URL Telegram-OAuth (возврат на
+// /link-telegram) и уводим туда. Один хелпер для настроек и онбординга.
+export async function startTelegramClaim(): Promise<void> {
+  const res = await fetch(`${API_URL}/auth/telegram/login-url?return_to=/link-telegram`, {
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error('claim-url');
+  const { url } = await res.json();
+  window.location.href = url;
+}

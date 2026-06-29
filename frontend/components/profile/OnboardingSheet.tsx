@@ -93,14 +93,7 @@ export default function OnboardingSheet({
   return (
     <>
       <div className="fixed inset-0 z-[60] bg-overlay-scrim backdrop-blur-sm" onClick={handleClose} />
-      {/* Высота шторки фиксированная (не зависит от объёма текста слайда) —
-          иначе при перелистывании менялась бы высота и «прыгала» бы линия
-          заголовка. На коротких слайдах остаётся пустое место снизу (как в
-          макете). 600px — подгоняемое значение. */}
-      <div
-        className="fixed left-1/2 -translate-x-1/2 bottom-0 w-full max-w-2xl z-[70] bg-card rounded-t-3xl flex flex-col overflow-hidden"
-        style={{ height: 'min(600px, calc(100svh - 48px))' }}
-      >
+      <div className="fixed left-1/2 -translate-x-1/2 bottom-0 w-full max-w-2xl z-[70] bg-card rounded-t-3xl flex flex-col max-h-[calc(100svh-48px)] overflow-hidden">
         <div className="flex justify-center pt-2 pb-1">
           <span className="w-9 h-1 rounded-full bg-border-strong" />
         </div>
@@ -128,7 +121,7 @@ export default function OnboardingSheet({
               pb 66.67% = 2/3 высоты от ширины — padding-hack держит аспект без
               зависимости от aspect-ratio. object-cover не режет при совпадении
               аспекта; shrink-0 — чтобы рамка не сжималась на коротких экранах. */}
-          <div className="relative w-full max-w-[360px] mx-auto shrink-0 overflow-hidden rounded-2xl bg-surface-sunken">
+          <div className="relative w-full shrink-0 overflow-hidden rounded-2xl bg-surface-sunken">
             <div className="pb-[66.67%]" />
             {slide.image ? (
               // eslint-disable-next-line @next/next/no-img-element

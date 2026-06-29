@@ -128,7 +128,7 @@ export default function OnboardingSheet({
               pb 66.67% = 2/3 высоты от ширины — padding-hack держит аспект без
               зависимости от aspect-ratio. object-cover не режет при совпадении
               аспекта; shrink-0 — чтобы рамка не сжималась на коротких экранах. */}
-          <div className="relative w-full shrink-0 overflow-hidden rounded-2xl bg-surface-sunken">
+          <div className="relative w-full max-w-[360px] mx-auto shrink-0 overflow-hidden rounded-2xl bg-surface-sunken">
             <div className="pb-[66.67%]" />
             {slide.image ? (
               // eslint-disable-next-line @next/next/no-img-element

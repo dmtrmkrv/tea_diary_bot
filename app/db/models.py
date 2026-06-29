@@ -37,6 +37,22 @@ class User(Base):
     first_name: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     photo_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
+    # Идентификаторы входа (любая комбинация). См. docs/auth-arch1-plan.md.
+    # id — внутренний суррогат: у существующих строк = старый telegram_id;
+    # у новых web-юзеров — из sequence users_web_id_seq (старт 10^12, не
+    # пересекается с telegram_id). Бот по-прежнему пишет id=telegram_id.
+    telegram_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
+    email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)  # lower-case
+    password_hash: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)  # argon2id
+    yandex_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    consented_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, nullable=True)
+
+    __table_args__ = (
+        Index("ix_users_telegram_id", "telegram_id", unique=True),
+        Index("ix_users_email", "email", unique=True),
+        Index("ix_users_yandex_id", "yandex_id", unique=True),
+    )
+
 
 class Tasting(Base):
     __tablename__ = "tastings"

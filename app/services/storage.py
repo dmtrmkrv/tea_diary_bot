@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-import mimetypes
+import io
 import os
 import uuid
 from dataclasses import dataclass
 from typing import Optional
+
+from PIL import Image
 
 from app.config import get_media_backend, get_s3_config
 
@@ -24,9 +26,49 @@ def _suffix_from_name(name: str) -> str:
     return ext if ext else ".jpg"
 
 
-def _guess_mime(filename: str, default: str = "image/jpeg") -> str:
-    mt, _ = mimetypes.guess_type(filename)
-    return mt or default
+# Лимит и проверка изображений при загрузке — одна точка для всех путей (фото
+# дегустаций, обложки сортов и посуды все идут через _save_bytes_with_prefix).
+MAX_UPLOAD_BYTES = 8 * 1024 * 1024  # 8 МБ на файл
+_ALLOWED_IMAGE_FORMATS = {"JPEG": "image/jpeg", "PNG": "image/png", "WEBP": "image/webp"}
+
+
+class ImageValidationError(Exception):
+    """Файл не прошёл проверку размера/типа. Роутер мапит в HTTP с понятным
+    сообщением для пользователя."""
+
+    def __init__(self, code: str, message: str):
+        super().__init__(message)
+        self.code = code
+        self.message = message
+
+
+def validate_image_upload(body: bytes) -> str:
+    """Проверяет размер и что это реальное изображение поддерживаемого формата.
+
+    Возвращает content_type по распознанному формату (а не по имени файла —
+    имя можно подделать). Иначе бросает ImageValidationError.
+    """
+    if len(body) > MAX_UPLOAD_BYTES:
+        raise ImageValidationError(
+            "file_too_large",
+            "Файл больше 8 МБ — сожмите изображение или выберите файл поменьше.",
+        )
+    try:
+        image = Image.open(io.BytesIO(body))
+        fmt = image.format
+        image.verify()  # проверка целостности; после verify() объект непригоден
+    except Exception:
+        raise ImageValidationError(
+            "unsupported_file",
+            "Не удалось распознать изображение. Поддерживаются JPEG, PNG и WEBP.",
+        )
+    content_type = _ALLOWED_IMAGE_FORMATS.get(fmt or "")
+    if content_type is None:
+        raise ImageValidationError(
+            "unsupported_file",
+            "Поддерживаются только изображения JPEG, PNG и WEBP.",
+        )
+    return content_type
 
 
 def _s3_client():
@@ -51,7 +93,7 @@ def _save_bytes_with_prefix(
 ) -> SaveResult:
     backend = get_media_backend()
     size = len(body)
-    content_type = _guess_mime(filename_hint)
+    content_type = validate_image_upload(body)  # размер + тип; иначе ImageValidationError
     key = f"{key_prefix}/{uuid.uuid4().hex}{_suffix_from_name(filename_hint)}"
 
     cfg = get_s3_config()

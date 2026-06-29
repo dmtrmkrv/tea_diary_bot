@@ -1,5 +1,7 @@
 'use client';
 
+import type { TelegramUser } from './telegramAuth';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 function getToken(): string {
@@ -16,7 +18,16 @@ async function apiCall<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const res = await fetch(`${API_URL}${path}`, { ...init, headers, cache: 'no-store' });
-  if (!res.ok) throw new Error(`API ${res.status}`);
+  if (!res.ok) {
+    // Достаём понятную причину с бэка ({detail:{code,message}}), если она есть —
+    // например, при отклонённой загрузке фото (размер/тип). Иначе общий текст.
+    const data = await res.json().catch(() => null);
+    const detail = (data as { detail?: { code?: string; message?: string } } | null)?.detail;
+    const err = new Error(detail?.message || `API ${res.status}`) as Error & { status?: number; code?: string };
+    err.status = res.status;
+    if (detail?.code) err.code = detail.code;
+    throw err;
+  }
   return res.json();
 }
 
@@ -207,6 +218,10 @@ export type Me = {
   first_name: string | null;
   photo_url: string | null;
   tz_offset_min: number;
+  email: string | null;
+  has_telegram: boolean;
+  has_yandex: boolean;
+  has_password: boolean;
 };
 
 export type MyStats = {
@@ -218,6 +233,20 @@ export type MyStats = {
 
 export function getMe() {
   return apiCall<Me>('/users/me');
+}
+
+// Инлайн-смена отображаемого имени (пишется в first_name на бэке).
+export function updateMyName(name: string) {
+  return apiCall<Me>('/users/me/name', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+}
+
+// Полное удаление аккаунта (необратимо). После — фронт разлогинивает.
+export function deleteMyAccount() {
+  return apiCall<{ ok: boolean }>('/users/me', { method: 'DELETE' });
 }
 
 export function getMyStats() {
@@ -257,4 +286,77 @@ export function deleteTastingPhoto(tastingId: number, photoId: number) {
   return apiCall<{ ok: boolean }>(`/tastings/${tastingId}/photos/${photoId}`, {
     method: 'DELETE',
   });
+}
+
+// --- Вход по email (Arch 1). Бэк отдаёт структурную ошибку {detail:{code,message}}. ---
+export type AuthError = { status: number; code?: string; message?: string };
+
+async function authCall(path: string, body: unknown): Promise<{ access_token: string }> {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    const detail = (data as { detail?: { code?: string; message?: string } }).detail;
+    const err: AuthError = { status: res.status, code: detail?.code, message: detail?.message };
+    throw err;
+  }
+  return res.json();
+}
+
+export function authRegister(email: string, password: string, consent: boolean) {
+  return authCall('/auth/register', { email, password, consent });
+}
+
+export function authLogin(email: string, password: string) {
+  return authCall('/auth/login', { email, password });
+}
+
+// Вход через Яндекс: обмен кода (от callback) на сессию. Токена ещё нет.
+export function authYandex(code: string) {
+  return authCall('/auth/yandex', { code });
+}
+
+// Те же ошибки {detail:{code,message}}, но с токеном текущего пользователя
+// (привязка ключа входа к своему аккаунту / перенос записей из бота).
+async function authCallAuthed<T>(path: string, body: unknown): Promise<T> {
+  const token = getToken();
+  const res = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    const detail = (data as { detail?: { code?: string; message?: string } }).detail;
+    const err: AuthError = { status: res.status, code: detail?.code, message: detail?.message };
+    throw err;
+  }
+  return res.json();
+}
+
+// Путь 2: добавить email+пароль к текущему аккаунту.
+export function authLinkEmail(email: string, password: string, consent: boolean) {
+  return authCallAuthed<{ ok: boolean }>('/auth/link-email', { email, password, consent });
+}
+
+// Смена пароля из настроек (нужен текущий пароль).
+export function authChangePassword(currentPassword: string, newPassword: string) {
+  return authCallAuthed<{ ok: boolean }>('/auth/change-password', {
+    current_password: currentPassword,
+    new_password: newPassword,
+  });
+}
+
+// Путь 1: перенести записи из бота (подтверждение — подписанные данные Telegram).
+// Возвращает новый токен: главным становится Telegram-аккаунт.
+export function authClaim(tg: TelegramUser & { tz_offset_min?: number }) {
+  return authCallAuthed<{ access_token: string }>('/auth/claim', tg);
 }

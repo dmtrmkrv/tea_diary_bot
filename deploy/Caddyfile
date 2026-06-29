@@ -1,0 +1,5 @@
+# Caddy сам выпустит и будет продлевать Let's Encrypt для домена.
+# Нужно: домен указывает A-записью на этот VPS, порты 80 и 443 открыты.
+leafpulse.ru, www.leafpulse.ru {
+	reverse_proxy frontend:3000
+}

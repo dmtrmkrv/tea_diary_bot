@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 import datetime
 
@@ -13,6 +13,7 @@ from app.services.storage import (
     save_tea_item_photo_bytes,
     save_teaware_photo_bytes,
     delete_object,
+    ImageValidationError,
 )
 
 router = APIRouter(prefix="/collection", tags=["collection"])
@@ -37,13 +38,13 @@ class TeaItemOut(BaseModel):
 
 
 class TeaItemCreate(BaseModel):
-    name: str
-    category: Optional[str] = None
-    year: Optional[int] = None
-    region: Optional[str] = None
-    vendor: Optional[str] = None
+    name: str = Field(max_length=200)
+    category: Optional[str] = Field(None, max_length=60)
+    year: Optional[int] = Field(None, ge=0, le=3000)
+    region: Optional[str] = Field(None, max_length=120)
+    vendor: Optional[str] = Field(None, max_length=200)
     notes: Optional[str] = None
-    amount_g: Optional[float] = None
+    amount_g: Optional[float] = Field(None, ge=0, le=1000000)
 
 
 class TeaItemAmountUpdate(BaseModel):
@@ -73,11 +74,11 @@ class TeawareOut(BaseModel):
 
 
 class TeawareCreate(BaseModel):
-    name: str
-    type: Optional[str] = None
-    volume_ml: Optional[int] = None
-    material: Optional[str] = None
-    region: Optional[str] = None
+    name: str = Field(max_length=200)
+    type: Optional[str] = Field(None, max_length=60)
+    volume_ml: Optional[int] = Field(None, ge=0, le=100000)
+    material: Optional[str] = Field(None, max_length=100)
+    region: Optional[str] = Field(None, max_length=120)
     suitable_csv: Optional[str] = None
     notes: Optional[str] = None
 
@@ -188,12 +189,18 @@ async def upload_tea_photo(
     if not body:
         raise HTTPException(status_code=400, detail="Пустой файл")
 
-    saved = save_tea_item_photo_bytes(
-        user_id=user_id,
-        tea_item_id=item.id,
-        body=body,
-        filename_hint=file.filename or "photo.jpg",
-    )
+    try:
+        saved = save_tea_item_photo_bytes(
+            user_id=user_id,
+            tea_item_id=item.id,
+            body=body,
+            filename_hint=file.filename or "photo.jpg",
+        )
+    except ImageValidationError as exc:
+        raise HTTPException(
+            status_code=413 if exc.code == "file_too_large" else 400,
+            detail={"code": exc.code, "message": exc.message},
+        )
     # Старый cover больше не нужен — чистим из хранилища
     if item.cover_object_key and item.cover_object_key != saved.object_key:
         delete_object(item.cover_object_key)
@@ -384,12 +391,18 @@ async def upload_teaware_photo(
     if not body:
         raise HTTPException(status_code=400, detail="Пустой файл")
 
-    saved = save_teaware_photo_bytes(
-        user_id=user_id,
-        teaware_id=item.id,
-        body=body,
-        filename_hint=file.filename or "photo.jpg",
-    )
+    try:
+        saved = save_teaware_photo_bytes(
+            user_id=user_id,
+            teaware_id=item.id,
+            body=body,
+            filename_hint=file.filename or "photo.jpg",
+        )
+    except ImageValidationError as exc:
+        raise HTTPException(
+            status_code=413 if exc.code == "file_too_large" else 400,
+            detail={"code": exc.code, "message": exc.message},
+        )
     # Старый cover больше не нужен — чистим из хранилища
     if item.cover_object_key and item.cover_object_key != saved.object_key:
         delete_object(item.cover_object_key)

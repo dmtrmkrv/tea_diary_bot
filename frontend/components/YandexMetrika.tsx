@@ -3,6 +3,7 @@
 import Script from 'next/script';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef } from 'react';
+import { useCookieConsent } from '@/lib/cookieConsent';
 
 const YM_ID = process.env.NEXT_PUBLIC_YM_COUNTER_ID;
 
@@ -28,10 +29,14 @@ function Tracker({ id }: { id: number }) {
   return null;
 }
 
-// Яндекс.Метрика. Подключается только если задан NEXT_PUBLIC_YM_COUNTER_ID
-// (на стейдже без переменной не грузится). Вебвизор выключен (настройки счётчика).
+// Яндекс.Метрика. Грузится только при (а) заданном NEXT_PUBLIC_YM_COUNTER_ID
+// и (б) согласии на аналитику в куки-баннере (cookie_consent === 'all').
+// Без согласия счётчик не инициализируется вовсе. При нажатии «Принять всё»
+// согласие меняется реактивно → компонент перерендерится и подключит tag.js
+// без перезагрузки. Вебвизор выключен (настройки счётчика).
 export default function YandexMetrika() {
-  if (!YM_ID) return null;
+  const { consent } = useCookieConsent();
+  if (!YM_ID || consent !== 'all') return null;
   const id = Number(YM_ID);
 
   return (

@@ -1,147 +1,168 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+export const dynamic = 'force-dynamic';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import { toast } from 'sonner';
+import AuthSheet from '@/components/auth/AuthSheet';
+import LeafPulseLogo from '@/components/LeafPulseLogo';
+import { Spinner } from '@/components/ui/spinner';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
-interface TelegramUser {
-  id: number;
-  first_name: string;
-  last_name?: string;
-  username?: string;
-  photo_url?: string;
-  auth_date: number;
-  hash: string;
-}
-
-// Данные авторизации могут вернуться от Telegram либо в hash
-// (#tgAuthResult=base64url(json)), либо в query (?id=&hash=…). Поддерживаем оба.
-function parseTelegramAuth(): TelegramUser | null {
-  if (typeof window === 'undefined') return null;
-
-  const hashMatch = window.location.hash.match(/tgAuthResult=([^&]+)/);
-  if (hashMatch) {
-    try {
-      let b64 = decodeURIComponent(hashMatch[1]).replace(/-/g, '+').replace(/_/g, '/');
-      while (b64.length % 4) b64 += '=';
-      const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
-      return JSON.parse(new TextDecoder('utf-8').decode(bytes)) as TelegramUser;
-    } catch {
-      /* пустой — упадём в проверку query ниже */
-    }
-  }
-
-  const sp = new URLSearchParams(window.location.search);
-  if (sp.get('id') && sp.get('hash')) {
-    return {
-      id: Number(sp.get('id')),
-      first_name: sp.get('first_name') ?? '',
-      last_name: sp.get('last_name') ?? undefined,
-      username: sp.get('username') ?? undefined,
-      photo_url: sp.get('photo_url') ?? undefined,
-      auth_date: Number(sp.get('auth_date')),
-      hash: sp.get('hash') as string,
-    };
-  }
-  return null;
-}
+type Tab = 'login' | 'register';
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [status, setStatus] = useState<'idle' | 'pending' | 'error'>('idle');
+  const [tab, setTab] = useState<Tab>('login');
+  const [consented, setConsented] = useState(false);
+  const [sheet, setSheet] = useState<Tab | null>(null);
+  const [prefillEmail, setPrefillEmail] = useState('');
+  const [shakeKey, setShakeKey] = useState(0); // меняем → область согласия «подёргивается»
+  const [yandexLoading, setYandexLoading] = useState(false);
 
-  // Возврат от Telegram: разбираем подписанные данные и логинимся.
-  useEffect(() => {
-    const user = parseTelegramAuth();
-    if (!user) return;
-    setStatus('pending');
-    // Чистим URL, чтобы данные не остались в истории / при обновлении.
-    window.history.replaceState(null, '', window.location.pathname);
-    fetch(`${API_URL}/auth/telegram`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...user, tz_offset_min: -new Date().getTimezoneOffset() }),
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error();
-        return res.json();
-      })
-      .then(({ access_token }) => {
-        document.cookie = `token=${access_token}; path=/; max-age=${60 * 60 * 24 * 180}`;
-        router.push('/');
-      })
-      .catch(() => setStatus('error'));
-  }, [router]);
+  // Тап по кнопке, которой нужно согласие, без галочки: трясём чекбокс + подсказка.
+  function nudgeConsent() {
+    setShakeKey((k) => k + 1);
+    toast('Примите Политику конфиденциальности, чтобы продолжить.');
+  }
 
-  // Один клик: берём URL авторизации с бэка и уводим на Telegram.
-  async function startLogin() {
-    setStatus('pending');
-    try {
-      const res = await fetch(`${API_URL}/auth/telegram/login-url`);
-      if (!res.ok) throw new Error();
-      const { url } = await res.json();
-      window.location.href = url;
-    } catch {
-      setStatus('error');
+  function onEmail() {
+    if (tab === 'login') {
+      setSheet('login'); // вход аккаунт не создаёт → согласие не нужно
+    } else if (consented) {
+      setSheet('register');
+    } else {
+      nudgeConsent();
     }
   }
 
+  async function onYandex() {
+    // Яндекс = find-or-create (может создать аккаунт) → нужно согласие на обеих вкладках.
+    if (!consented) {
+      nudgeConsent();
+      return;
+    }
+    setYandexLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/auth/yandex/login-url`);
+      if (!res.ok) throw new Error();
+      const { url, state } = await res.json();
+      // Сохраняем метку — на возврате callback сверит её (CSRF-защита входа).
+      if (state) sessionStorage.setItem('yandex_oauth_state', state);
+      window.location.href = url;
+    } catch {
+      setYandexLoading(false);
+      toast.error('Не удалось открыть вход через Яндекс. Попробуйте позже.');
+    }
+  }
+
+  // «Выглядит выключенной, но кликабельна» (Вариант A): тап ловим, согласие подсказываем.
+  const emailMuted = tab === 'register' && !consented;
+  const yandexMuted = !consented;
+
+  const emailLabel = tab === 'login' ? 'Войти по электронной почте' : 'Регистрация по электронной почте';
+
   return (
-    <main
-      className="fixed inset-0 overflow-hidden flex flex-col items-center px-4 pt-[clamp(56px,12vh,138px)] pb-[max(env(safe-area-inset-bottom),clamp(40px,6vh,56px))] text-white text-center"
-      style={{ background: 'linear-gradient(204.8deg, rgb(148, 232, 125) 0%, rgb(222, 203, 105) 33.875%, rgb(241, 136, 63) 100%)' }}
-    >
-      {/* Логотип */}
-      <div className="shrink-0 flex justify-center">
-        <svg width="122" height="168" viewBox="0 0 122 168" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-[0px_4px_3px_rgba(0,0,0,0.1),0px_10px_7.5px_rgba(0,0,0,0.1)]">
-            <path d="M72.0013 0C87.0862 0 94.6285 0.000231936 99.3147 4.68652C104.001 9.37281 104.001 16.9151 104.001 32V54C104.001 69.0849 104.001 76.6272 99.3147 81.3135C94.6285 85.9998 87.0862 86 72.0013 86H50.0013C34.9163 86 27.3741 85.9998 22.6878 81.3135C18.0015 76.6272 18.0013 69.0849 18.0013 54V32C18.0013 16.9151 18.0015 9.37281 22.6878 4.68652C27.3741 0.000231936 34.9163 0 50.0013 0H72.0013ZM61.0286 19.2246C54.9664 25.1888 47.5811 32.796 44.4231 40.7656C43.8338 42.2533 43.422 43.7561 43.136 45.3271C42.9514 46.342 42.7945 47.3624 42.7903 48.3965C42.774 52.1136 43.9341 55.7413 46.1048 58.7637C46.7846 59.6993 47.5672 60.5514 48.3851 61.3682C51.7197 64.6617 56.2329 66.4978 60.927 66.4707C60.9912 66.4705 61.0562 66.4695 61.1204 66.4678C66.1429 66.387 70.9287 64.322 74.4251 60.7266C77.6493 57.3658 79.491 52.5316 79.3772 47.8936C79.2111 41.1308 74.2941 33.8253 70.0774 28.7686C68.8525 27.2996 67.5312 25.8903 66.222 24.4941C66.1735 24.4425 66.1249 24.3905 66.0765 24.3389C65.9977 24.2549 65.918 24.17 65.8392 24.0859C65.747 23.9876 65.6541 23.8894 65.5618 23.791C65.3378 23.5521 65.113 23.3129 64.888 23.0742C64.7131 22.8888 64.5364 22.7044 64.3606 22.5195C63.9751 22.1141 63.5884 21.7088 63.1966 21.3096C62.6248 20.727 62.0451 20.1526 61.4534 19.5947C61.3829 19.5283 61.3111 19.46 61.2376 19.3945C61.2296 19.3874 61.2212 19.3801 61.2132 19.373C61.1891 19.352 61.1646 19.3308 61.1399 19.3105L61.0286 19.2246ZM72.7425 48.332C72.7726 48.5214 72.6642 48.7943 72.6126 48.9795C72.2688 50.173 71.8254 51.3356 71.2874 52.4551C69.1742 56.9145 65.9896 59.9231 61.7337 62.3252C61.6826 60.9591 61.7975 59.6219 62.1448 58.2969C62.3922 57.3532 62.8046 56.521 63.3304 55.7021C65.5452 52.2528 69.3036 50.329 72.7425 48.332ZM49.4251 48.3496C50.0682 48.6152 50.718 49.0695 51.3196 49.4238C53.5529 50.7388 55.538 51.9601 57.347 53.8535C59.7603 56.3796 60.4005 58.8268 60.3196 62.2373C59.6546 61.951 58.9816 61.4391 58.3792 61.0361C54.9571 58.7468 52.3461 55.7825 50.6546 52.0166C50.1299 50.8485 49.6745 49.6077 49.4251 48.3496ZM50.3899 39.249C50.7863 39.4154 51.5982 40.1767 52.0013 40.4883C53.8993 41.9553 55.8753 43.2965 57.5862 44.9961C58.6269 46.0301 59.8299 47.569 60.1819 49.0195C60.3805 49.8379 60.3237 50.7495 60.3255 51.5879L60.3284 54.4023C59.7854 53.8164 59.2658 53.2109 58.7015 52.6445C57.484 51.4227 56.1777 50.2769 55.0061 49.0107C52.4627 46.2621 50.8377 42.9746 50.3899 39.249ZM71.5892 39.2764C71.6326 39.3208 71.63 39.3691 71.6311 39.4316C71.6422 40.015 71.3032 41.206 71.1429 41.8027C70.8664 42.8319 70.4543 43.8328 69.9788 44.7852C67.9372 48.8742 64.7668 51.049 61.7972 54.3232L61.7581 54.3076C61.6894 53.9733 61.7623 50.1766 61.8079 49.6934C62.14 46.184 66.6022 43.1029 69.2278 41.1377C70.0329 40.5406 70.8207 39.9198 71.5892 39.2764ZM60.9876 27.4316C61.3706 27.819 61.6723 28.355 61.9632 28.8145C62.9918 30.4391 63.9652 32.1229 64.4866 33.9883C65.7204 38.4033 63.2421 42.377 61.1702 46.0537C61.2894 45.2566 61.1682 42.3509 61.0257 41.6123L61.0032 41.6357C60.9158 42.7536 60.7164 45.1303 60.9163 46.1523C60.3014 45.2254 59.7628 44.2524 59.2444 43.2695C58.2527 41.3894 57.3492 39.521 57.1556 37.3691C56.8987 34.5142 58.052 31.963 59.5101 29.5908C59.9656 28.8498 60.4301 28.1012 60.9876 27.4316Z" fill="white"/>
-            <path d="M89.3376 109V132.888H84.1081V109H89.3376ZM99.3122 113.842H84.5923V109H99.3122V113.842ZM97.7305 123.558H84.4632V118.846H97.7305V123.558Z" fill="white"/>
-            <path d="M64.1669 132.888H58.7115L67.2336 109H72.3339L80.8236 132.888H75.2714L73.5928 127.852H65.8778L64.1669 132.888ZM69.1058 118.361L67.395 123.462H72.1079L70.397 118.361C70.2679 117.952 70.1388 117.533 70.0097 117.102C69.8805 116.672 69.7945 116.317 69.7514 116.037C69.7084 116.317 69.6223 116.672 69.4932 117.102C69.3856 117.511 69.2565 117.931 69.1058 118.361Z" fill="white"/>
-            <path d="M56.1238 132.888H40.952V109H56.1238V113.842H44.7288L46.1814 112.486V118.523H54.9939V123.107H46.1814V129.401L44.7288 128.045H56.1238V132.888Z" fill="white"/>
-            <path d="M27.74 109V132.887H22.5106V109H27.74ZM23.4467 132.887V128.045H37.1659V132.887H23.4467Z" fill="white"/>
-            <path d="M111.001 167.063H95.8295V143.175H111.001V148.017H99.6063L101.059 146.661V152.698H109.871V157.282H101.059V163.576L99.6063 162.221H111.001V167.063Z" fill="white"/>
-            <path d="M74.1894 150.116C74.1894 148.674 74.566 147.404 75.3193 146.307C76.0725 145.187 77.1054 144.316 78.4182 143.692C79.7524 143.046 81.2696 142.723 82.9697 142.723C84.6913 142.723 86.1762 143.025 87.4244 143.627C88.6726 144.23 89.6302 145.08 90.2974 146.177C90.986 147.275 91.3303 148.577 91.3303 150.083H86.1332C86.1332 149.244 85.8427 148.588 85.2616 148.114C84.6806 147.619 83.8951 147.372 82.9052 147.372C81.8507 147.372 81.0006 147.598 80.355 148.05C79.7309 148.502 79.4189 149.126 79.4189 149.922C79.4189 150.654 79.6125 151.213 79.9999 151.601C80.3873 151.988 81.0006 152.268 81.8399 152.44L85.423 153.182C87.5535 153.613 89.1353 154.366 90.1683 155.442C91.2012 156.496 91.7177 157.971 91.7177 159.864C91.7177 161.392 91.3411 162.737 90.5879 163.899C89.8347 165.04 88.7694 165.922 87.3921 166.546C86.0364 167.17 84.4438 167.482 82.6146 167.482C80.85 167.482 79.3005 167.181 77.9662 166.579C76.6535 165.976 75.6313 165.126 74.8996 164.028C74.1894 162.909 73.8344 161.607 73.8344 160.123H79.0315C79.0315 160.983 79.3435 161.65 79.9676 162.124C80.5917 162.597 81.4848 162.834 82.6469 162.834C83.8305 162.834 84.7667 162.619 85.4553 162.189C86.144 161.737 86.4883 161.134 86.4883 160.381C86.4883 159.714 86.3161 159.197 85.9718 158.831C85.649 158.465 85.0895 158.207 84.2932 158.057L80.6455 157.314C78.515 156.884 76.901 156.066 75.8035 154.861C74.7274 153.656 74.1894 152.074 74.1894 150.116Z" fill="white"/>
-            <path d="M62.9793 143.175V167.063H57.7499V143.175H62.9793ZM58.686 167.063V162.221H72.4052V167.063H58.686Z" fill="white"/>
-            <path d="M32.6064 158.089V143.175H37.8358V157.734C37.8358 159.24 38.234 160.391 39.0302 161.188C39.8265 161.984 40.9563 162.382 42.4197 162.382C43.9046 162.382 45.0451 161.973 45.8414 161.155C46.6591 160.338 47.068 159.197 47.068 157.734V143.175H52.2975V158.089C52.2975 159.983 51.8886 161.629 51.0708 163.028C50.2746 164.426 49.134 165.513 47.6491 166.288C46.1642 167.063 44.421 167.45 42.4197 167.45C40.4398 167.45 38.7074 167.073 37.2225 166.32C35.7591 165.546 34.6185 164.459 33.8008 163.06C33.0045 161.64 32.6064 159.983 32.6064 158.089Z" fill="white"/>
-            <path d="M16.2307 143.175V167.063H11.0013V143.175H16.2307ZM20.6854 159.122H14.9395V154.473H19.5233C20.793 154.473 21.7399 154.204 22.364 153.666C22.9881 153.107 23.3001 152.267 23.3001 151.148C23.3001 150.029 22.9881 149.201 22.364 148.663C21.7399 148.103 20.793 147.824 19.5233 147.824H14.9395V143.175H20.6854C22.3209 143.175 23.7413 143.509 24.9464 144.176C26.1731 144.843 27.1199 145.779 27.7871 146.984C28.4757 148.168 28.8201 149.556 28.8201 151.148C28.8201 152.741 28.4757 154.14 27.7871 155.345C27.1199 156.529 26.1731 157.454 24.9464 158.121C23.7413 158.788 22.3209 159.122 20.6854 159.122Z" fill="white"/>
-        </svg>
-      </div>
+    <>
+      <main
+        className="fixed inset-0 overflow-y-auto"
+        style={{ background: 'linear-gradient(204.8deg, rgb(148, 232, 125) 0%, rgb(222, 203, 105) 33.875%, rgb(241, 136, 63) 100%)' }}
+      >
+        <div className="min-h-full flex flex-col items-center justify-center px-4 py-8">
+        <div className="w-full max-w-[400px] bg-card rounded-3xl shadow-xl px-5 py-7 flex flex-col items-center">
+          {/* Лого */}
+          <LeafPulseLogo className="h-[72px] w-auto mb-8 text-text-secondary" />
 
-      {/* Минимальный зазор — текст не наезжает на лого на низких экранах */}
-      <div className="flex-1 min-h-[32px]" />
-
-      {/* Текст + кнопки — нижняя группа */}
-      <div className="shrink-0 w-full flex flex-col items-center gap-[40px]">
-        <div className="w-full max-w-[358px] flex flex-col gap-[16px]">
-          <h1 className="font-[family-name:var(--font-inter)] text-[32px] font-semibold leading-[32px] tracking-[-1px]">
-            Твой чайный дневник и{' '}коллекция
+          <h1 className="text-[24px] font-semibold leading-[1.2] tracking-[-0.5px] text-foreground text-center">
+            Твой чайный дневник<br />и коллекция
           </h1>
-          <p className="font-[family-name:var(--font-inter)] text-[16px] font-medium leading-[24px]">
+          <p className="text-[14px] leading-[20px] text-muted-foreground text-center mt-3">
             Собирай сорта и посуду в одном месте, записывай дегустации и отслеживай, как раскрывается каждый чай.
           </p>
-        </div>
 
-        <div className="w-full max-w-[296px] flex flex-col gap-[12px]">
+          {/* Табы */}
+          <div className="w-full mt-6 grid grid-cols-2 gap-1 p-1 rounded-full bg-surface-sunken">
+            {(['login', 'register'] as Tab[]).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTab(t)}
+                className={`h-9 rounded-full text-[14px] font-medium transition-colors ${
+                  tab === t ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
+                }`}
+              >
+                {t === 'login' ? 'Вход' : 'Регистрация'}
+              </button>
+            ))}
+          </div>
+
+          {/* Кнопка email */}
           <button
             type="button"
-            onClick={startLogin}
-            disabled={status === 'pending'}
-            className="w-full flex items-center justify-center min-h-[40px] px-[24px] py-[10px] rounded-lg bg-[#78350f] text-[#fafaf9] text-[14px] font-medium leading-[20px] disabled:opacity-80"
+            onClick={onEmail}
+            className={`w-full mt-4 h-11 rounded-lg bg-primary text-[14px] font-medium text-primary-foreground transition-opacity ${emailMuted ? 'opacity-50' : ''}`}
           >
-            {status === 'pending' ? 'Входим…' : 'Регистрация через Telegram'}
+            {emailLabel}
           </button>
 
-          {/* Место под подсказку зарезервировано (opacity), чтобы её появление
-              не сдвигало раскладку и текст не наезжал на лого. */}
-          <p
-            aria-hidden={status !== 'error'}
-            className={`text-[12px] leading-[16px] text-white/80 text-center transition-opacity ${status === 'error' ? 'opacity-100' : 'opacity-0'}`}
+          <div className="w-full h-px bg-border-default my-4" />
+
+          {/* Кнопка Яндекс */}
+          <button
+            type="button"
+            onClick={onYandex}
+            disabled={yandexLoading}
+            className={`w-full h-11 rounded-lg border border-border-default bg-background text-[14px] font-medium text-foreground transition-opacity flex items-center justify-center gap-2 ${yandexMuted ? 'opacity-50' : ''}`}
           >
-            Не удалось войти — попробуйте другую сеть или зайдите позже.
-          </p>
+            {yandexLoading ? (<><Spinner className="size-4" />Минуту…</>) : 'Войти через Яндекс'}
+          </button>
+
+          {/* Согласие */}
+          <label
+            key={shakeKey}
+            className={`w-full mt-4 flex items-start gap-2 cursor-pointer select-none ${shakeKey > 0 ? 'lp-shake' : ''}`}
+          >
+            <input
+              type="checkbox"
+              checked={consented}
+              onChange={(e) => setConsented(e.target.checked)}
+              className="mt-0.5 size-4 shrink-0 accent-primary"
+            />
+            <span className="text-[12px] leading-[16px] text-muted-foreground">
+              Согласен на обработку персональных данных и принимаю{' '}
+              <Link href="/privacy" target="_blank" rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-accent-default underline underline-offset-2">
+                политику конфиденциальности
+              </Link>
+            </span>
+          </label>
         </div>
-      </div>
-    </main>
+        </div>
+      </main>
+
+      {sheet === 'login' && (
+        <AuthSheet
+          mode="login"
+          onClose={() => setSheet(null)}
+          onSwitchToRegister={(email) => {
+            // «Аккаунт не найден» → на вкладку Регистрации (там галочка согласия), почту переносим.
+            setSheet(null);
+            setPrefillEmail(email);
+            setTab('register');
+            if (!consented) nudgeConsent();
+          }}
+        />
+      )}
+      {sheet === 'register' && (
+        <AuthSheet
+          mode="register"
+          consented={consented}
+          prefillEmail={prefillEmail}
+          onClose={() => setSheet(null)}
+        />
+      )}
+    </>
   );
 }

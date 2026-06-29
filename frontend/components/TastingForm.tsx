@@ -393,8 +393,9 @@ export default function TastingForm(props: TastingFormProps) {
     if (photos.length > 0) {
       try {
         await uploadTastingPhotos(created.id, photos);
-      } catch {
-        toast.error('Дегустация сохранена, но фото не загрузились');
+      } catch (e) {
+        const err = e as { code?: string; message?: string };
+        toast.error(err.code ? `Дегустация сохранена, но фото не загрузилось: ${err.message}` : 'Дегустация сохранена, но фото не загрузились');
       }
     }
     router.push(`/tastings/${created.id}`);
@@ -413,8 +414,9 @@ export default function TastingForm(props: TastingFormProps) {
     if (photos.length > 0) {
       try {
         await uploadTastingPhotos(tastingId, photos);
-      } catch {
-        toast.error('Изменения сохранены, но новые фото не загрузились');
+      } catch (e) {
+        const err = e as { code?: string; message?: string };
+        toast.error(err.code ? `Изменения сохранены, но фото не загрузилось: ${err.message}` : 'Изменения сохранены, но новые фото не загрузились');
       }
     }
     initialSnapshot.current = currentSnapshot;
@@ -428,8 +430,13 @@ export default function TastingForm(props: TastingFormProps) {
     try {
       if (mode === 'edit') await handleEdit();
       else await handleCreate();
-    } catch {
-      toast.error('Не удалось сохранить дегустацию. Проверьте подключение и попробуйте ещё раз.');
+    } catch (e) {
+      const err = e as { status?: number };
+      toast.error(
+        err.status === 422
+          ? 'Проверьте введённые значения и попробуйте ещё раз.'
+          : 'Не удалось сохранить дегустацию. Проверьте подключение и попробуйте ещё раз.'
+      );
       setSubmitting(false);
     }
   }

@@ -1,0 +1,30 @@
+# Деплой прод-фронта LeafPulse на VPS (Санкт-Петербург).
+# Frontend (next start = SSR) за Caddy (автоматический HTTPS/Let's Encrypt).
+# Запуск на сервере:  cd deploy && docker compose up -d --build
+services:
+  frontend:
+    build:
+      context: ../frontend          # использует ../frontend/Dockerfile
+    environment:
+      - API_URL=https://dmtrmkrv-tea-diary-bot-c01d.twc1.net  # серверный SSR-fetch (можно позже на приватный IP API)
+      - PORT=3000
+    expose:
+      - "3000"                       # только внутри сети compose, наружу не публикуем
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data             # сертификаты LE (персистентно)
+      - caddy_config:/config
+    depends_on:
+      - frontend
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:

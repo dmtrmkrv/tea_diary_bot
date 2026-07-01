@@ -17,6 +17,9 @@ export function proxy(request: NextRequest) {
   // нужен и для входа (токена ещё нет), и для будущей привязки (токен есть).
   if (pathname === '/auth/yandex/callback') return NextResponse.next();
 
+  // «/» — публичная: без токена app/page.tsx показывает лендинг, с токеном — ленту.
+  if (pathname === '/') return NextResponse.next();
+
   const isPublic = pathname === '/login' || pathname.startsWith('/auth');
 
   if (!token && !isPublic) {
@@ -31,5 +34,8 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  // `.*\\..*` — пропускаем пути с точкой (статика из /public и иконки /icon.svg):
+  // иначе картинки лендинга и фавиконка 307-редиректятся на /login у незалогиненных.
+  // Маршруты приложения точек не содержат и остаются под проверкой токена.
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)'],
 };

@@ -1,7 +1,10 @@
 export const dynamic = 'force-dynamic';
 
 import { Suspense } from 'react';
+import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import { unstable_rethrow } from 'next/navigation';
+import LandingPage from '@/components/landing/LandingPage';
 import { getTastings, getTeawareList, getMe } from '@/lib/api';
 import TastingCard, { TastingItem } from '@/components/TastingCard';
 import PaginationLinks from '@/components/PaginationLinks';
@@ -11,6 +14,18 @@ import EmptySearch from '@/components/EmptySearch';
 import OnboardingGate from '@/components/OnboardingGate';
 
 const PAGE_SIZE = 10;
+
+// Незалогиненным на «/» показываем лендинг (proxy.ts пускает «/» без токена),
+// залогиненным — ленту. Метаданные тоже ветвятся: у лендинга свои title/description.
+export async function generateMetadata(): Promise<Metadata> {
+  const hasToken = (await cookies()).has('token');
+  if (hasToken) return { title: 'Чайный дневник', description: 'Записи чайных дегустаций' };
+  return {
+    title: 'LeafPulse — личный чайный дневник',
+    description:
+      'Записывайте дегустации, ведите коллекцию чая и посуды, отслеживайте любимые вкусы. Всё в одном месте.',
+  };
+}
 
 type SearchParams = {
   page?: string;
@@ -25,6 +40,11 @@ export default async function Home({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
+  // Нет токена — публичный лендинг, без запросов к API.
+  if (!(await cookies()).has('token')) {
+    return <LandingPage />;
+  }
+
   const sp = await searchParams;
   const page = Math.max(1, parseInt(sp.page ?? '1', 10) || 1);
   const offset = (page - 1) * PAGE_SIZE;

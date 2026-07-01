@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import AuthSheet from '@/components/auth/AuthSheet';
 import LeafPulseLogo from '@/components/LeafPulseLogo';
@@ -14,7 +15,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 type Tab = 'login' | 'register';
 
 export default function LoginPage() {
-  const [tab, setTab] = useState<Tab>('login');
+  // ?tab=register — CTA с лендинга открывают сразу вкладку регистрации.
+  const searchParams = useSearchParams();
+  const [tab, setTab] = useState<Tab>(searchParams.get('tab') === 'register' ? 'register' : 'login');
   const [consented, setConsented] = useState(false);
   const [sheet, setSheet] = useState<Tab | null>(null);
   const [prefillEmail, setPrefillEmail] = useState('');

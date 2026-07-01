@@ -29,12 +29,15 @@ export default function RootLayout({
     <html lang="ru" className={`${inter.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col font-[family-name:var(--font-inter)]">
         <Providers>
-          <div className="pb-[88px]">
+          <div className="app-content pb-[88px]">
             {children}
           </div>
-          <Suspense fallback={null}>
-            <BottomNav />
-          </Suspense>
+          {/* Обёртка нужна, чтобы CSS мог скрыть навигацию на лендинге (см. globals.css) */}
+          <div className="bottom-nav-slot">
+            <Suspense fallback={null}>
+              <BottomNav />
+            </Suspense>
+          </div>
           <AddTeaSheetController />
           <Toaster position="top-center" />
           <TzSync />

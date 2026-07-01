@@ -491,3 +491,8 @@ select {
   40%, 80% { transform: translateX(4px); }
 }
 .lp-shake { animation: lp-shake 0.4s ease-in-out; }
+
+/* Лендинг (data-landing на корне): страница живёт на «/», где usePathname
+ * не отличит её от ленты, поэтому нижнюю навигацию и её отступ прячем CSS-ом. */
+body:has([data-landing]) .bottom-nav-slot { display: none; }
+body:has([data-landing]) .app-content { padding-bottom: 0; }

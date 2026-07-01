@@ -48,8 +48,8 @@ function Hero() {
       />
       <div className="absolute inset-0 bg-black/30" />
 
-      {/* Плавающая шапка */}
-      <div className="absolute inset-x-4 top-12 z-10">
+      {/* Плавающая шапка: fixed — следует за скроллом, стекло поверх контента */}
+      <div className="fixed inset-x-4 top-12 z-50">
         <div className="mx-auto flex h-[60px] max-w-[1150px] items-center justify-between rounded-full border border-[#d6d3d1] bg-white/40 pl-5 pr-4 shadow-[0px_4px_15px_-5px_rgba(0,0,0,0.15)] backdrop-blur-md">
           <LandingLogo className="h-8 w-auto text-[#1c1917]" />
           <Link href="/login" className={`${PRIMARY_BTN} min-h-[32px] px-4 text-[14px]`}>
@@ -127,7 +127,8 @@ function FeatureText({ num, title, children }: { num: string; title: React.React
 
 function Features() {
   return (
-    <section id="features" className="mx-auto max-w-[1150px] scroll-mt-8 lg:px-8">
+    // scroll-mt-32 — запас под fixed-шапку (48px отступ + 60px пилюля)
+    <section id="features" className="mx-auto max-w-[1150px] scroll-mt-32 lg:px-8">
       <h2 className={`${SERIF} mx-auto mb-14 mt-8 max-w-[358px] px-4 text-center text-[36px] leading-[1.05] tracking-[-0.36px] text-[#1c1917] lg:max-w-none`}>
         Больше, чем заметки о чае
       </h2>

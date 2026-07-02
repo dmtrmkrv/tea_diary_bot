@@ -66,9 +66,10 @@ function Hero() {
       <div className="relative z-[1] mx-auto flex h-full flex-col items-center justify-center gap-6 px-4 pb-[98px] text-center md:pb-[84px]">
         <div className="flex flex-col gap-2">
           <h1 className={`${SERIF} text-[36px] leading-[1.05] tracking-[-0.36px] text-[#fafaf9] md:text-[44px] md:tracking-[-0.44px]`}>
-            {/* nbsp перед тире: перенос идёт после «—», тире не отрывается от слова */}
+            {/* nbsp перед тире держит «дневник —» вместе, br жёстко рвёт строку
+                после тире: 390 → 3 строки, 667+ → 2 строки (как в макетах) */}
             {'Личный чайный дневник — '}
-            <br className="hidden md:block" />
+            <br />
             всё в одном месте
           </h1>
           <p className="text-[16px] leading-6 text-white/80 md:mx-auto md:max-w-[520px]">

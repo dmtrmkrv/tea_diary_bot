@@ -66,7 +66,9 @@ function Hero() {
       <div className="relative z-[1] mx-auto flex h-full flex-col items-center justify-center gap-6 px-4 pb-[98px] text-center md:pb-[84px]">
         <div className="flex flex-col gap-2">
           <h1 className={`${SERIF} text-[36px] leading-[1.05] tracking-[-0.36px] text-[#fafaf9] md:text-[44px] md:tracking-[-0.44px]`}>
-            Личный чайный дневник — <br className="hidden md:block" />
+            {/* nbsp перед тире: перенос идёт после «—», тире не отрывается от слова */}
+            {'Личный чайный дневник — '}
+            <br className="hidden md:block" />
             всё в одном месте
           </h1>
           <p className="text-[16px] leading-6 text-white/80 md:mx-auto md:max-w-[520px]">
@@ -108,20 +110,14 @@ function PillTag({ children }: { children: React.ReactNode }) {
 // (как в мобильном макете); на xl вся карточка масштабируется до 460×429
 // (масштаб 1.23 — как в макете 1280+), поэтому абсолютные координаты внутри
 // не пересчитываются под брейкпоинты.
-function CardShell({ side, children }: { side: 'left' | 'right'; children: React.ReactNode }) {
-  // Мобилка: карточка прижата к краю экрана и скруглена только с внутренней
-  // стороны; с планшета — по центру колонки, скруглена целиком, с тенью.
-  const mobileAlign = side === 'right' ? 'ml-auto' : 'mr-auto';
-  const mobileRounding = side === 'right' ? 'rounded-l-[32px]' : 'rounded-r-[32px]';
+// Карточка всегда по центру своей колонки и скруглена целиком — это же
+// закрывает промежуточные ширины (широкие телефоны, ландшафт 430–767px).
+function CardShell({ children }: { children: React.ReactNode }) {
   // Масштаб карточки по макетам: 390 → 374×349 (1:1), 768 → 330×308 (×0.88),
   // 1280+ → 460×429 (×1.23). Внешний div резервирует место, внутренний скейлится.
   return (
-    <div
-      className={`relative h-[349px] w-[374px] ${mobileAlign} md:mx-auto md:h-[308px] md:w-[330px] xl:h-[429px] xl:w-[460px]`}
-    >
-      <div
-        className={`absolute left-0 top-0 h-[349px] w-[374px] origin-top-left overflow-hidden bg-white shadow-[0px_4px_6px_-4px_rgba(0,0,0,0.1),0px_10px_15px_-3px_rgba(0,0,0,0.1)] ${mobileRounding} md:scale-[0.8824] md:rounded-[32px] md:shadow-[0px_15px_50px_-4px_rgba(0,0,0,0.2)] xl:scale-[1.2299]`}
-      >
+    <div className="relative mx-auto h-[349px] w-[374px] md:h-[308px] md:w-[330px] xl:h-[429px] xl:w-[460px]">
+      <div className="absolute left-0 top-0 h-[349px] w-[374px] origin-top-left overflow-hidden rounded-[32px] bg-white shadow-[0px_4px_6px_-4px_rgba(0,0,0,0.1),0px_10px_15px_-3px_rgba(0,0,0,0.1)] md:scale-[0.8824] md:shadow-[0px_15px_50px_-4px_rgba(0,0,0,0.2)] xl:scale-[1.2299]">
         {children}
       </div>
     </div>
@@ -132,7 +128,9 @@ function CardShell({ side, children }: { side: 'left' | 'right'; children: React
 // заголовка; md+: номер в потоке над заголовком (как в макетах 768/1280+).
 function FeatureText({ num, title, children }: { num: string; title: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="relative mt-4 px-4 md:mt-0 md:px-0">
+    // До md текстовый блок не шире карточки (374) и центрирован вместе с ней —
+    // на широких телефонах/ландшафте текст не липнет к краю экрана.
+    <div className="relative mx-auto mt-4 w-full max-w-[374px] px-4 md:mx-0 md:mt-0 md:max-w-none md:px-0">
       <img
         src={`/landing/num-${num}.svg`}
         alt=""
@@ -160,7 +158,7 @@ function Features() {
         {/* 01 — Дегустации: текст слева, карточка справа */}
         <div className="md:grid md:grid-cols-2 md:items-center md:gap-8 xl:grid-cols-[378px_460px] xl:justify-between xl:gap-0">
           <div className="md:order-2">
-            <CardShell side="right">
+            <CardShell>
               <img
                 src="/landing/app-new-tasting.webp"
                 alt="Экран новой дегустации в LeafPulse"
@@ -194,7 +192,7 @@ function Features() {
 
         {/* 02 — Карточка: карточка слева, текст справа */}
         <div className="md:grid md:grid-cols-2 md:items-center md:gap-8 xl:grid-cols-[460px_378px] xl:justify-between xl:gap-0">
-          <CardShell side="left">
+          <CardShell>
             <img
               src="/landing/app-tasting-card.webp"
               alt="Карточка дегустации в LeafPulse"
@@ -228,7 +226,7 @@ function Features() {
         {/* 03 — Коллекция: текст слева, карточка справа */}
         <div className="md:grid md:grid-cols-2 md:items-center md:gap-8 xl:grid-cols-[378px_460px] xl:justify-between xl:gap-0">
           <div className="md:order-2">
-            <CardShell side="right">
+            <CardShell>
               <img
                 src="/landing/app-tea-list.webp"
                 alt="Коллекция чая в LeafPulse"
@@ -293,7 +291,7 @@ const MORE_ITEMS: MoreItem[] = [
 
 function MoreFeatures() {
   return (
-    <section id="more" className="mt-4 scroll-mt-20 bg-[#292524] px-4 py-10 md:mt-20 md:py-12">
+    <section id="more" className="mt-10 scroll-mt-20 bg-[#292524] px-4 py-10 md:mt-20 md:py-12">
       <div className="mx-auto max-w-[917px]">
         <h2 className={`${SERIF} text-[36px] leading-[1.05] tracking-[-0.36px] text-[#fafaf9] md:text-center md:text-[44px] md:tracking-[-0.44px]`}>
           Другие возможности

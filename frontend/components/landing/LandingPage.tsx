@@ -49,7 +49,7 @@ function Hero() {
 
       {/* Плавающая шапка: fixed — следует за скроллом, стекло поверх контента */}
       <div className="fixed inset-x-4 top-6 z-50">
-        <div className="mx-auto flex h-[60px] max-w-[1150px] items-center justify-between rounded-full border border-[#d6d3d1] bg-white/40 pl-5 pr-4 shadow-[0px_4px_15px_-5px_rgba(0,0,0,0.15)] backdrop-blur-md md:h-14 md:max-w-[917px] md:pl-6">
+        <div className="mx-auto flex h-[60px] max-w-[736px] items-center justify-between rounded-full border border-[#d6d3d1] bg-white/40 pl-5 pr-4 shadow-[0px_4px_15px_-5px_rgba(0,0,0,0.15)] backdrop-blur-md md:h-14 md:pl-6 xl:max-w-[917px]">
           <LandingLogo className="h-8 w-auto text-[#1c1917]" />
           <nav className="hidden items-center gap-10 text-[12px] font-medium text-[#1c1917] md:flex">
             <a href="#features" className="transition-opacity hover:opacity-70">Функционал</a>
@@ -131,7 +131,9 @@ function FeatureText({ num, title, children }: { num: string; title: React.React
   return (
     // До md текстовый блок не шире карточки (374) и центрирован вместе с ней —
     // на широких телефонах/ландшафте текст не липнет к краю экрана.
-    <div className="relative mx-auto mt-4 w-full max-w-[374px] px-4 md:mx-0 md:mt-0 md:max-w-none md:px-0">
+    // md: блок шириной карточки (330) по центру колонки — текст и карточки
+    // соседних блоков стоят на одной вертикальной линии; xl — по сетке макета.
+    <div className="relative mx-auto mt-4 w-full max-w-[374px] px-4 md:mt-0 md:w-[330px] md:max-w-none md:px-0 xl:mx-0 xl:w-auto">
       <img
         src={`/landing/num-${num}.svg`}
         alt=""
@@ -149,8 +151,10 @@ function FeatureText({ num, title, children }: { num: string; title: React.React
 
 function Features() {
   return (
-    // scroll-mt-32 — запас под fixed-шапку (отступ + пилюля)
-    <section id="features" className="mx-auto max-w-[917px] scroll-mt-32 md:px-4 xl:px-0">
+    // scroll-mt-32 — запас под fixed-шапку (отступ + пилюля).
+    // 769–1279: контент держит планшетную ширину (736), не растягиваясь, —
+    // иначе тексты 01/03 уезжают за визуальную линию карточки 02.
+    <section id="features" className="mx-auto max-w-[768px] scroll-mt-32 md:px-4 xl:max-w-[917px] xl:px-0">
       <h2 className={`${SERIF} mx-auto mb-[18px] mt-8 max-w-[358px] px-4 text-center text-[36px] leading-[1.05] tracking-[-0.36px] text-[#1c1917] md:mb-10 md:mt-[88px] md:max-w-none md:text-[44px] md:tracking-[-0.44px]`}>
         Больше, чем заметки о чае
       </h2>
@@ -293,7 +297,7 @@ const MORE_ITEMS: MoreItem[] = [
 function MoreFeatures() {
   return (
     <section id="more" className="mt-10 scroll-mt-20 bg-[#292524] px-4 py-10 md:mt-20 md:py-12">
-      <div className="mx-auto max-w-[917px]">
+      <div className="mx-auto max-w-[736px] xl:max-w-[917px]">
         <h2 className={`${SERIF} text-[36px] leading-[1.05] tracking-[-0.36px] text-[#fafaf9] md:text-center md:text-[44px] md:tracking-[-0.44px]`}>
           Другие возможности
         </h2>
@@ -368,7 +372,7 @@ function Cta() {
 function LandingFooter() {
   return (
     <footer className="bg-[#292524] px-4 pb-6 pt-4">
-      <div className="mx-auto max-w-[917px]">
+      <div className="mx-auto max-w-[736px] xl:max-w-[917px]">
         <div className="flex items-center justify-between">
           <LandingLogo mono className="h-6 w-auto text-[#78716c]" />
           <p className="text-[10px] leading-4 text-[#78716c]">© 2026 LeafPulse — все права защищены</p>

@@ -1,8 +1,10 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { XIcon, CaretLeftIcon, CaretRightIcon, ImageSquareIcon } from '@phosphor-icons/react';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { startTelegramClaim } from '@/lib/apiClient';
 
 /**
  * Шторка «Возможности приложения» — онбординг-слайдер.
@@ -14,6 +16,16 @@ type Slide = {
   title: string;
   text: string;
   image?: string; // путь к ассету в /public, появится позже
+  claim?: boolean; // последний слайд-действие: перенос записей из бота
+};
+
+// Слайд переноса добавляется в конец, только если у юзера не привязан Telegram
+// (после переноса has_telegram=true → слайд исчезает, как и пункт в настройках).
+const CLAIM_SLIDE: Slide = {
+  title: 'Перенос записей из бота',
+  text: 'Уже вели дегустации в боте @TeaNotesBot? Перенесите их в приложение — записи и коллекция подтянутся в ваш аккаунт.',
+  image: '/onboarding/transfer.png',
+  claim: true,
 };
 
 const SLIDES: Slide[] = [
@@ -42,9 +54,11 @@ const SLIDES: Slide[] = [
 export default function OnboardingSheet({
   open,
   onClose,
+  showClaim = false,
 }: {
   open: boolean;
   onClose: () => void;
+  showClaim?: boolean;
 }) {
   const [index, setIndex] = useState(0);
   const touchStartX = useRef<number | null>(null);
@@ -53,9 +67,10 @@ export default function OnboardingSheet({
 
   if (!open) return null;
 
-  const slide = SLIDES[index];
+  const slides = showClaim ? [...SLIDES, CLAIM_SLIDE] : SLIDES;
+  const slide = slides[index];
   const isFirst = index === 0;
-  const isLast = index === SLIDES.length - 1;
+  const isLast = index === slides.length - 1;
 
   function onTouchStart(e: React.TouchEvent) {
     touchStartX.current = e.touches[0].clientX;
@@ -66,7 +81,7 @@ export default function OnboardingSheet({
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     touchStartX.current = null;
     if (Math.abs(dx) < 40) return;
-    if (dx < 0) setIndex(i => Math.min(i + 1, SLIDES.length - 1));
+    if (dx < 0) setIndex(i => Math.min(i + 1, slides.length - 1));
     else setIndex(i => Math.max(i - 1, 0));
   }
 
@@ -129,6 +144,30 @@ export default function OnboardingSheet({
             <p className="text-[14px] leading-[20px] text-text-secondary">
               {slide.text}
             </p>
+            {slide.claim && (
+              <div className="flex gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="flex-1 h-11 rounded-full bg-surface-input text-foreground text-[14px] font-medium"
+                >
+                  Пропустить
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await startTelegramClaim();
+                    } catch {
+                      toast.error('Не удалось начать перенос. Попробуйте позже.');
+                    }
+                  }}
+                  className="flex-1 h-11 rounded-full bg-primary text-primary-foreground text-[14px] font-medium"
+                >
+                  Перенести записи
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -145,7 +184,7 @@ export default function OnboardingSheet({
           </button>
 
           <div className="flex items-center gap-1.5">
-            {SLIDES.map((_, i) => (
+            {slides.map((_, i) => (
               <button
                 key={i}
                 type="button"
@@ -160,7 +199,7 @@ export default function OnboardingSheet({
 
           <button
             type="button"
-            onClick={() => setIndex(i => Math.min(i + 1, SLIDES.length - 1))}
+            onClick={() => setIndex(i => Math.min(i + 1, slides.length - 1))}
             disabled={isLast}
             aria-label="Вперёд"
             className="w-9 h-9 flex items-center justify-center rounded-full text-foreground disabled:opacity-30 transition-opacity"

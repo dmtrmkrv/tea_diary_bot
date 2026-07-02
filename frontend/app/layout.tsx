@@ -16,6 +16,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  // База для абсолютных URL в метаданных (og:image и т.п.).
+  // NEXT_PUBLIC_SITE_URL можно задать на стейдже, дефолт — прод-домен.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://leafpulse.ru"),
   title: "Чайный дневник",
   description: "Записи чайных дегустаций",
 };
@@ -29,12 +32,15 @@ export default function RootLayout({
     <html lang="ru" className={`${inter.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col font-[family-name:var(--font-inter)]">
         <Providers>
-          <div className="pb-[88px]">
+          <div className="app-content pb-[88px]">
             {children}
           </div>
-          <Suspense fallback={null}>
-            <BottomNav />
-          </Suspense>
+          {/* Обёртка нужна, чтобы CSS мог скрыть навигацию на лендинге (см. globals.css) */}
+          <div className="bottom-nav-slot">
+            <Suspense fallback={null}>
+              <BottomNav />
+            </Suspense>
+          </div>
           <AddTeaSheetController />
           <Toaster position="top-center" />
           <TzSync />

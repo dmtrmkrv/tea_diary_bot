@@ -1,15 +1,50 @@
 export const dynamic = 'force-dynamic';
 
 import { Suspense } from 'react';
+import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import { unstable_rethrow } from 'next/navigation';
+import LandingPage from '@/components/landing/LandingPage';
 import { getTastings, getTeawareList, getMe } from '@/lib/api';
 import TastingCard, { TastingItem } from '@/components/TastingCard';
 import PaginationLinks from '@/components/PaginationLinks';
 import SearchControls, { type TeawareFilterItem } from '@/components/SearchControls';
 import EmptyTastings from '@/components/EmptyTastings';
 import EmptySearch from '@/components/EmptySearch';
+import OnboardingGate from '@/components/OnboardingGate';
 
 const PAGE_SIZE = 10;
+
+// Незалогиненным на «/» показываем лендинг (proxy.ts пускает «/» без токена),
+// залогиненным — ленту. Метаданные тоже ветвятся: у лендинга свои title/description.
+export async function generateMetadata(): Promise<Metadata> {
+  const hasToken = (await cookies()).has('token');
+  if (hasToken) return { title: 'Чайный дневник', description: 'Записи чайных дегустаций' };
+  const title = 'LeafPulse — личный чайный дневник';
+  const description =
+    'Записывайте дегустации, ведите коллекцию чая и посуды, отслеживайте любимые вкусы. Всё в одном месте.';
+  return {
+    title,
+    description,
+    // OG/Twitter — превью ссылки в Telegram и соцсетях (абсолютные URL
+    // собираются из metadataBase в app/layout.tsx)
+    openGraph: {
+      title,
+      description,
+      url: '/',
+      siteName: 'LeafPulse',
+      locale: 'ru_RU',
+      type: 'website',
+      images: [{ url: '/landing/og.jpg', width: 1200, height: 630, alt: 'LeafPulse — личный чайный дневник' }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: ['/landing/og.jpg'],
+    },
+  };
+}
 
 type SearchParams = {
   page?: string;
@@ -24,6 +59,11 @@ export default async function Home({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
+  // Нет токена — публичный лендинг, без запросов к API.
+  if (!(await cookies()).has('token')) {
+    return <LandingPage />;
+  }
+
   const sp = await searchParams;
   const page = Math.max(1, parseInt(sp.page ?? '1', 10) || 1);
   const offset = (page - 1) * PAGE_SIZE;
@@ -68,6 +108,7 @@ export default async function Home({
 
   return (
     <main className="min-h-screen bg-background">
+      <OnboardingGate />
       <div className="max-w-2xl mx-auto px-4">
         <Suspense fallback={null}>
           <SearchControls teaware={teawareItems} />

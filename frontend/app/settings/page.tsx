@@ -11,9 +11,8 @@ import OnboardingSheet from '@/components/profile/OnboardingSheet';
 import LinkEmailSheet from '@/components/profile/LinkEmailSheet';
 import ChangePasswordSheet from '@/components/profile/ChangePasswordSheet';
 import DeleteAccountSheet from '@/components/profile/DeleteAccountSheet';
-import { getMe, downloadTastingsCsv, type Me } from '@/lib/apiClient';
+import { getMe, downloadTastingsCsv, startTelegramClaim, type Me } from '@/lib/apiClient';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 const FEEDBACK_EMAIL = 'info@leafpulse.ru';
 
 type Sheet = 'theme' | 'onboarding' | 'linkEmail' | 'changePassword' | 'deleteAccount' | null;
@@ -42,10 +41,7 @@ export default function SettingsPage() {
 
   async function startClaim() {
     try {
-      const res = await fetch(`${API_URL}/auth/telegram/login-url?return_to=/link-telegram`);
-      if (!res.ok) throw new Error();
-      const { url } = await res.json();
-      window.location.href = url;
+      await startTelegramClaim();
     } catch {
       toast.error('Не удалось начать перенос. Попробуйте позже.');
     }
@@ -114,7 +110,7 @@ export default function SettingsPage() {
       </div>
 
       <ThemeSheet open={sheet === 'theme'} onClose={() => setSheet(null)} />
-      <OnboardingSheet open={sheet === 'onboarding'} onClose={() => setSheet(null)} />
+      <OnboardingSheet open={sheet === 'onboarding'} onClose={() => setSheet(null)} showClaim={me ? !me.has_telegram : false} />
       {sheet === 'linkEmail' && (
         <LinkEmailSheet
           onClose={() => setSheet(null)}

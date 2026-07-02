@@ -1,24 +1,22 @@
 // Публичный лендинг LeafPulse — показывается незалогиненным на «/»
 // (ветвление в app/page.tsx). Дизайн: Figma sM9Jr39VS3nDKWdPVgNTL1,
-// node 299:5569 (Landing_Mobile); десктоп — адаптация той же структуры.
+// брейкпоинты: 299:5569 (390), 333:6656 (768, md), 338:7018 (1280+, xl).
 // Атрибут data-landing на корне используется CSS в globals.css, чтобы
 // скрыть нижнюю навигацию приложения и её отступ.
 import Link from 'next/link';
-import { Source_Serif_4, Fraunces } from 'next/font/google';
+import { Source_Serif_4 } from 'next/font/google';
 import {
-  HandPointingIcon,
+  BrowsersIcon,
   ChartPieIcon,
   TrophyIcon,
   TimerIcon,
-  CheckIcon,
 } from '@phosphor-icons/react/dist/ssr';
-import LandingLogo from './LandingLogo';
+import LandingLogo, { LandingLogoMark } from './LandingLogo';
 
-// Шрифты только для лендинга: акцидентный Source Serif 4 (в Google Fonts —
-// преемник Source Serif Pro из макета) и Fraunces для больших цифр 01/02/03.
-// Файлы шрифтов грузятся только там, где реально используются глифы.
+// Акцидентный шрифт лендинга: Source Serif 4 (в Google Fonts — преемник
+// Source Serif Pro из макета). Грузится только там, где используются глифы.
+// Цифры 01/02/03 — готовые SVG из макета, шрифт для них не нужен.
 const serif = Source_Serif_4({ subsets: ['latin', 'cyrillic'], variable: '--font-serif-landing' });
-const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-fraunces' });
 
 const SERIF = 'font-[family-name:var(--font-serif-landing)]';
 const PRIMARY_BTN =
@@ -26,7 +24,7 @@ const PRIMARY_BTN =
 
 export default function LandingPage() {
   return (
-    <div data-landing className={`${serif.variable} ${fraunces.variable} overflow-hidden bg-[#e7e5e4]`}>
+    <div data-landing className={`${serif.variable} overflow-hidden bg-[#e7e5e4]`}>
       <Hero />
       <Features />
       <MoreFeatures />
@@ -41,40 +39,47 @@ export default function LandingPage() {
 function Hero() {
   return (
     <section className="relative h-[640px] overflow-hidden bg-[#bfa78b]">
-      <img
-        src="/landing/hero-bg.webp"
-        alt=""
-        className="absolute inset-0 h-full w-full object-cover object-[50%_75%] lg:object-[50%_60%]"
-      />
-      <div className="absolute inset-0 bg-black/30" />
+      <picture>
+        <source media="(min-width: 1441px)" srcSet="/landing/hero-1440.webp" />
+        <source media="(min-width: 1025px)" srcSet="/landing/hero-1280.webp" />
+        <source media="(min-width: 641px)" srcSet="/landing/hero-768.webp" />
+        <img src="/landing/hero-390.webp" alt="" className="absolute inset-0 h-full w-full object-cover" />
+      </picture>
+      <div className="absolute inset-0 bg-black/20" />
 
       {/* Плавающая шапка: fixed — следует за скроллом, стекло поверх контента */}
-      <div className="fixed inset-x-4 top-12 z-50">
-        <div className="mx-auto flex h-[60px] max-w-[1150px] items-center justify-between rounded-full border border-[#d6d3d1] bg-white/40 pl-5 pr-4 shadow-[0px_4px_15px_-5px_rgba(0,0,0,0.15)] backdrop-blur-md">
+      <div className="fixed inset-x-4 top-12 z-50 md:top-6">
+        <div className="mx-auto flex h-[60px] max-w-[1150px] items-center justify-between rounded-full border border-[#d6d3d1] bg-white/40 pl-5 pr-4 shadow-[0px_4px_15px_-5px_rgba(0,0,0,0.15)] backdrop-blur-md md:h-14 md:max-w-[917px] md:pl-6">
           <LandingLogo className="h-8 w-auto text-[#1c1917]" />
+          <nav className="hidden items-center gap-10 text-[12px] font-medium text-[#1c1917] md:flex">
+            <a href="#features" className="transition-opacity hover:opacity-70">Функционал</a>
+            <a href="#more" className="transition-opacity hover:opacity-70">Возможности</a>
+            <a href="#cta" className="transition-opacity hover:opacity-70">Создать</a>
+          </nav>
           <Link href="/login" className={`${PRIMARY_BTN} min-h-[32px] px-4 text-[14px]`}>
             Войти
           </Link>
         </div>
       </div>
 
-      {/* Оффер */}
-      <div className="relative z-[1] mx-auto flex max-w-[1150px] flex-col items-center gap-6 px-4 pt-[140px] text-center lg:items-start lg:pt-[190px] lg:text-left">
+      {/* Оффер: на мобилке от верха, с планшета — по центру (чуть выше середины) */}
+      <div className="relative z-[1] mx-auto flex h-full flex-col items-center gap-6 px-4 pt-[140px] text-center md:justify-center md:pb-[84px] md:pt-0">
         <div className="flex flex-col gap-2">
-          <h1 className={`${SERIF} text-[36px] leading-[1.05] tracking-[-0.36px] text-[#fafaf9] lg:max-w-[560px] lg:text-[52px]`}>
-            Личный чайный дневник — всё в одном месте
+          <h1 className={`${SERIF} text-[36px] leading-[1.05] tracking-[-0.36px] text-[#fafaf9] md:text-[44px] md:tracking-[-0.44px]`}>
+            Личный чайный дневник — <br className="hidden md:block" />
+            всё в одном месте
           </h1>
-          <p className="text-[16px] leading-6 text-white/80 lg:max-w-[430px]">
+          <p className="text-[16px] leading-6 text-white/80 md:mx-auto md:max-w-[520px]">
             Записывайте дегустации, ведите коллекцию чая и посуды, отслеживайте любимые вкусы
           </p>
         </div>
-        <div className="flex w-full justify-center gap-3 lg:w-auto lg:justify-start">
-          <Link href="/login?tab=register" className={`${PRIMARY_BTN} min-h-10 w-[196px] px-6 text-[14px] lg:w-auto lg:px-8`}>
+        <div className="flex w-full justify-center gap-3 md:w-auto">
+          <Link href="/login?tab=register" className={`${PRIMARY_BTN} min-h-10 w-[196px] px-6 text-[14px]`}>
             Начать бесплатно
           </Link>
           <a
             href="#features"
-            className="flex min-h-10 flex-1 items-center justify-center rounded-full border border-[#f5f5f4] px-6 text-[14px] font-medium text-[#fafaf9] transition-colors hover:bg-white/10 lg:flex-none lg:px-8"
+            className="flex min-h-10 flex-1 items-center justify-center rounded-full border border-[#f5f5f4] px-6 text-[14px] font-medium text-[#fafaf9] transition-colors hover:bg-white/10 md:flex-none md:px-8"
           >
             Узнать больше
           </a>
@@ -95,62 +100,76 @@ function PillTag({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Плавающий чекбокс-тег на карточке 01 (стилизован под тёмный скрин приложения)
-function TagChip({ label, className }: { label: string; className?: string }) {
+// Белая карточка-коллаж. Внутренности сверстаны в базовом размере 374×349
+// (как в мобильном макете); на xl вся карточка масштабируется до 460×429
+// (масштаб 1.23 — как в макете 1280+), поэтому абсолютные координаты внутри
+// не пересчитываются под брейкпоинты.
+function CardShell({ side, children }: { side: 'left' | 'right'; children: React.ReactNode }) {
+  // Мобилка: карточка прижата к краю экрана и скруглена только с внутренней
+  // стороны; с планшета — по центру колонки, скруглена целиком, с тенью.
+  const mobileAlign = side === 'right' ? 'ml-auto' : 'mr-auto';
+  const mobileRounding = side === 'right' ? 'rounded-l-[32px]' : 'rounded-r-[32px]';
   return (
-    <div
-      className={`absolute flex w-[159px] origin-top-left items-start gap-3 rounded-lg border border-[#d97706] bg-[#44403c] p-3 shadow-[2px_10px_20px_-5px_rgba(0,0,0,0.25)] ${className ?? ''}`}
-    >
-      <p className="flex-1 text-[14px] leading-5 text-[#fafaf9]">{label}</p>
-      <span className="mt-0.5 flex size-4 items-center justify-center rounded-[4px] bg-[#b45309]">
-        <CheckIcon size={12} weight="bold" color="#fafaf9" />
-      </span>
+    <div className={`relative h-[349px] w-[374px] ${mobileAlign} md:mx-auto xl:h-[429px] xl:w-[460px]`}>
+      <div
+        className={`absolute left-0 top-0 h-[349px] w-[374px] origin-top-left overflow-hidden bg-white ${mobileRounding} md:rounded-[32px] md:shadow-[0px_15px_50px_-4px_rgba(0,0,0,0.2)] xl:scale-[1.2299]`}
+      >
+        {children}
+      </div>
     </div>
   );
 }
 
-// Номер + заголовок + текст под карточкой
+// Номер + заголовок + текст. Мобилка: номер — водяной знак справа от
+// заголовка; md+: номер в потоке над заголовком (как в макетах 768/1280+).
 function FeatureText({ num, title, children }: { num: string; title: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="relative mt-4 px-4 lg:mt-0 lg:px-0">
-      <span
-        aria-hidden
-        className="pointer-events-none absolute -top-[29px] right-4 select-none font-[family-name:var(--font-fraunces)] text-[110px] font-bold leading-none text-[#fafaf9] opacity-70 lg:right-0"
-      >
-        {num}
-      </span>
-      <h3 className="relative text-[24px] font-semibold leading-[30px] tracking-[-1px] text-[#1c1917]">{title}</h3>
-      <p className="relative mt-3 max-w-[358px] text-[14px] leading-5 text-[#1c1917]">{children}</p>
+    <div className="relative mt-4 px-4 md:mt-0 md:px-0">
+      <img
+        src={`/landing/num-${num}.svg`}
+        alt=""
+        className="pointer-events-none absolute -top-[29px] right-4 h-[110px] select-none md:static md:mb-6 md:h-20"
+      />
+      <h3 className="relative text-[24px] font-semibold leading-[30px] tracking-[-1px] text-[#1c1917] xl:text-[32px] xl:leading-8">
+        {title}
+      </h3>
+      <p className="relative mt-3 max-w-[358px] text-[14px] leading-5 text-[#1c1917] xl:mt-4 xl:max-w-[378px] xl:text-[16px] xl:leading-6">
+        {children}
+      </p>
     </div>
   );
 }
 
 function Features() {
   return (
-    // scroll-mt-32 — запас под fixed-шапку (48px отступ + 60px пилюля)
-    <section id="features" className="mx-auto max-w-[1150px] scroll-mt-32 lg:px-8">
-      <h2 className={`${SERIF} mx-auto mb-14 mt-8 max-w-[358px] px-4 text-center text-[36px] leading-[1.05] tracking-[-0.36px] text-[#1c1917] lg:max-w-none`}>
+    // scroll-mt-32 — запас под fixed-шапку (отступ + пилюля)
+    <section id="features" className="mx-auto max-w-[917px] scroll-mt-32 md:px-4 xl:px-0">
+      <h2 className={`${SERIF} mx-auto mb-14 mt-8 max-w-[358px] px-4 text-center text-[36px] leading-[1.05] tracking-[-0.36px] text-[#1c1917] md:mb-20 md:mt-[88px] md:max-w-none md:text-[44px] md:tracking-[-0.44px]`}>
         Больше, чем заметки о чае
       </h2>
 
-      <div className="flex flex-col gap-16 lg:gap-24">
-        {/* 01 — Дегустации */}
-        <div className="lg:grid lg:grid-cols-2 lg:items-center lg:gap-16">
-          <div className="relative ml-auto h-[349px] w-[374px] overflow-hidden rounded-l-[32px] bg-white lg:mx-auto lg:rounded-[32px]">
-            <img
-              src="/landing/app-new-tasting.webp"
-              alt="Экран новой дегустации в LeafPulse"
-              className="absolute left-5 top-[19px] w-[147px] rounded-[16px]"
-            />
-            <div className="absolute left-[182px] top-10 flex w-[181px] flex-col gap-4">
-              <PillTag>Дегустации</PillTag>
-              <p className="text-[12px] font-semibold leading-4 text-[#5e5e5e]">
-                Быстрые теги по аромату, вкусу и послевкусию — отметьте готовые или запишите свои
-              </p>
-            </div>
-            <TagChip label="Цветочный" className="left-[201px] top-[199px]" />
-            <TagChip label="Кондитерский" className="left-[179px] top-[239px] scale-[0.886]" />
-            <TagChip label="Ореховый" className="left-[249px] top-[276px] scale-[0.665]" />
+      <div className="flex flex-col gap-16 md:gap-14">
+        {/* 01 — Дегустации: текст слева, карточка справа */}
+        <div className="md:grid md:grid-cols-2 md:items-center md:gap-8">
+          <div className="md:order-2">
+            <CardShell side="right">
+              <img
+                src="/landing/app-new-tasting.webp"
+                alt="Экран новой дегустации в LeafPulse"
+                className="absolute left-5 top-[19px] w-[147px] rounded-[16px]"
+              />
+              <div className="absolute left-[182px] top-10 flex w-[181px] flex-col gap-4">
+                <PillTag>Дегустации</PillTag>
+                <p className="text-[12px] font-semibold leading-4 text-[#5e5e5e]">
+                  Быстрые теги по аромату, вкусу и послевкусию — отметьте готовые или запишите свои
+                </p>
+              </div>
+              <img
+                src="/landing/tags.webp"
+                alt=""
+                className="absolute left-[168px] top-[192px] w-[208px]"
+              />
+            </CardShell>
           </div>
           <FeatureText
             num="01"
@@ -165,9 +184,9 @@ function Features() {
           </FeatureText>
         </div>
 
-        {/* 02 — Карточка */}
-        <div className="lg:grid lg:grid-cols-2 lg:items-center lg:gap-16">
-          <div className="relative mr-auto h-[349px] w-[374px] overflow-hidden rounded-r-[32px] bg-white lg:order-2 lg:mx-auto lg:rounded-[32px]">
+        {/* 02 — Карточка: карточка слева, текст справа */}
+        <div className="md:grid md:grid-cols-2 md:items-center md:gap-8">
+          <CardShell side="left">
             <img
               src="/landing/app-tasting-card.webp"
               alt="Карточка дегустации в LeafPulse"
@@ -180,21 +199,11 @@ function Features() {
               </p>
             </div>
             <img
-              src="/landing/arrow-doodle.svg"
+              src="/landing/card-photos.webp"
               alt=""
-              className="absolute left-[133px] top-[149px] w-[54px] rotate-[3.82deg]"
+              className="absolute left-1 top-[140px] w-[230px]"
             />
-            <img
-              src="/landing/photo-moment-1.webp"
-              alt=""
-              className="absolute left-[65px] top-[210px] w-[144px] rotate-[4.61deg] rounded-[16px] border-[3px] border-[#fafaf9] shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.2)]"
-            />
-            <img
-              src="/landing/photo-moment-2.webp"
-              alt=""
-              className="absolute left-4 top-[159px] w-[109px] rotate-[-5.36deg] rounded-[16px] border-[3px] border-[#fafaf9] shadow-[0px_5px_20px_-3px_rgba(0,0,0,0.4)]"
-            />
-          </div>
+          </CardShell>
           <FeatureText
             num="02"
             title={
@@ -208,30 +217,27 @@ function Features() {
           </FeatureText>
         </div>
 
-        {/* 03 — Коллекция */}
-        <div className="lg:grid lg:grid-cols-2 lg:items-center lg:gap-16">
-          <div className="relative ml-auto h-[349px] w-[374px] overflow-hidden rounded-l-[32px] bg-white lg:mx-auto lg:rounded-[32px]">
-            <img
-              src="/landing/app-tea-list.webp"
-              alt="Коллекция чая в LeafPulse"
-              className="absolute left-4 top-5 w-[148px] rounded-[16px] shadow-[0px_4px_6px_-4px_rgba(0,0,0,0.1),0px_10px_15px_-3px_rgba(0,0,0,0.1)]"
-            />
-            <div className="absolute left-[182px] top-6 flex w-[181px] flex-col gap-4">
-              <PillTag>Коллекция</PillTag>
-              <p className="text-[12px] font-semibold leading-4 text-[#5e5e5e]">
-                Фото, параметры и остатки — быстрый выбор чая для дегустации
-              </p>
-            </div>
-            <img
-              src="/landing/photo-teaware-1.webp"
-              alt=""
-              className="absolute left-[141px] top-[152px] w-[121px] rotate-[3.79deg] rounded-[8px] border border-[#fafaf9] shadow-[0px_4px_20px_-5px_rgba(0,0,0,0.68)]"
-            />
-            <img
-              src="/landing/photo-teaware-2.webp"
-              alt=""
-              className="absolute left-[225px] top-[173px] w-[99px] rotate-[15.92deg] rounded-[8px] border border-[#fafaf9] shadow-[4px_10px_15px_-5px_rgba(0,0,0,0.3)]"
-            />
+        {/* 03 — Коллекция: текст слева, карточка справа */}
+        <div className="md:grid md:grid-cols-2 md:items-center md:gap-8">
+          <div className="md:order-2">
+            <CardShell side="right">
+              <img
+                src="/landing/app-tea-list.webp"
+                alt="Коллекция чая в LeafPulse"
+                className="absolute left-4 top-5 w-[148px] rounded-[16px] shadow-[0px_4px_6px_-4px_rgba(0,0,0,0.1),0px_10px_15px_-3px_rgba(0,0,0,0.1)]"
+              />
+              <div className="absolute left-[182px] top-6 flex w-[181px] flex-col gap-4">
+                <PillTag>Коллекция</PillTag>
+                <p className="text-[12px] font-semibold leading-4 text-[#5e5e5e]">
+                  Фото, параметры и остатки — быстрый выбор чая для дегустации
+                </p>
+              </div>
+              <img
+                src="/landing/collection-cards.webp"
+                alt=""
+                className="absolute left-[130px] top-[142px] w-[246px]"
+              />
+            </CardShell>
           </div>
           <FeatureText num="03" title="Ваша личная чайная полка">
             Добавляйте чаи с типом, регионом и остатком, посуду — с материалом и объёмом. Вся коллекция под рукой при
@@ -246,7 +252,7 @@ function Features() {
 /* ------------------------ «Другие возможности» -------------------------- */
 
 type MoreItem = {
-  Icon: typeof HandPointingIcon;
+  Icon: typeof BrowsersIcon;
   title: string;
   text: string;
   soon?: boolean;
@@ -254,9 +260,9 @@ type MoreItem = {
 
 const MORE_ITEMS: MoreItem[] = [
   {
-    Icon: HandPointingIcon,
-    title: 'Быстрый старт',
-    text: 'Кнопка добавления всегда под рукой: новый чай, посуда или дегустация — в одно касание.',
+    Icon: BrowsersIcon,
+    title: 'Работает из браузера',
+    text: 'Без скачиваний и установки, приложение доступно на любом устройстве прямо из браузера.',
   },
   {
     Icon: ChartPieIcon,
@@ -279,22 +285,22 @@ const MORE_ITEMS: MoreItem[] = [
 
 function MoreFeatures() {
   return (
-    <section className="mt-20 bg-[#292524] px-4 py-10">
-      <div className="mx-auto max-w-[1150px]">
-        <h2 className={`${SERIF} text-[36px] leading-[1.05] tracking-[-0.36px] text-[#fafaf9]`}>
+    <section id="more" className="mt-20 scroll-mt-20 bg-[#292524] px-4 py-10 md:py-12">
+      <div className="mx-auto max-w-[917px]">
+        <h2 className={`${SERIF} text-[36px] leading-[1.05] tracking-[-0.36px] text-[#fafaf9] md:text-center md:text-[44px] md:tracking-[-0.44px]`}>
           Другие возможности
         </h2>
-        <div className="mt-8 flex flex-col lg:grid lg:grid-cols-2 lg:gap-x-16 lg:gap-y-10">
+        <div className="mt-8 flex flex-col md:mt-10 md:grid md:grid-cols-2 md:gap-x-6">
           {MORE_ITEMS.map(({ Icon, title, text, soon }, i) => (
             <div
               key={title}
-              className={`flex gap-4 py-6 lg:border-none lg:py-0 ${i > 0 ? 'border-t border-white/10' : ''}`}
+              className={`flex gap-4 py-6 ${i > 0 ? 'border-t border-white/10' : ''} ${i === 1 ? 'md:border-t-0' : ''}`}
             >
               <span className="flex size-[70px] shrink-0 items-center justify-center rounded-[16px] bg-[#fafaf9]">
-                <Icon size={32} color="#292524" />
+                <Icon size={32} color="#b45309" />
               </span>
               <div className="flex flex-1 flex-col gap-2">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between md:justify-start md:gap-2">
                   <p className="text-[20px] font-semibold leading-6 text-[#fafaf9]">{title}</p>
                   {soon && (
                     <span className="rounded-full bg-[#f59e0b] px-2 pb-px pt-0.5 text-[9px] font-extrabold uppercase leading-4 tracking-[1px] text-[#b45309]">
@@ -316,27 +322,35 @@ function MoreFeatures() {
 
 function Cta() {
   return (
-    <section className="relative h-[634px] overflow-hidden bg-[#c3af9c]">
-      <div className="absolute inset-x-0 bottom-0 h-[375px]">
-        <img src="/landing/cta-bg.webp" alt="" className="h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-black/20" />
-        {/* Плавный переход в тёмный футер */}
-        <div className="absolute inset-x-0 bottom-0 h-[98px] bg-gradient-to-b from-transparent to-[#292524]" />
-      </div>
-      <div className="relative z-[1] mx-auto flex max-w-[420px] flex-col items-center px-4 pt-14 text-center">
-        <img src="/landing/logo-mark.svg" alt="" className="size-12" />
-        <h2 className={`${SERIF} mt-4 text-[36px] leading-[1.05] tracking-[-0.36px] text-[#1c1917]`}>
-          Создайте свой <br /> чайный дневник сегодня
-        </h2>
-        <Link href="/login?tab=register" className={`${PRIMARY_BTN} mt-[52px] min-h-12 w-[280px] px-8 text-[16px]`}>
-          Зарегистрироваться
-        </Link>
-        <p className="mt-6 text-[14px] leading-5 text-[#fafaf9]">
-          Уже есть аккаунт?{' '}
-          <Link href="/login" className="text-[#d97706] underline-offset-2 hover:underline">
-            Войти
+    <section id="cta" className="relative h-[520px] overflow-hidden bg-[#292524]">
+      <picture>
+        <source media="(min-width: 1441px)" srcSet="/landing/cta-1440.webp" />
+        <source media="(min-width: 1025px)" srcSet="/landing/cta-1280.webp" />
+        <source media="(min-width: 641px)" srcSet="/landing/cta-768.webp" />
+        <img src="/landing/cta-390.webp" alt="" className="absolute inset-0 h-full w-full object-cover" />
+      </picture>
+      <div className="absolute inset-0 bg-black/30" />
+      {/* Плавный переход в тёмный футер */}
+      <div className="absolute inset-x-0 bottom-0 h-[176px] bg-gradient-to-b from-transparent to-[#292524]" />
+
+      <div className="relative z-[1] mx-auto flex h-full max-w-[621px] flex-col items-center justify-center gap-8 px-4 text-center">
+        <div className="flex flex-col items-center gap-4">
+          <LandingLogoMark className="size-12" />
+          <h2 className={`${SERIF} text-[36px] leading-[1.05] tracking-[-0.36px] text-[#fafaf9] md:text-[44px] md:tracking-[-0.44px]`}>
+            Создайте свой <br /> чайный дневник сегодня
+          </h2>
+        </div>
+        <div className="flex w-[280px] flex-col items-center gap-6">
+          <Link href="/login?tab=register" className={`${PRIMARY_BTN} min-h-12 w-full px-8 text-[16px]`}>
+            Зарегистрироваться
           </Link>
-        </p>
+          <p className="text-[14px] leading-5 text-[#fafaf9]">
+            Уже есть аккаунт?{' '}
+            <Link href="/login" className="text-[#d97706] underline-offset-2 hover:underline">
+              Войти
+            </Link>
+          </p>
+        </div>
       </div>
     </section>
   );
@@ -347,9 +361,9 @@ function Cta() {
 function LandingFooter() {
   return (
     <footer className="bg-[#292524] px-4 pb-6 pt-4">
-      <div className="mx-auto max-w-[1150px]">
+      <div className="mx-auto max-w-[917px]">
         <div className="flex items-center justify-between">
-          <LandingLogo className="h-6 w-auto text-[#fafaf9]" />
+          <LandingLogo mono className="h-6 w-auto text-[#78716c]" />
           <p className="text-[10px] leading-4 text-[#78716c]">© 2026 LeafPulse — все права защищены</p>
         </div>
         <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">

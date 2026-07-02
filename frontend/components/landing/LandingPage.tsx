@@ -39,9 +39,13 @@ export default function LandingPage() {
 function Hero() {
   return (
     <section className="relative h-[640px] overflow-hidden bg-[#bfa78b]">
+      {/* Кадр — «ближайший снизу» к ширине окна: композиция соответствует
+          той ширине, под которую кадрирована. ≤640 — вертикальный кадр 390. */}
       <picture>
+        <source media="(min-width: 1921px)" srcSet="/landing/hero-1920.webp" />
         <source media="(min-width: 1441px)" srcSet="/landing/hero-1440.webp" />
-        <source media="(min-width: 1025px)" srcSet="/landing/hero-1280.webp" />
+        <source media="(min-width: 1281px)" srcSet="/landing/hero-1280.webp" />
+        <source media="(min-width: 1025px)" srcSet="/landing/hero-1024.webp" />
         <source media="(min-width: 641px)" srcSet="/landing/hero-768.webp" />
         <img src="/landing/hero-390.webp" alt="" className="absolute inset-0 h-full w-full object-cover" />
       </picture>

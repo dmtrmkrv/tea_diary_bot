@@ -48,7 +48,7 @@ function Hero() {
       <div className="absolute inset-0 bg-black/20" />
 
       {/* Плавающая шапка: fixed — следует за скроллом, стекло поверх контента */}
-      <div className="fixed inset-x-4 top-12 z-50 md:top-6">
+      <div className="fixed inset-x-4 top-6 z-50">
         <div className="mx-auto flex h-[60px] max-w-[1150px] items-center justify-between rounded-full border border-[#d6d3d1] bg-white/40 pl-5 pr-4 shadow-[0px_4px_15px_-5px_rgba(0,0,0,0.15)] backdrop-blur-md md:h-14 md:max-w-[917px] md:pl-6">
           <LandingLogo className="h-8 w-auto text-[#1c1917]" />
           <nav className="hidden items-center gap-10 text-[12px] font-medium text-[#1c1917] md:flex">
@@ -62,8 +62,8 @@ function Hero() {
         </div>
       </div>
 
-      {/* Оффер: на мобилке от верха, с планшета — по центру (чуть выше середины) */}
-      <div className="relative z-[1] mx-auto flex h-full flex-col items-center gap-6 px-4 pt-[140px] text-center md:justify-center md:pb-[84px] md:pt-0">
+      {/* Оффер: по центру, чуть выше середины (390: −49px, 1280: −42px) */}
+      <div className="relative z-[1] mx-auto flex h-full flex-col items-center justify-center gap-6 px-4 pb-[98px] text-center md:pb-[84px]">
         <div className="flex flex-col gap-2">
           <h1 className={`${SERIF} text-[36px] leading-[1.05] tracking-[-0.36px] text-[#fafaf9] md:text-[44px] md:tracking-[-0.44px]`}>
             Личный чайный дневник — <br className="hidden md:block" />
@@ -73,13 +73,17 @@ function Hero() {
             Записывайте дегустации, ведите коллекцию чая и посуды, отслеживайте любимые вкусы
           </p>
         </div>
-        <div className="flex w-full justify-center gap-3 md:w-auto">
-          <Link href="/login?tab=register" className={`${PRIMARY_BTN} min-h-10 w-[196px] px-6 text-[14px]`}>
+        {/* Мобилка: обе кнопки равной ширины (flex-1); с планшета — контейнер 402px */}
+        <div className="flex w-full justify-center gap-3 md:w-[402px]">
+          <Link
+            href="/login?tab=register"
+            className={`${PRIMARY_BTN} min-h-10 flex-1 whitespace-nowrap px-6 text-[14px] md:w-[196px] md:flex-none`}
+          >
             Начать бесплатно
           </Link>
           <a
             href="#features"
-            className="flex min-h-10 flex-1 items-center justify-center rounded-full border border-[#f5f5f4] px-6 text-[14px] font-medium text-[#fafaf9] transition-colors hover:bg-white/10 md:flex-none md:px-8"
+            className="flex min-h-10 flex-1 items-center justify-center whitespace-nowrap rounded-full border border-[#f5f5f4] px-6 text-[14px] font-medium text-[#fafaf9] transition-colors hover:bg-white/10"
           >
             Узнать больше
           </a>
@@ -109,10 +113,14 @@ function CardShell({ side, children }: { side: 'left' | 'right'; children: React
   // стороны; с планшета — по центру колонки, скруглена целиком, с тенью.
   const mobileAlign = side === 'right' ? 'ml-auto' : 'mr-auto';
   const mobileRounding = side === 'right' ? 'rounded-l-[32px]' : 'rounded-r-[32px]';
+  // Масштаб карточки по макетам: 390 → 374×349 (1:1), 768 → 330×308 (×0.88),
+  // 1280+ → 460×429 (×1.23). Внешний div резервирует место, внутренний скейлится.
   return (
-    <div className={`relative h-[349px] w-[374px] ${mobileAlign} md:mx-auto xl:h-[429px] xl:w-[460px]`}>
+    <div
+      className={`relative h-[349px] w-[374px] ${mobileAlign} md:mx-auto md:h-[308px] md:w-[330px] xl:h-[429px] xl:w-[460px]`}
+    >
       <div
-        className={`absolute left-0 top-0 h-[349px] w-[374px] origin-top-left overflow-hidden bg-white ${mobileRounding} md:rounded-[32px] md:shadow-[0px_15px_50px_-4px_rgba(0,0,0,0.2)] xl:scale-[1.2299]`}
+        className={`absolute left-0 top-0 h-[349px] w-[374px] origin-top-left overflow-hidden bg-white shadow-[0px_4px_6px_-4px_rgba(0,0,0,0.1),0px_10px_15px_-3px_rgba(0,0,0,0.1)] ${mobileRounding} md:scale-[0.8824] md:rounded-[32px] md:shadow-[0px_15px_50px_-4px_rgba(0,0,0,0.2)] xl:scale-[1.2299]`}
       >
         {children}
       </div>
@@ -128,7 +136,7 @@ function FeatureText({ num, title, children }: { num: string; title: React.React
       <img
         src={`/landing/num-${num}.svg`}
         alt=""
-        className="pointer-events-none absolute -top-[29px] right-4 h-[110px] select-none md:static md:mb-6 md:h-20"
+        className="pointer-events-none absolute right-4 top-0 h-20 select-none md:static md:mb-6"
       />
       <h3 className="relative text-[24px] font-semibold leading-[30px] tracking-[-1px] text-[#1c1917] xl:text-[32px] xl:leading-8">
         {title}
@@ -144,13 +152,13 @@ function Features() {
   return (
     // scroll-mt-32 — запас под fixed-шапку (отступ + пилюля)
     <section id="features" className="mx-auto max-w-[917px] scroll-mt-32 md:px-4 xl:px-0">
-      <h2 className={`${SERIF} mx-auto mb-14 mt-8 max-w-[358px] px-4 text-center text-[36px] leading-[1.05] tracking-[-0.36px] text-[#1c1917] md:mb-20 md:mt-[88px] md:max-w-none md:text-[44px] md:tracking-[-0.44px]`}>
+      <h2 className={`${SERIF} mx-auto mb-[18px] mt-8 max-w-[358px] px-4 text-center text-[36px] leading-[1.05] tracking-[-0.36px] text-[#1c1917] md:mb-10 md:mt-[88px] md:max-w-none md:text-[44px] md:tracking-[-0.44px]`}>
         Больше, чем заметки о чае
       </h2>
 
-      <div className="flex flex-col gap-16 md:gap-14">
+      <div className="flex flex-col gap-10 md:gap-14">
         {/* 01 — Дегустации: текст слева, карточка справа */}
-        <div className="md:grid md:grid-cols-2 md:items-center md:gap-8">
+        <div className="md:grid md:grid-cols-2 md:items-center md:gap-8 xl:grid-cols-[378px_460px] xl:justify-between xl:gap-0">
           <div className="md:order-2">
             <CardShell side="right">
               <img
@@ -185,7 +193,7 @@ function Features() {
         </div>
 
         {/* 02 — Карточка: карточка слева, текст справа */}
-        <div className="md:grid md:grid-cols-2 md:items-center md:gap-8">
+        <div className="md:grid md:grid-cols-2 md:items-center md:gap-8 xl:grid-cols-[460px_378px] xl:justify-between xl:gap-0">
           <CardShell side="left">
             <img
               src="/landing/app-tasting-card.webp"
@@ -218,7 +226,7 @@ function Features() {
         </div>
 
         {/* 03 — Коллекция: текст слева, карточка справа */}
-        <div className="md:grid md:grid-cols-2 md:items-center md:gap-8">
+        <div className="md:grid md:grid-cols-2 md:items-center md:gap-8 xl:grid-cols-[378px_460px] xl:justify-between xl:gap-0">
           <div className="md:order-2">
             <CardShell side="right">
               <img
@@ -285,7 +293,7 @@ const MORE_ITEMS: MoreItem[] = [
 
 function MoreFeatures() {
   return (
-    <section id="more" className="mt-20 scroll-mt-20 bg-[#292524] px-4 py-10 md:py-12">
+    <section id="more" className="mt-4 scroll-mt-20 bg-[#292524] px-4 py-10 md:mt-20 md:py-12">
       <div className="mx-auto max-w-[917px]">
         <h2 className={`${SERIF} text-[36px] leading-[1.05] tracking-[-0.36px] text-[#fafaf9] md:text-center md:text-[44px] md:tracking-[-0.44px]`}>
           Другие возможности

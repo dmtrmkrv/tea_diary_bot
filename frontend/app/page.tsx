@@ -20,10 +20,29 @@ const PAGE_SIZE = 10;
 export async function generateMetadata(): Promise<Metadata> {
   const hasToken = (await cookies()).has('token');
   if (hasToken) return { title: 'Чайный дневник', description: 'Записи чайных дегустаций' };
+  const title = 'LeafPulse — личный чайный дневник';
+  const description =
+    'Записывайте дегустации, ведите коллекцию чая и посуды, отслеживайте любимые вкусы. Всё в одном месте.';
   return {
-    title: 'LeafPulse — личный чайный дневник',
-    description:
-      'Записывайте дегустации, ведите коллекцию чая и посуды, отслеживайте любимые вкусы. Всё в одном месте.',
+    title,
+    description,
+    // OG/Twitter — превью ссылки в Telegram и соцсетях (абсолютные URL
+    // собираются из metadataBase в app/layout.tsx)
+    openGraph: {
+      title,
+      description,
+      url: '/',
+      siteName: 'LeafPulse',
+      locale: 'ru_RU',
+      type: 'website',
+      images: [{ url: '/landing/og.jpg', width: 1200, height: 630, alt: 'LeafPulse — личный чайный дневник' }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: ['/landing/og.jpg'],
+    },
   };
 }
 

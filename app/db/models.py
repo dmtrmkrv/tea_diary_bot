@@ -46,6 +46,11 @@ class User(Base):
     password_hash: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)  # argon2id
     yandex_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     consented_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, nullable=True)
+    # Версия токенов: пишется в JWT (claim tv) и сверяется при каждом запросе.
+    # Бамп (при смене пароля) отзывает все ранее выданные токены юзера.
+    token_version: Mapped[int] = mapped_column(
+        Integer, default=0, server_default=sa.text("0"), nullable=False
+    )
 
     __table_args__ = (
         Index("ix_users_telegram_id", "telegram_id", unique=True),

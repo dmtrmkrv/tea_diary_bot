@@ -348,8 +348,10 @@ export function authLinkEmail(email: string, password: string, consent: boolean)
 }
 
 // Смена пароля из настроек (нужен текущий пароль).
+// Возвращает свежий токен: старые сессии отзываются (token_version), без
+// обновления куки текущее устройство разлогинилось бы.
 export function authChangePassword(currentPassword: string, newPassword: string) {
-  return authCallAuthed<{ ok: boolean }>('/auth/change-password', {
+  return authCallAuthed<{ ok: boolean; access_token: string }>('/auth/change-password', {
     current_password: currentPassword,
     new_password: newPassword,
   });

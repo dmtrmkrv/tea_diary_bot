@@ -222,3 +222,20 @@ class LoginCode(Base):
         DateTime, default=datetime.datetime.utcnow, nullable=False
     )
     used: Mapped[bool] = mapped_column(default=False, nullable=False)
+
+
+class PasswordReset(Base):
+    """Одноразовый токен сброса пароля. Хранится только SHA-256 хэш —
+    сам токен уходит в письмо и в БД не попадает."""
+
+    __tablename__ = "password_resets"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime, default=datetime.datetime.utcnow, nullable=False
+    )
+    used: Mapped[bool] = mapped_column(default=False, server_default=sa.false(), nullable=False)

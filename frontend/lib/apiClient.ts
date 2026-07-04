@@ -321,6 +321,17 @@ export function authYandex(code: string) {
   return authCall('/auth/yandex', { code });
 }
 
+// Сброс пароля: запрос ссылки на почту (ответ всегда ok — существование
+// email не раскрывается) и установка нового пароля по токену из письма
+// (сразу логинит: свежую куку ставит BFF).
+export function authForgotPassword(email: string) {
+  return authCall('/auth/forgot-password', { email });
+}
+
+export function authResetPassword(token: string, newPassword: string) {
+  return authCall('/auth/reset-password', { token, new_password: newPassword });
+}
+
 // Те же ошибки {detail:{code,message}}, но под сессией текущего пользователя
 // (привязка ключа входа к своему аккаунту / перенос записей из бота).
 async function authCallAuthed<T>(path: string, body: unknown): Promise<T> {

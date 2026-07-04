@@ -11,7 +11,7 @@ from urllib.parse import urlencode
 
 import jwt
 import os
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -19,7 +19,8 @@ from sqlalchemy.exc import IntegrityError
 from app.api.auth import get_current_user_id
 from app.config import JWT_ALGORITHM, get_jwt_secret
 from app.db.engine import SessionLocal
-from app.db.models import LoginCode, User
+from app.db.models import LoginCode, PasswordReset, User
+from app.services import mailer
 from app.services.passwords import hash_password, verify_password
 from app.services.users import (
     AuthConflict,
@@ -431,6 +432,90 @@ def change_password(request: Request, data: ChangePasswordData, user_id: int = D
         session.commit()
         token = create_jwt_token(user.id, user.username, user.token_version)
     return {"ok": True, "access_token": token, "token_type": "bearer"}
+
+
+# --- Сброс пароля по email (SMTP) ---
+
+RESET_TOKEN_TTL_SECONDS = 3600  # ссылка из письма живёт 1 час
+
+
+def _reset_token_hash(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+class ForgotPasswordData(BaseModel):
+    email: str
+
+
+class ResetPasswordData(BaseModel):
+    token: str
+    new_password: str
+
+
+@router.post("/forgot-password")
+@limiter.limit("5/hour")
+def forgot_password(request: Request, data: ForgotPasswordData, background_tasks: BackgroundTasks):
+    """Высылаем ссылку сброса на почту. Ответ всегда {"ok": true} — не палим,
+    существует ли такой email (иначе ручка = справочник адресов)."""
+    if not mailer.is_configured():
+        raise HTTPException(status_code=503, detail={"code": "mail_not_configured", "message": "Отправка почты временно недоступна"})
+    email = data.email.strip().lower()
+    user = find_user_by_email(email) if _EMAIL_RE.match(email) else None
+    if user is not None:
+        token = secrets.token_urlsafe(32)
+        with SessionLocal() as session:
+            with session.begin():
+                # Старые неиспользованные ссылки юзера гасим — живёт только последняя.
+                session.query(PasswordReset).filter(
+                    PasswordReset.user_id == user.id,
+                    PasswordReset.used == False,
+                ).delete()
+                session.add(PasswordReset(
+                    user_id=user.id,
+                    token_hash=_reset_token_hash(token),
+                    created_at=datetime.datetime.utcnow(),
+                    used=False,
+                ))
+        link = f"{WEB_URL}/reset-password?token={token}"
+        background_tasks.add_task(
+            mailer.send_email_background,
+            email,
+            "Сброс пароля — LeafPulse",
+            "Вы (или кто-то другой) запросили сброс пароля в LeafPulse.\n\n"
+            f"Чтобы задать новый пароль, перейдите по ссылке (действует 1 час):\n{link}\n\n"
+            "Если это были не вы — просто проигнорируйте это письмо, пароль не изменится.",
+        )
+    return {"ok": True}
+
+
+@router.post("/reset-password")
+@limiter.limit("10/minute")
+def reset_password(request: Request, data: ResetPasswordData):
+    """Установка нового пароля по токену из письма. Отзывает все старые сессии
+    (бамп token_version) и сразу логинит это устройство свежим токеном."""
+    if len(data.new_password) < _MIN_PASSWORD_LEN:
+        raise HTTPException(status_code=422, detail={"code": "weak_password", "message": "Пароль не короче 8 символов"})
+    token_hash = _reset_token_hash(data.token.strip())
+    invalid = HTTPException(status_code=401, detail={"code": "invalid_token", "message": "Ссылка недействительна или устарела — запросите сброс ещё раз"})
+    with SessionLocal() as session:
+        entry = session.execute(
+            select(PasswordReset).where(PasswordReset.token_hash == token_hash)
+        ).scalar_one_or_none()
+        if entry is None or entry.used:
+            raise invalid
+        age = (datetime.datetime.utcnow() - entry.created_at).total_seconds()
+        if age > RESET_TOKEN_TTL_SECONDS:
+            raise invalid
+        user = session.get(User, entry.user_id)
+        if user is None:
+            raise invalid
+        user.password_hash = hash_password(data.new_password)
+        # Отзываем все выданные ранее токены: сброс пароля = «меня могли увести».
+        user.token_version += 1
+        entry.used = True
+        session.commit()
+        token = create_jwt_token(user.id, user.username, user.token_version)
+    return {"access_token": token, "token_type": "bearer"}
 
 
 # --- Повторное подтверждение владения (re-auth) перед удалением аккаунта ---

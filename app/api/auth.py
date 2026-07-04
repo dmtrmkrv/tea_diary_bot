@@ -29,6 +29,10 @@ def get_current_user_id(
         token_version = int(payload.get("tv") or 0)
     except Exception:
         raise HTTPException(status_code=401, detail="Неверный токен")
+    # Одноцелевые токены (напр. purpose=reauth — подтверждение перед удалением
+    # аккаунта) сессией не являются и как Bearer не принимаются.
+    if payload.get("purpose"):
+        raise HTTPException(status_code=401, detail="Неверный токен")
     # Сверка версии токена с БД: бамп users.token_version (смена пароля,
     # «выйти на всех устройствах») мгновенно отзывает все старые токены.
     # Заодно 401 для токенов удалённых аккаунтов (строки в БД уже нет).

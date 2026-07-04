@@ -4,22 +4,28 @@ export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { authYandex, type AuthError } from '@/lib/apiClient';
+import { authYandex, authYandexReauth, type AuthError } from '@/lib/apiClient';
 
-// Callback входа через Яндекс: Яндекс возвращает сюда ?code=… , меняем его на
-// сессию на бэке; HttpOnly-куку ставит BFF-прокси.
+// Callback Яндекс-OAuth. Два режима (метка yandex_oauth_mode в sessionStorage):
+// вход (по умолчанию) — code меняется на сессию, и повторное подтверждение
+// перед удалением аккаунта (reauth) — code меняется на proof, возврат в
+// настройки к шторке удаления. HttpOnly-куки в обоих случаях ставит BFF-прокси.
 export default function YandexCallbackPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [backTo, setBackTo] = useState('/login');
 
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
     const code = sp.get('code');
     const returnedState = sp.get('state');
     const yandexError = sp.get('error');
-    // Метка, сохранённая при старте входа: сверяем и сразу гасим (одноразовая).
+    // Метки, сохранённые при старте: сверяем/читаем и сразу гасим (одноразовые).
     const savedState = sessionStorage.getItem('yandex_oauth_state');
     sessionStorage.removeItem('yandex_oauth_state');
+    const isReauth = sessionStorage.getItem('yandex_oauth_mode') === 'reauth';
+    sessionStorage.removeItem('yandex_oauth_mode');
+    if (isReauth) setBackTo('/settings');
     if (yandexError || !code) {
       setError('Не получилось войти через Яндекс. Попробуйте ещё раз.');
       return;
@@ -32,9 +38,9 @@ export default function YandexCallbackPage() {
     }
     // Убираем code из URL, чтобы не остался в истории.
     window.history.replaceState(null, '', window.location.pathname);
-    authYandex(code)
+    (isReauth ? authYandexReauth(code) : authYandex(code))
       .then(() => {
-        router.replace('/');
+        router.replace(isReauth ? '/settings?reauth=ok' : '/');
       })
       .catch((e: AuthError) => {
         setError(e.message || 'Не удалось войти через Яндекс. Попробуйте позже.');
@@ -48,10 +54,10 @@ export default function YandexCallbackPage() {
           <p className="text-[15px] leading-[22px] text-foreground">{error}</p>
           <button
             type="button"
-            onClick={() => router.replace('/login')}
+            onClick={() => router.replace(backTo)}
             className="text-[14px] font-medium text-accent-default underline underline-offset-2"
           >
-            Вернуться ко входу
+            {backTo === '/settings' ? 'Вернуться в настройки' : 'Вернуться ко входу'}
           </button>
         </div>
       ) : (

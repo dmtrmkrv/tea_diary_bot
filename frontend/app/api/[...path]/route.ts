@@ -9,11 +9,13 @@ const API_URL = process.env.API_URL || 'https://dmtrmkrv-tea-diary-bot-03bd.twc1
 
 // Как TOKEN_EXPIRE_SECONDS на бэке: 180 дней — редкий перелогин.
 const TOKEN_MAX_AGE = 60 * 60 * 24 * 180;
+// Как REAUTH_EXPIRE_SECONDS на бэке: proof подтверждения перед удалением аккаунта.
+const REAUTH_MAX_AGE = 300;
 
-function tokenCookie(token: string): string {
+function httpOnlyCookie(name: string, value: string, maxAge: number): string {
   // Без Secure вне production, чтобы кука работала на http://localhost:3000.
   const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
-  return `token=${token}; Path=/; Max-Age=${TOKEN_MAX_AGE}; HttpOnly; SameSite=Lax${secure}`;
+  return `${name}=${value}; Path=/; Max-Age=${maxAge}; HttpOnly; SameSite=Lax${secure}`;
 }
 
 async function forward(
@@ -33,13 +35,18 @@ async function forward(
   // запросы приходили бы с IP Next-сервера и лимит бил бы по всем сразу.
   const xff = req.headers.get('x-forwarded-for');
   if (xff) headers.set('X-Forwarded-For', xff);
+  // Proof повторного подтверждения (перед удалением аккаунта) — тоже HttpOnly-кука,
+  // на бэк уходит заголовком.
+  const reauth = req.cookies.get('reauth')?.value;
+  if (reauth) headers.set('X-Reauth-Proof', reauth);
 
   const body =
     req.method === 'GET' || req.method === 'HEAD' ? undefined : await req.arrayBuffer();
   const res = await fetch(target, { method: req.method, headers, body, cache: 'no-store' });
 
-  // Auth-ручки (login/register/code/yandex/claim/change-password) возвращают
-  // access_token — кладём его в HttpOnly-куку вместо тела ответа.
+  // Auth-ручки возвращают токены — кладём их в HttpOnly-куки вместо тела ответа:
+  // access_token (login/register/code/yandex/claim/change-password) → кука token,
+  // reauth_token (yandex/telegram reauth) → кука reauth.
   if (path[0] === 'auth' && res.ok && (res.headers.get('content-type') || '').includes('application/json')) {
     const data: unknown = await res.json();
     if (data && typeof data === 'object' && 'access_token' in data) {
@@ -49,7 +56,17 @@ async function forward(
       }
       return Response.json(rest, {
         status: res.status,
-        headers: { 'Set-Cookie': tokenCookie(String((data as { access_token: unknown }).access_token)) },
+        headers: {
+          'Set-Cookie': httpOnlyCookie('token', String((data as { access_token: unknown }).access_token), TOKEN_MAX_AGE),
+        },
+      });
+    }
+    if (data && typeof data === 'object' && 'reauth_token' in data) {
+      return Response.json({ ok: true }, {
+        status: res.status,
+        headers: {
+          'Set-Cookie': httpOnlyCookie('reauth', String((data as { reauth_token: unknown }).reauth_token), REAUTH_MAX_AGE),
+        },
       });
     }
     return Response.json(data, { status: res.status });

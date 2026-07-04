@@ -431,3 +431,56 @@ def change_password(request: Request, data: ChangePasswordData, user_id: int = D
         session.commit()
         token = create_jwt_token(user.id, user.username, user.token_version)
     return {"ok": True, "access_token": token, "token_type": "bearer"}
+
+
+# --- Повторное подтверждение владения (re-auth) перед удалением аккаунта ---
+# Для аккаунтов без пароля (только Яндекс/Telegram): юзер повторно проходит
+# OAuth/подпись, сверяем с привязанным идентификатором и выдаём короткоживущий
+# одноцелевой proof. DELETE /users/me принимает его заголовком X-Reauth-Proof
+# (BFF-прокси хранит proof в HttpOnly-куке и подставляет заголовок сам).
+
+REAUTH_EXPIRE_SECONDS = 300  # 5 минут — успеть нажать «Удалить», не более
+
+
+def create_reauth_proof(user_id: int) -> str:
+    payload = {
+        "sub": str(user_id),
+        # purpose делает токен одноцелевым: get_current_user_id такие отвергает,
+        # т.е. украсть proof = нельзя получить сессию.
+        "purpose": "reauth",
+        "exp": int(time.time()) + REAUTH_EXPIRE_SECONDS,
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+
+@router.post("/yandex/reauth")
+@limiter.limit("10/minute")
+def yandex_reauth(request: Request, data: YandexCodeData, user_id: int = Depends(get_current_user_id)):
+    """Подтверждение через повторный Яндекс-OAuth: должен вернуться тот же
+    yandex_id, что привязан к текущему аккаунту."""
+    if not YANDEX_CLIENT_ID or not YANDEX_CLIENT_SECRET:
+        raise HTTPException(status_code=503, detail={"code": "yandex_not_configured", "message": "Вход через Яндекс временно недоступен"})
+    try:
+        access_token = _yandex_exchange_code(data.code)
+        info = _yandex_userinfo(access_token)
+    except Exception:
+        raise HTTPException(status_code=502, detail={"code": "yandex_failed", "message": "Не удалось получить данные от Яндекса"})
+    yandex_id = str(info.get("id") or "")
+    with SessionLocal() as session:
+        user = session.get(User, user_id)
+    if user is None or not user.yandex_id or user.yandex_id != yandex_id:
+        raise HTTPException(status_code=403, detail={"code": "reauth_mismatch", "message": "Это другой Яндекс-аккаунт — войдите в тот, что привязан к профилю."})
+    return {"reauth_token": create_reauth_proof(user_id)}
+
+
+@router.post("/telegram/reauth")
+@limiter.limit("10/minute")
+def telegram_reauth(request: Request, data: TelegramAuthData, user_id: int = Depends(get_current_user_id)):
+    """Подтверждение Telegram-подписью: тот же telegram_id, что привязан."""
+    if not verify_telegram_auth(data):
+        raise HTTPException(status_code=401, detail="Неверная подпись Telegram")
+    with SessionLocal() as session:
+        user = session.get(User, user_id)
+    if user is None or user.telegram_id != data.id:
+        raise HTTPException(status_code=403, detail={"code": "reauth_mismatch", "message": "Это другой Telegram-аккаунт — войдите тем, что привязан к профилю."})
+    return {"reauth_token": create_reauth_proof(user_id)}

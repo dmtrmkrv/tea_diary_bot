@@ -239,8 +239,18 @@ export function updateMyName(name: string) {
 }
 
 // Полное удаление аккаунта (необратимо). После — фронт разлогинивает.
-export function deleteMyAccount() {
-  return apiCall<{ ok: boolean }>('/users/me', { method: 'DELETE' });
+// Подтверждение: аккаунт с паролем шлёт текущий пароль; OAuth-only аккаунт
+// проходит повторный вход (proof лежит в HttpOnly-куке, BFF подставляет сам).
+export function deleteMyAccount(currentPassword?: string) {
+  return apiCall<{ ok: boolean }>('/users/me', {
+    method: 'DELETE',
+    ...(currentPassword
+      ? {
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ current_password: currentPassword }),
+        }
+      : {}),
+  });
 }
 
 export function getMyStats() {
@@ -357,6 +367,38 @@ export async function startTelegramClaim(): Promise<void> {
     cache: 'no-store',
   });
   if (!res.ok) throw new Error('claim-url');
+  const { url } = await res.json();
+  window.location.href = url;
+}
+
+// --- Повторное подтверждение владения перед удалением аккаунта (OAuth-only) ---
+// Успех = {ok:true}: proof BFF кладёт в HttpOnly-куку (5 минут), в JS не попадает.
+
+export function authYandexReauth(code: string) {
+  return authCallAuthed<{ ok: boolean }>('/auth/yandex/reauth', { code });
+}
+
+export function authTelegramReauth(tg: TelegramUser) {
+  return authCallAuthed<{ ok: boolean }>('/auth/telegram/reauth', tg);
+}
+
+// Уводим на Яндекс-OAuth в режиме подтверждения: callback по метке mode поймёт,
+// что это не вход, и вернёт пользователя в настройки к шторке удаления.
+export async function startYandexReauth(): Promise<void> {
+  const res = await fetch(`${API_URL}/auth/yandex/login-url`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('yandex-url');
+  const { url, state } = await res.json();
+  if (state) sessionStorage.setItem('yandex_oauth_state', state);
+  sessionStorage.setItem('yandex_oauth_mode', 'reauth');
+  window.location.href = url;
+}
+
+// То же для Telegram: возврат с подписанными данными на /reauth-telegram.
+export async function startTelegramReauth(): Promise<void> {
+  const res = await fetch(`${API_URL}/auth/telegram/login-url?return_to=/reauth-telegram`, {
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error('reauth-url');
   const { url } = await res.json();
   window.location.href = url;
 }

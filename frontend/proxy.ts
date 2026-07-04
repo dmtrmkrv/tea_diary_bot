@@ -9,6 +9,11 @@ export function proxy(request: NextRequest) {
   // иначе при наличии (протухшей) куки proxy увёл бы его на / и была бы петля.
   if (pathname === '/logout') return NextResponse.next();
 
+  // /api/* — BFF-прокси к бэкенду (app/api/[...path]/route.ts). Пропускаем:
+  // это fetch-запросы, им нужен честный 401 от API, а не HTML-редирект на
+  // /login (логин сам ходит сюда ещё без куки).
+  if (pathname.startsWith('/api/')) return NextResponse.next();
+
   // /privacy — публичная страница (Политика конфиденциальности). Доступна и до
   // входа (ссылка с логина), и после. Без редиректов в обе стороны.
   if (pathname === '/privacy') return NextResponse.next();

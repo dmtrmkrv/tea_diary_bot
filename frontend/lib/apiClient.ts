@@ -2,20 +2,14 @@
 
 import type { TelegramUser } from './telegramAuth';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
-
-function getToken(): string {
-  if (typeof document === 'undefined') return '';
-  const m = document.cookie.match(/(?:^|;\s*)token=([^;]+)/);
-  return m ? decodeURIComponent(m[1]) : '';
-}
+// Все запросы идут через BFF-прокси на своём домене (app/api/[...path]/route.ts):
+// сессия — в HttpOnly-куке, браузер шлёт её сам, токен в JS не попадает.
+const API_URL = '/api';
 
 async function apiCall<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const token = getToken();
   const headers: Record<string, string> = {
     ...(init.headers as Record<string, string> | undefined),
   };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const res = await fetch(`${API_URL}${path}`, { ...init, headers, cache: 'no-store' });
   if (!res.ok) {
@@ -245,8 +239,18 @@ export function updateMyName(name: string) {
 }
 
 // Полное удаление аккаунта (необратимо). После — фронт разлогинивает.
-export function deleteMyAccount() {
-  return apiCall<{ ok: boolean }>('/users/me', { method: 'DELETE' });
+// Подтверждение: аккаунт с паролем шлёт текущий пароль; OAuth-only аккаунт
+// проходит повторный вход (proof лежит в HttpOnly-куке, BFF подставляет сам).
+export function deleteMyAccount(currentPassword?: string) {
+  return apiCall<{ ok: boolean }>('/users/me', {
+    method: 'DELETE',
+    ...(currentPassword
+      ? {
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ current_password: currentPassword }),
+        }
+      : {}),
+  });
 }
 
 export function getMyStats() {
@@ -254,11 +258,7 @@ export function getMyStats() {
 }
 
 export async function downloadTastingsCsv(): Promise<void> {
-  const token = getToken();
-  const res = await fetch(`${API_URL}/tastings/export.csv`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    cache: 'no-store',
-  });
+  const res = await fetch(`${API_URL}/tastings/export.csv`, { cache: 'no-store' });
   if (!res.ok) throw new Error(`API ${res.status}`);
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
@@ -291,7 +291,8 @@ export function deleteTastingPhoto(tastingId: number, photoId: number) {
 // --- Вход по email (Arch 1). Бэк отдаёт структурную ошибку {detail:{code,message}}. ---
 export type AuthError = { status: number; code?: string; message?: string };
 
-async function authCall(path: string, body: unknown): Promise<{ access_token: string }> {
+// Успех = {ok:true}: токен BFF-прокси кладёт в HttpOnly-куку, в тело он не попадает.
+async function authCall(path: string, body: unknown): Promise<{ ok: boolean }> {
   const res = await fetch(`${API_URL}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -320,16 +321,12 @@ export function authYandex(code: string) {
   return authCall('/auth/yandex', { code });
 }
 
-// Те же ошибки {detail:{code,message}}, но с токеном текущего пользователя
+// Те же ошибки {detail:{code,message}}, но под сессией текущего пользователя
 // (привязка ключа входа к своему аккаунту / перенос записей из бота).
 async function authCallAuthed<T>(path: string, body: unknown): Promise<T> {
-  const token = getToken();
   const res = await fetch(`${API_URL}${path}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
     cache: 'no-store',
   });
@@ -347,7 +344,9 @@ export function authLinkEmail(email: string, password: string, consent: boolean)
   return authCallAuthed<{ ok: boolean }>('/auth/link-email', { email, password, consent });
 }
 
-// Смена пароля из настроек (нужен текущий пароль).
+// Смена пароля из настроек (нужен текущий пароль). Старые сессии отзываются
+// (token_version); свежий токен BFF сам кладёт в куку — устройство остаётся
+// залогиненным.
 export function authChangePassword(currentPassword: string, newPassword: string) {
   return authCallAuthed<{ ok: boolean }>('/auth/change-password', {
     current_password: currentPassword,
@@ -356,9 +355,9 @@ export function authChangePassword(currentPassword: string, newPassword: string)
 }
 
 // Путь 1: перенести записи из бота (подтверждение — подписанные данные Telegram).
-// Возвращает новый токен: главным становится Telegram-аккаунт.
+// Главным становится Telegram-аккаунт; новый токен BFF кладёт в куку сам.
 export function authClaim(tg: TelegramUser & { tz_offset_min?: number }) {
-  return authCallAuthed<{ access_token: string }>('/auth/claim', tg);
+  return authCallAuthed<{ ok: boolean }>('/auth/claim', tg);
 }
 
 // Старт переноса записей из бота: получаем URL Telegram-OAuth (возврат на
@@ -368,6 +367,38 @@ export async function startTelegramClaim(): Promise<void> {
     cache: 'no-store',
   });
   if (!res.ok) throw new Error('claim-url');
+  const { url } = await res.json();
+  window.location.href = url;
+}
+
+// --- Повторное подтверждение владения перед удалением аккаунта (OAuth-only) ---
+// Успех = {ok:true}: proof BFF кладёт в HttpOnly-куку (5 минут), в JS не попадает.
+
+export function authYandexReauth(code: string) {
+  return authCallAuthed<{ ok: boolean }>('/auth/yandex/reauth', { code });
+}
+
+export function authTelegramReauth(tg: TelegramUser) {
+  return authCallAuthed<{ ok: boolean }>('/auth/telegram/reauth', tg);
+}
+
+// Уводим на Яндекс-OAuth в режиме подтверждения: callback по метке mode поймёт,
+// что это не вход, и вернёт пользователя в настройки к шторке удаления.
+export async function startYandexReauth(): Promise<void> {
+  const res = await fetch(`${API_URL}/auth/yandex/login-url`, { cache: 'no-store' });
+  if (!res.ok) throw new Error('yandex-url');
+  const { url, state } = await res.json();
+  if (state) sessionStorage.setItem('yandex_oauth_state', state);
+  sessionStorage.setItem('yandex_oauth_mode', 'reauth');
+  window.location.href = url;
+}
+
+// То же для Telegram: возврат с подписанными данными на /reauth-telegram.
+export async function startTelegramReauth(): Promise<void> {
+  const res = await fetch(`${API_URL}/auth/telegram/login-url?return_to=/reauth-telegram`, {
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error('reauth-url');
   const { url } = await res.json();
   window.location.href = url;
 }

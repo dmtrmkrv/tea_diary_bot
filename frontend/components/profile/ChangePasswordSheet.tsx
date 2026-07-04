@@ -70,6 +70,7 @@ export default function ChangePasswordSheet({
     }
     setSubmitting(true);
     try {
+      // Старые сессии отзываются (token_version); свежую куку ставит BFF-прокси.
       await authChangePassword(current, next);
       onChanged();
     } catch (e) {

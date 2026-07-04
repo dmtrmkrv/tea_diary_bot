@@ -10,7 +10,8 @@ import AuthSheet from '@/components/auth/AuthSheet';
 import LeafPulseLogo from '@/components/LeafPulseLogo';
 import { Spinner } from '@/components/ui/spinner';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+// Через BFF-прокси на своём домене (login-url — публичная ручка, токен не нужен).
+const API_URL = '/api';
 
 type Tab = 'login' | 'register';
 

@@ -2,8 +2,8 @@
 
 export const dynamic = 'force-dynamic';
 
-import { Fragment, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Fragment, Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeftIcon, CaretRightIcon } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import ThemeSheet from '@/components/profile/ThemeSheet';
@@ -19,9 +19,28 @@ type Sheet = 'theme' | 'onboarding' | 'linkEmail' | 'changePassword' | 'deleteAc
 type Row = { key: string; label: string; value?: string; onClick?: () => void };
 
 export default function SettingsPage() {
+  return (
+    <Suspense fallback={null}>
+      <SettingsContent />
+    </Suspense>
+  );
+}
+
+function SettingsContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Возврат из повторного OAuth перед удалением аккаунта (?reauth=ok): сразу
+  // открываем шторку удаления в состоянии «подтверждено», чтобы пользователь
+  // продолжил с того же места. Метку фиксируем в state ОДИН раз: URL дальше
+  // чистится (F5 не должен переоткрывать), а useSearchParams после чистки
+  // пересчитался бы и состояние «подтверждено» потерялось бы до загрузки me.
+  const [reauthConfirmed] = useState(searchParams.get('reauth') === 'ok');
   const [me, setMe] = useState<Me | null>(null);
-  const [sheet, setSheet] = useState<Sheet>(null);
+  const [sheet, setSheet] = useState<Sheet>(reauthConfirmed ? 'deleteAccount' : null);
+
+  useEffect(() => {
+    if (reauthConfirmed) window.history.replaceState(null, '', '/settings');
+  }, [reauthConfirmed]);
 
   useEffect(() => {
     let cancelled = false;
@@ -123,8 +142,8 @@ export default function SettingsPage() {
           onChanged={() => { setSheet(null); toast.success('Пароль изменён ✓'); }}
         />
       )}
-      {sheet === 'deleteAccount' && (
-        <DeleteAccountSheet onClose={() => setSheet(null)} />
+      {sheet === 'deleteAccount' && me && (
+        <DeleteAccountSheet me={me} proofConfirmed={reauthConfirmed} onClose={() => setSheet(null)} />
       )}
     </main>
   );

@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
@@ -23,11 +24,15 @@ export const metadata: Metadata = {
   description: "Записи чайных дегустаций",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Кука сессии HttpOnly — клиентский код её не видит, поэтому «залогинен ли»
+  // решаем здесь и рендерим TzSync только для вошедших (иначе аноним на
+  // лендинге дёргал бы API впустую).
+  const hasToken = (await cookies()).has("token");
   return (
     <html lang="ru" className={`${inter.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col font-[family-name:var(--font-inter)]">
@@ -43,7 +48,7 @@ export default function RootLayout({
           </div>
           <AddTeaSheetController />
           <Toaster position="top-center" />
-          <TzSync />
+          {hasToken && <TzSync />}
           <YandexMetrika />
           <CookieBanner />
         </Providers>

@@ -1,11 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
+import jwt
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
 from app.api.deps import get_db
-from app.api.auth import get_current_user_id
+from app.api.auth import ALGORITHM, SECRET_KEY, get_current_user_id
+from app.api.ratelimit import limiter
 from app.db.models import User, Tasting, TeaItem, Teaware
+from app.services.passwords import verify_password
 from app.services.users import delete_user
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -135,9 +138,43 @@ def update_my_name(
     return _user_out(user)
 
 
+class DeleteMeData(BaseModel):
+    current_password: Optional[str] = None
+
+
+def _valid_reauth_proof(proof: Optional[str], user_id: int) -> bool:
+    """Проверка одноцелевого proof от /auth/*/reauth (см. auth_router):
+    подпись, срок (5 минут), назначение и совпадение пользователя."""
+    if not proof:
+        return False
+    try:
+        payload = jwt.decode(proof, SECRET_KEY, algorithms=[ALGORITHM])
+    except Exception:
+        return False
+    return payload.get("purpose") == "reauth" and int(payload.get("sub") or 0) == user_id
+
+
 @router.delete("/me")
-def delete_me(user_id: int = Depends(get_current_user_id)):
+@limiter.limit("10/minute")
+def delete_me(
+    request: Request,
+    data: Optional[DeleteMeData] = None,
+    x_reauth_proof: Optional[str] = Header(default=None),
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),
+):
     """Полное удаление аккаунта (право на удаление, 152-ФЗ). Сносит все данные
-    пользователя и файлы. После — фронт разлогинивает."""
+    пользователя и файлы. Одного токена сессии мало (украденный токен не должен
+    сносить аккаунт): аккаунт с паролем подтверждает текущим паролем, аккаунт
+    только с OAuth — свежим proof повторного входа (X-Reauth-Proof)."""
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Не найдено")
+    if user.password_hash:
+        password = (data.current_password if data else None) or ""
+        if not password or not verify_password(user.password_hash, password):
+            raise HTTPException(status_code=401, detail={"code": "wrong_password", "message": "Текущий пароль неверный"})
+    elif not _valid_reauth_proof(x_reauth_proof, user_id):
+        raise HTTPException(status_code=401, detail={"code": "reauth_required", "message": "Подтвердите владение аккаунтом перед удалением"})
     delete_user(user_id)
     return {"ok": True}

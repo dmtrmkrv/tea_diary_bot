@@ -87,11 +87,14 @@ def verify_telegram_auth(data: TelegramAuthData) -> bool:
     return True
 
 
-def create_jwt_token(user_id: int, username: Optional[str] = None) -> str:
+def create_jwt_token(user_id: int, username: Optional[str] = None, token_version: int = 0) -> str:
     payload = {
         "sub": str(user_id),
         "username": username,
         "exp": int(time.time()) + TOKEN_EXPIRE_SECONDS,
+        # Версия токенов юзера: сверяется с users.token_version при каждом
+        # запросе (get_current_user_id). Бамп версии отзывает все токены.
+        "tv": token_version,
     }
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -108,6 +111,7 @@ def telegram_auth(request: Request, data: TelegramAuthData):
 
     # Гарантируем запись о пользователе и обновляем профиль из виджета
     get_or_create_user(data.id, username=data.username)
+    token_version = 0
     with SessionLocal() as session:
         user = session.get(User, data.id)
         if user is not None:
@@ -118,8 +122,9 @@ def telegram_auth(request: Request, data: TelegramAuthData):
             if data.tz_offset_min is not None:
                 user.tz_offset_min = data.tz_offset_min
             session.commit()
+            token_version = user.token_version
 
-    token = create_jwt_token(data.id, data.username)
+    token = create_jwt_token(data.id, data.username, token_version)
     return {"access_token": token, "token_type": "bearer"}
 
 
@@ -197,7 +202,7 @@ def code_auth(request: Request, data: CodeAuthData):
             telegram_id = entry.telegram_id
 
     user = get_or_create_user(telegram_id)
-    token = create_jwt_token(telegram_id, user.username)
+    token = create_jwt_token(telegram_id, user.username, user.token_version)
     return {"access_token": token, "token_type": "bearer"}
 
 
@@ -236,7 +241,7 @@ def register(request: Request, data: RegisterData):
     except IntegrityError:
         # Гонка: email заняли между проверкой и вставкой.
         raise HTTPException(status_code=409, detail={"code": "email_taken", "message": "Этот email уже зарегистрирован"})
-    token = create_jwt_token(user.id)
+    token = create_jwt_token(user.id, token_version=user.token_version)
     return {"access_token": token, "token_type": "bearer"}
 
 
@@ -258,7 +263,7 @@ def login(request: Request, data: LoginData):
         register_login_failure(email)
         raise HTTPException(status_code=401, detail={"code": "wrong_password", "message": "Неверный пароль"})
     clear_login_failures(email)
-    token = create_jwt_token(user.id, user.username)
+    token = create_jwt_token(user.id, user.username, user.token_version)
     return {"access_token": token, "token_type": "bearer"}
 
 
@@ -306,7 +311,7 @@ def claim(request: Request, data: TelegramAuthData, user_id: int = Depends(get_c
         # Неожиданный конфликт данных при слиянии — отдаём читаемую ошибку
         # (с CORS), а не голый 500 без заголовков.
         raise HTTPException(status_code=409, detail={"code": "merge_conflict", "message": "Не удалось объединить аккаунты — возможно, эти данные уже привязаны."})
-    token = create_jwt_token(user.id, user.username)
+    token = create_jwt_token(user.id, user.username, user.token_version)
     return {"access_token": token, "token_type": "bearer"}
 
 
@@ -396,7 +401,7 @@ def yandex_auth(request: Request, data: YandexCodeData):
             user = find_user_by_yandex_id(yandex_id)
             if user is None:
                 raise HTTPException(status_code=502, detail={"code": "yandex_failed", "message": "Не удалось войти через Яндекс"})
-    token = create_jwt_token(user.id, user.username)
+    token = create_jwt_token(user.id, user.username, user.token_version)
     return {"access_token": token, "token_type": "bearer"}
 
 
@@ -420,5 +425,62 @@ def change_password(request: Request, data: ChangePasswordData, user_id: int = D
         if not user.password_hash or not verify_password(user.password_hash, data.current_password):
             raise HTTPException(status_code=401, detail={"code": "wrong_password", "message": "Текущий пароль неверный"})
         user.password_hash = hash_password(data.new_password)
+        # Отзываем все ранее выданные токены (украденный/чужой токен умирает),
+        # текущему устройству возвращаем свежий — оно остаётся залогиненным.
+        user.token_version += 1
         session.commit()
-    return {"ok": True}
+        token = create_jwt_token(user.id, user.username, user.token_version)
+    return {"ok": True, "access_token": token, "token_type": "bearer"}
+
+
+# --- Повторное подтверждение владения (re-auth) перед удалением аккаунта ---
+# Для аккаунтов без пароля (только Яндекс/Telegram): юзер повторно проходит
+# OAuth/подпись, сверяем с привязанным идентификатором и выдаём короткоживущий
+# одноцелевой proof. DELETE /users/me принимает его заголовком X-Reauth-Proof
+# (BFF-прокси хранит proof в HttpOnly-куке и подставляет заголовок сам).
+
+REAUTH_EXPIRE_SECONDS = 300  # 5 минут — успеть нажать «Удалить», не более
+
+
+def create_reauth_proof(user_id: int) -> str:
+    payload = {
+        "sub": str(user_id),
+        # purpose делает токен одноцелевым: get_current_user_id такие отвергает,
+        # т.е. украсть proof = нельзя получить сессию.
+        "purpose": "reauth",
+        "exp": int(time.time()) + REAUTH_EXPIRE_SECONDS,
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+
+@router.post("/yandex/reauth")
+@limiter.limit("10/minute")
+def yandex_reauth(request: Request, data: YandexCodeData, user_id: int = Depends(get_current_user_id)):
+    """Подтверждение через повторный Яндекс-OAuth: должен вернуться тот же
+    yandex_id, что привязан к текущему аккаунту."""
+    if not YANDEX_CLIENT_ID or not YANDEX_CLIENT_SECRET:
+        raise HTTPException(status_code=503, detail={"code": "yandex_not_configured", "message": "Вход через Яндекс временно недоступен"})
+    try:
+        access_token = _yandex_exchange_code(data.code)
+        info = _yandex_userinfo(access_token)
+    except Exception:
+        raise HTTPException(status_code=502, detail={"code": "yandex_failed", "message": "Не удалось получить данные от Яндекса"})
+    yandex_id = str(info.get("id") or "")
+    with SessionLocal() as session:
+        user = session.get(User, user_id)
+    if user is None or not user.yandex_id or user.yandex_id != yandex_id:
+        raise HTTPException(status_code=403, detail={"code": "reauth_mismatch", "message": "Это другой Яндекс-аккаунт — войдите в тот, что привязан к профилю."})
+    return {"reauth_token": create_reauth_proof(user_id)}
+
+
+@router.post("/telegram/reauth")
+@limiter.limit("10/minute")
+def telegram_reauth(request: Request, data: TelegramAuthData, user_id: int = Depends(get_current_user_id)):
+    """Подтверждение Telegram-подписью: тот же telegram_id, что привязан."""
+    if not verify_telegram_auth(data):
+        raise HTTPException(status_code=401, detail="Неверная подпись Telegram")
+    with SessionLocal() as session:
+        user = session.get(User, user_id)
+    if user is None or user.telegram_id != data.id:
+        raise HTTPException(status_code=403, detail={"code": "reauth_mismatch", "message": "Это другой Telegram-аккаунт — войдите тем, что привязан к профилю."})
+    return {"reauth_token": create_reauth_proof(user_id)}

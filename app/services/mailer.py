@@ -37,9 +37,18 @@ def send_email(to: str, subject: str, text: str) -> None:
     msg["Subject"] = subject
     msg.set_content(text)
 
-    with smtplib.SMTP_SSL(host, port, context=ssl.create_default_context(), timeout=20) as smtp:
-        smtp.login(user, password)
-        smtp.send_message(msg)
+    context = ssl.create_default_context()
+    if port == 465:
+        # Неявный TLS: шифрование с первого байта.
+        with smtplib.SMTP_SSL(host, port, context=context, timeout=20) as smtp:
+            smtp.login(user, password)
+            smtp.send_message(msg)
+    else:
+        # 587 и прочие — STARTTLS: обычное соединение, апгрейд до TLS командой.
+        with smtplib.SMTP(host, port, timeout=20) as smtp:
+            smtp.starttls(context=context)
+            smtp.login(user, password)
+            smtp.send_message(msg)
 
 
 def send_email_background(to: str, subject: str, text: str) -> None:

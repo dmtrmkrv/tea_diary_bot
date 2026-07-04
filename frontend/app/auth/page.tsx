@@ -3,7 +3,8 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+// Через BFF-прокси: HttpOnly-куку ставит сервер, токен в JS не попадает.
+const API_URL = '/api';
 
 function AuthContent() {
   const router = useRouter();
@@ -24,8 +25,7 @@ function AuthContent() {
     })
       .then(res => res.json())
       .then(data => {
-        if (data.access_token) {
-          document.cookie = `token=${data.access_token}; path=/; max-age=${60 * 60 * 24 * 180}`;
+        if (data.ok) {
           router.push('/');
         } else {
           setStatus('error');

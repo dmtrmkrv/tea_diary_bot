@@ -70,12 +70,8 @@ export default function ChangePasswordSheet({
     }
     setSubmitting(true);
     try {
-      const { access_token } = await authChangePassword(current, next);
-      // Старые токены отозваны (token_version) — кладём свежий, чтобы
-      // текущее устройство осталось залогиненным.
-      if (access_token) {
-        document.cookie = `token=${access_token}; path=/; max-age=${60 * 60 * 24 * 180}`;
-      }
+      // Старые сессии отзываются (token_version); свежую куку ставит BFF-прокси.
+      await authChangePassword(current, next);
       onChanged();
     } catch (e) {
       const err = e as AuthError;

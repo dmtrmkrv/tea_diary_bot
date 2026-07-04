@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { authYandex, type AuthError } from '@/lib/apiClient';
 
 // Callback входа через Яндекс: Яндекс возвращает сюда ?code=… , меняем его на
-// сессию на бэке и кладём токен в куку.
+// сессию на бэке; HttpOnly-куку ставит BFF-прокси.
 export default function YandexCallbackPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -33,8 +33,7 @@ export default function YandexCallbackPage() {
     // Убираем code из URL, чтобы не остался в истории.
     window.history.replaceState(null, '', window.location.pathname);
     authYandex(code)
-      .then(({ access_token }) => {
-        document.cookie = `token=${access_token}; path=/; max-age=${60 * 60 * 24 * 180}`;
+      .then(() => {
         router.replace('/');
       })
       .catch((e: AuthError) => {

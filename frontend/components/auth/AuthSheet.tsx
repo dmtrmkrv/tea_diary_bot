@@ -14,10 +14,6 @@ const MIN_PASSWORD = 8;
 
 type Mode = 'login' | 'register';
 
-function setSessionCookie(token: string) {
-  document.cookie = `token=${token}; path=/; max-age=${60 * 60 * 24 * 180}`;
-}
-
 // Поле пароля с переключателем видимости («глазик»). Отдельно от Input,
 // чтобы не толпиться с его крестиком-очисткой.
 function PasswordInput({
@@ -95,10 +91,12 @@ export default function AuthSheet({
 
     setSubmitting(true);
     try {
-      const { access_token } = isRegister
-        ? await authRegister(mail, password, consented)
-        : await authLogin(mail, password);
-      setSessionCookie(access_token);
+      // Сессионную куку (HttpOnly) ставит BFF-прокси в ответе — тут только редирект.
+      if (isRegister) {
+        await authRegister(mail, password, consented);
+      } else {
+        await authLogin(mail, password);
+      }
       router.push('/');
     } catch (e) {
       const err = e as AuthError;

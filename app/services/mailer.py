@@ -12,6 +12,7 @@ import os
 import smtplib
 import ssl
 from email.message import EmailMessage
+from email.utils import formatdate, make_msgid
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,10 @@ def send_email(to: str, subject: str, text: str) -> None:
     msg["From"] = f"LeafPulse <{sender}>"
     msg["To"] = to
     msg["Subject"] = subject
+    # Date и Message-ID обязательны по RFC; без них спам-фильтры (особенно
+    # Gmail) сильно занижают доверие к письму.
+    msg["Date"] = formatdate(localtime=False)
+    msg["Message-ID"] = make_msgid(domain=sender.split("@")[-1] or None)
     msg.set_content(text)
 
     context = ssl.create_default_context()

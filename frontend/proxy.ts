@@ -22,6 +22,10 @@ export function proxy(request: NextRequest) {
   // нужен и для входа (токена ещё нет), и для будущей привязки (токен есть).
   if (pathname === '/auth/yandex/callback') return NextResponse.next();
 
+  // /reset-password — страница из письма сброса пароля. Пропускаем без
+  // проверок: открывают обычно без сессии, но валидна и с ней.
+  if (pathname === '/reset-password') return NextResponse.next();
+
   // «/» — публичная: без токена app/page.tsx показывает лендинг, с токеном — ленту.
   if (pathname === '/') return NextResponse.next();
 

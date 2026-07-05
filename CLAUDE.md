@@ -14,7 +14,7 @@ Locally, if no PostgreSQL env vars are set, the bot automatically uses SQLite at
 
 ## Environment
 
-Key env vars: `BOT_TOKEN`, `APP_ENV` (`production` or dev), `TZ`, PostgreSQL vars (`POSTGRESQL_HOST/PORT/DBNAME/USER/PASSWORD/SSLMODE`), `ADMINS` (comma/space/semicolon-separated Telegram user IDs), `MEDIA_BACKEND` (`local` or `s3`), S3 vars.
+Key env vars: `BOT_TOKEN`, `APP_ENV` (`production` or dev), `TZ`, PostgreSQL vars (`POSTGRESQL_HOST/PORT/DBNAME/USER/PASSWORD/SSLMODE`), `ADMINS` (comma/space/semicolon-separated Telegram user IDs), `MEDIA_BACKEND` (`local` or `s3`), S3 vars, SMTP vars for password-reset email (`SMTP_HOST/PORT/USER/PASSWORD`, optional `SMTP_FROM`).
 
 `APP_ENV` is not set → dev mode: `.env` is loaded, diagnostics router is always attached.  
 `APP_ENV=production` → `.env` is skipped; diagnostics disabled if `ADMINS` is empty.

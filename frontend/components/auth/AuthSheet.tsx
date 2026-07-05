@@ -2,12 +2,11 @@
 
 import { useState, type ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
 import { XIcon, EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { authLogin, authRegister, type AuthError } from '@/lib/apiClient';
+import { authForgotPassword, authLogin, authRegister, type AuthError } from '@/lib/apiClient';
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const MIN_PASSWORD = 8;
@@ -66,12 +65,40 @@ export default function AuthSheet({
   const [password2, setPassword2] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<{ text: string; offerRegister?: boolean } | null>(null);
+  // Сброс пароля — режимы внутри шторки входа: форма email → «письмо отправлено».
+  const [view, setView] = useState<'form' | 'forgot' | 'forgotSent'>('form');
 
   const isRegister = mode === 'register';
-  const title = isRegister ? 'Регистрация' : 'Вход по почте';
+  const isForgot = view !== 'form';
+  const title = isForgot ? 'Сброс пароля' : isRegister ? 'Регистрация' : 'Вход по почте';
   const submitLabel = isRegister ? 'Зарегистрироваться' : 'Войти';
   const canSubmit = email.trim() !== '' && password !== ''
     && (!isRegister || password2 !== '') && !submitting;
+
+  async function handleForgot() {
+    setError(null);
+    const mail = email.trim().toLowerCase();
+    if (!EMAIL_RE.test(mail)) {
+      setError({ text: 'Похоже, в почте опечатка. Проверьте адрес.' });
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await authForgotPassword(mail);
+      setView('forgotSent');
+    } catch (e) {
+      const err = e as AuthError;
+      if (err.code === 'mail_not_configured') {
+        setError({ text: 'Отправка почты временно недоступна. Напишите нам на info@leafpulse.ru.' });
+      } else if (err.status === 429) {
+        setError({ text: 'Слишком много запросов — попробуйте через час.' });
+      } else {
+        setError({ text: 'Не получилось отправить письмо. Попробуйте ещё раз.' });
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   async function handleSubmit() {
     setError(null);
@@ -138,6 +165,55 @@ export default function AuthSheet({
 
         <div className="h-px bg-border-default shrink-0" />
 
+        {view === 'forgotSent' ? (
+          <div className="px-4 pt-4 pb-6 flex flex-col gap-4">
+            <p className="text-[14px] leading-[20px] text-foreground">
+              Отправили ссылку для сброса пароля на <span className="font-semibold">{email.trim().toLowerCase()}</span>.
+              Ссылка действует 1 час. Если письма нет — проверьте папку «Спам».
+            </p>
+            <button
+              type="button"
+              onClick={onClose}
+              className="h-11 rounded-lg bg-primary text-[14px] font-medium text-primary-foreground"
+            >
+              Понятно
+            </button>
+          </div>
+        ) : view === 'forgot' ? (
+          <div className="px-4 pt-4 pb-6 flex flex-col gap-4">
+            <p className="text-[13px] leading-[18px] text-muted-foreground">
+              Укажите почту, на которую зарегистрирован аккаунт, — пришлём ссылку для смены пароля.
+            </p>
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-[14px] font-medium text-foreground">Адрес электронной почты</Label>
+              <Input
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); setError(null); }}
+                placeholder="you@example.com"
+              />
+            </div>
+            {error && (
+              <p className="text-[13px] leading-[18px] text-destructive">{error.text}</p>
+            )}
+            <button
+              type="button"
+              onClick={handleForgot}
+              disabled={email.trim() === '' || submitting}
+              className="h-11 rounded-lg bg-primary text-[14px] font-medium text-primary-foreground disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {submitting ? (<><Spinner className="size-4" />Минуту…</>) : 'Отправить ссылку'}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setView('form'); setError(null); }}
+              className="h-11 rounded-lg text-[14px] font-medium text-text-secondary"
+            >
+              Назад ко входу
+            </button>
+          </div>
+        ) : (
         <div className="px-4 pt-4 pb-6 flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <Label className="text-[14px] font-medium text-foreground">Адрес электронной почты</Label>
@@ -175,7 +251,7 @@ export default function AuthSheet({
           {!isRegister && (
             <button
               type="button"
-              onClick={() => toast('Сброс пароля скоро появится. Пока напишите нам на info@leafpulse.ru.')}
+              onClick={() => { setView('forgot'); setError(null); }}
               className="self-start text-[13px] font-medium text-accent-default"
             >
               Забыли пароль?
@@ -209,6 +285,7 @@ export default function AuthSheet({
             {submitting ? (<><Spinner className="size-4" />Минуту…</>) : submitLabel}
           </button>
         </div>
+        )}
       </div>
     </>
   );

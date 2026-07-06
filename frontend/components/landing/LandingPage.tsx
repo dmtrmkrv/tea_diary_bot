@@ -5,6 +5,7 @@
 // скрыть нижнюю навигацию приложения и её отступ.
 import Link from 'next/link';
 import { Source_Serif_4 } from 'next/font/google';
+import { FEEDBACK_EMAIL } from '@/lib/constants';
 import {
   BrowsersIcon,
   ChartPieIcon,
@@ -383,7 +384,7 @@ function LandingFooter() {
         </div>
         <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
           <a
-            href={`mailto:info@leafpulse.ru?subject=${encodeURIComponent('LeafPulse: сообщение об ошибке')}`}
+            href={`mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent('LeafPulse: сообщение об ошибке')}`}
             className="text-[10px] leading-4 text-[#78716c] underline"
           >
             Сообщить об ошибке

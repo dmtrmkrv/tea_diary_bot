@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { AppButton } from '@/components/ui/app-button';
 import { useCookieConsent, setStoredConsent } from '@/lib/cookieConsent';
 
 export default function CookieBanner() {
@@ -30,20 +31,23 @@ export default function CookieBanner() {
           </Link>.
         </p>
         <div className="flex gap-2">
-          <button
+          <AppButton
             type="button"
+            variant="secondary"
+            size="sm"
             onClick={() => setStoredConsent('necessary')}
-            className="flex-1 h-9 rounded-full bg-surface-sunken text-[13px] font-medium text-muted-foreground"
+            className="flex-1"
           >
             Только необходимые
-          </button>
-          <button
+          </AppButton>
+          <AppButton
             type="button"
+            size="sm"
             onClick={() => setStoredConsent('all')}
-            className="flex-1 h-9 rounded-full bg-primary text-[13px] font-medium text-primary-foreground"
+            className="flex-1"
           >
             Принять всё
-          </button>
+          </AppButton>
         </div>
       </div>
     </div>

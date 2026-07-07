@@ -44,6 +44,7 @@ import {
 import ConfirmDiscardDialog from '@/components/ConfirmDiscardDialog';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { compressImage } from '@/lib/imageCompression';
+import { AppButton } from '@/components/ui/app-button';
 import { Spinner } from '@/components/ui/spinner';
 
 const AROMA_OPTIONS = [
@@ -733,23 +734,24 @@ export default function TastingForm(props: TastingFormProps) {
 
       <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border-default z-40">
         <div className="max-w-2xl mx-auto p-4 flex gap-2">
-          <button
+          <AppButton
             type="button"
+            variant="secondary"
             onClick={() => confirmClose(() => router.push(backHref))}
-            className="w-[120px] shrink-0 h-10 rounded-full bg-surface-sunken text-[14px] font-medium text-muted-foreground"
+            className="w-[120px] shrink-0"
           >
             Отменить
-          </button>
-          <button
+          </AppButton>
+          <AppButton
             type="button"
             onClick={handleSave}
             disabled={!canSave}
-            className="flex-1 h-10 rounded-full bg-primary text-[14px] font-medium text-primary-foreground disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1"
           >
             {submitting
               ? (<><Spinner className="size-4" />Сохранение…</>)
               : (mode === 'edit' ? 'Сохранить изменения' : 'Сохранить дегустацию')}
-          </button>
+          </AppButton>
         </div>
       </div>
     </main>

@@ -1,5 +1,6 @@
 'use client';
 
+import { AppButton } from '@/components/ui/app-button';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 export default function ConfirmDiscardDialog({
@@ -32,20 +33,22 @@ export default function ConfirmDiscardDialog({
           Введённые данные будут потеряны
         </p>
         <div className="flex flex-col gap-2">
-          <button
+          <AppButton
             type="button"
+            variant="secondary"
             onClick={onCancel}
-            className="w-full h-11 rounded-full bg-surface-sunken text-[15px] font-medium text-foreground"
+            className="w-full"
           >
             Продолжить редактирование
-          </button>
-          <button
+          </AppButton>
+          <AppButton
             type="button"
+            variant="destructive-soft"
             onClick={onConfirm}
-            className="w-full h-11 rounded-full bg-button-destructive-bg text-[15px] font-medium text-destructive"
+            className="w-full"
           >
             Закрыть
-          </button>
+          </AppButton>
         </div>
       </div>
     </>

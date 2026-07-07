@@ -29,6 +29,13 @@ export function proxy(request: NextRequest) {
   // «/» — публичная: без токена app/page.tsx показывает лендинг, с токеном — ленту.
   if (pathname === '/') return NextResponse.next();
 
+  // /dev/* — дев-превью (кнопки и т.п.). Только локально: в проде сами
+  // страницы отдают notFound(), а без этого пропуска редирект на /login
+  // скрыл бы даже 404.
+  if (process.env.NODE_ENV !== 'production' && pathname.startsWith('/dev/')) {
+    return NextResponse.next();
+  }
+
   const isPublic = pathname === '/login' || pathname.startsWith('/auth');
 
   if (!token && !isPublic) {

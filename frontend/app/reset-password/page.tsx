@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import { Suspense, useState, type ChangeEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
+import { AppButton } from '@/components/ui/app-button';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { authResetPassword, type AuthError } from '@/lib/apiClient';
@@ -118,14 +119,13 @@ function ResetPasswordContent() {
           placeholder="Повторите пароль"
         />
         {error && <p className="text-[13px] leading-[18px] text-destructive">{error}</p>}
-        <button
+        <AppButton
           type="button"
           onClick={handleSubmit}
           disabled={next === '' || confirm === '' || submitting}
-          className="h-11 rounded-lg bg-primary text-[14px] font-medium text-primary-foreground disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {submitting ? (<><Spinner className="size-4" />Минуту…</>) : 'Сохранить и войти'}
-        </button>
+        </AppButton>
       </div>
     </main>
   );

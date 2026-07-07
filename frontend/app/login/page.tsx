@@ -8,6 +8,7 @@ import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import AuthSheet from '@/components/auth/AuthSheet';
 import LeafPulseLogo from '@/components/LeafPulseLogo';
+import { AppButton } from '@/components/ui/app-button';
 import { Spinner } from '@/components/ui/spinner';
 
 // Через BFF-прокси на своём домене (login-url — публичная ручка, токен не нужен).
@@ -102,25 +103,26 @@ export default function LoginPage() {
           </div>
 
           {/* Кнопка email */}
-          <button
+          <AppButton
             type="button"
             onClick={onEmail}
-            className={`w-full mt-4 h-11 rounded-lg bg-primary text-[14px] font-medium text-primary-foreground transition-opacity ${emailMuted ? 'opacity-50' : ''}`}
+            className={`w-full mt-4 ${emailMuted ? 'opacity-50' : ''}`}
           >
             {emailLabel}
-          </button>
+          </AppButton>
 
           <div className="w-full h-px bg-border-default my-4" />
 
           {/* Кнопка Яндекс */}
-          <button
+          <AppButton
             type="button"
+            variant="secondary"
             onClick={onYandex}
             disabled={yandexLoading}
-            className={`w-full h-11 rounded-lg border border-border-default bg-background text-[14px] font-medium text-foreground transition-opacity flex items-center justify-center gap-2 ${yandexMuted ? 'opacity-50' : ''}`}
+            className={`w-full ${yandexMuted ? 'opacity-50' : ''}`}
           >
             {yandexLoading ? (<><Spinner className="size-4" />Минуту…</>) : 'Войти через Яндекс'}
-          </button>
+          </AppButton>
 
           {/* Согласие */}
           <label

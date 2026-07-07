@@ -12,6 +12,7 @@ import {
   TrophyIcon,
 } from '@phosphor-icons/react';
 import { toast } from 'sonner';
+import { AppButton } from '@/components/ui/app-button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getMe, getMyStats, updateMyName, type Me, type MyStats } from '@/lib/apiClient';
 
@@ -218,13 +219,14 @@ export default function ProfilePage() {
         </div>
 
         {/* Выйти */}
-        <button
+        <AppButton
           type="button"
+          variant="secondary"
           onClick={logout}
-          className="w-full mt-4 min-h-[40px] flex items-center justify-center px-6 py-[10px] rounded-full bg-surface-muted border border-border-strong shadow-xs text-[14px] font-medium text-text-secondary"
+          className="w-full mt-4"
         >
           Выйти
-        </button>
+        </AppButton>
       </div>
     </main>
   );

@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import RichRadioGroup from '@/components/form/RichRadioGroup';
 import { createTeaItem, uploadTeaItemPhoto, type TeaItem } from '@/lib/apiClient';
 import { compressImage } from '@/lib/imageCompression';
+import { AppButton } from '@/components/ui/app-button';
 import { Spinner } from '@/components/ui/spinner';
 import ConfirmDiscardDialog from '@/components/ConfirmDiscardDialog';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
@@ -298,21 +299,22 @@ export default function AddTeaSheet({
         </div>
 
         <div className="flex gap-2 p-4 border-t border-border-default bg-card">
-          <button
+          <AppButton
             type="button"
+            variant="secondary"
             onClick={handleClose}
-            className="w-[120px] shrink-0 h-10 rounded-full bg-surface-sunken text-[14px] font-medium text-muted-foreground"
+            className="w-[120px] shrink-0"
           >
             Отменить
-          </button>
-          <button
+          </AppButton>
+          <AppButton
             type="button"
             onClick={handleSave}
             disabled={!canSave}
-            className="flex-1 h-10 rounded-full bg-primary text-[14px] font-medium text-primary-foreground disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1"
           >
             {submitting ? (<><Spinner className="size-4" />Сохранение…</>) : 'Сохранить чай'}
-          </button>
+          </AppButton>
         </div>
       </div>
     </>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { XIcon, CheckCircleIcon } from '@phosphor-icons/react';
+import { AppButton } from '@/components/ui/app-button';
 import { Spinner } from '@/components/ui/spinner';
 import {
   deleteMyAccount,
@@ -111,22 +112,22 @@ export default function DeleteAccountSheet({
                 Для удаления подтвердите, что аккаунт ваш:
               </p>
               {me.has_yandex && (
-                <button
+                <AppButton
                   type="button"
+                  variant="secondary"
                   onClick={() => startReauth('yandex')}
-                  className="h-11 rounded-lg border border-border-input bg-surface-input text-[14px] font-medium text-foreground"
                 >
                   Подтвердить через Яндекс
-                </button>
+                </AppButton>
               )}
               {me.has_telegram && (
-                <button
+                <AppButton
                   type="button"
+                  variant="secondary"
                   onClick={() => startReauth('telegram')}
-                  className="h-11 rounded-lg border border-border-input bg-surface-input text-[14px] font-medium text-foreground"
                 >
                   Подтвердить через Telegram
-                </button>
+                </AppButton>
               )}
             </div>
           )}
@@ -145,21 +146,17 @@ export default function DeleteAccountSheet({
 
           {error && <p className="text-[13px] leading-[18px] text-destructive">{error}</p>}
 
-          <button
+          <AppButton
             type="button"
+            variant="destructive-solid"
             onClick={handleDelete}
             disabled={!canDelete}
-            className="h-11 rounded-lg bg-status-destructive text-[14px] font-medium text-status-destructive-foreground disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {submitting ? (<><Spinner className="size-4" />Удаляем…</>) : 'Удалить аккаунт навсегда'}
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="h-11 rounded-lg text-[14px] font-medium text-text-secondary"
-          >
+          </AppButton>
+          <AppButton type="button" variant="ghost" onClick={onClose}>
             Отмена
-          </button>
+          </AppButton>
         </div>
       </div>
     </>

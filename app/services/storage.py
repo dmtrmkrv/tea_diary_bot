@@ -74,8 +74,9 @@ def validate_image_upload(body: bytes) -> str:
 
 
 # Параметры миниатюр для списков (лента, коллекция): WEBP, длинная сторона
-# 640 px, качество 78 — ~40–90 КБ вместо 2–3.5 МБ оригинала.
-THUMB_MAX_SIDE = 640
+# 800 px (хватает на 2x-ретину при ширине карточки ~375 CSS px), качество 78 —
+# ~60–130 КБ вместо 2–3.5 МБ оригинала.
+THUMB_MAX_SIDE = 800
 THUMB_QUALITY = 78
 THUMB_CONTENT_TYPE = "image/webp"
 

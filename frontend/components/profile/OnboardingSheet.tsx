@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { XIcon, CaretLeftIcon, CaretRightIcon, ImageSquareIcon } from '@phosphor-icons/react';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { AppButton } from '@/components/ui/app-button';
 import { startTelegramClaim } from '@/lib/apiClient';
 
 /**
@@ -146,14 +147,15 @@ export default function OnboardingSheet({
             </p>
             {slide.claim && (
               <div className="flex gap-3 pt-3">
-                <button
+                <AppButton
                   type="button"
+                  variant="secondary"
                   onClick={handleClose}
-                  className="flex-1 h-11 rounded-full bg-surface-input text-foreground text-[14px] font-medium"
+                  className="flex-1"
                 >
                   Пропустить
-                </button>
-                <button
+                </AppButton>
+                <AppButton
                   type="button"
                   onClick={async () => {
                     try {
@@ -162,10 +164,10 @@ export default function OnboardingSheet({
                       toast.error('Не удалось начать перенос. Попробуйте позже.');
                     }
                   }}
-                  className="flex-1 h-11 rounded-full bg-primary text-primary-foreground text-[14px] font-medium"
+                  className="flex-1"
                 >
                   Перенести записи
-                </button>
+                </AppButton>
               </div>
             )}
           </div>

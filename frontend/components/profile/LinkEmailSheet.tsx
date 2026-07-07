@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { XIcon, EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
+import { AppButton } from '@/components/ui/app-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
@@ -139,14 +140,9 @@ export default function LinkEmailSheet({
             <p className="text-[13px] leading-[18px] text-destructive">{error}</p>
           )}
 
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-            className="h-11 rounded-lg bg-primary text-[14px] font-medium text-primary-foreground disabled:opacity-50 flex items-center justify-center gap-2"
-          >
+          <AppButton type="button" onClick={handleSubmit} disabled={!canSubmit}>
             {submitting ? (<><Spinner className="size-4" />Минуту…</>) : 'Добавить'}
-          </button>
+          </AppButton>
         </div>
       </div>
     </>

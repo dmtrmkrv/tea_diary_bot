@@ -1,5 +1,6 @@
 'use client';
 
+import { AppButton } from '@/components/ui/app-button';
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -338,22 +339,23 @@ export default function TeaDetailSheet({
         </div>
 
         <div className="flex gap-2 p-4 border-t border-border-default bg-card shrink-0">
-          <button
+          <AppButton
             type="button"
+            variant="secondary"
             onClick={onClose}
-            className="w-[120px] shrink-0 h-10 rounded-full bg-surface-sunken text-[14px] font-medium text-muted-foreground"
+            className="w-[120px] shrink-0"
           >
             Закрыть
-          </button>
-          <button
+          </AppButton>
+          <AppButton
             type="button"
             onClick={() => {
               if (item) router.push(`/new?tea_item_id=${item.id}`);
             }}
-            className="flex-1 h-10 rounded-full bg-primary text-[14px] font-medium text-primary-foreground"
+            className="flex-1"
           >
             Новая дегустация
-          </button>
+          </AppButton>
         </div>
       </div>
 

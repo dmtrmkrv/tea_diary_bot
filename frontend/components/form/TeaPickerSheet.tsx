@@ -1,5 +1,6 @@
 'use client';
 
+import { AppButton } from '@/components/ui/app-button';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { MagnifyingGlassIcon, PlusIcon, XIcon, LeafIcon } from '@phosphor-icons/react';
@@ -136,21 +137,22 @@ export default function TeaPickerSheet({
 
         {/* Footer */}
         <div className="flex gap-2 p-4 border-t border-border-default bg-card shrink-0">
-          <button
+          <AppButton
             type="button"
+            variant="secondary"
             onClick={onClose}
-            className="w-[120px] shrink-0 h-10 rounded-full bg-surface-sunken text-[14px] font-medium text-muted-foreground"
+            className="w-[120px] shrink-0"
           >
             Отменить
-          </button>
-          <button
+          </AppButton>
+          <AppButton
             type="button"
             onClick={() => { if (selected) onSelect(selected); }}
             disabled={!selected}
-            className="flex-1 h-10 rounded-full bg-primary text-[14px] font-medium text-primary-foreground disabled:opacity-50"
+            className="flex-1"
           >
             Выбрать
-          </button>
+          </AppButton>
         </div>
       </div>
     </>

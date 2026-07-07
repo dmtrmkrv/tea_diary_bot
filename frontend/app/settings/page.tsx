@@ -11,6 +11,7 @@ import OnboardingSheet from '@/components/profile/OnboardingSheet';
 import LinkEmailSheet from '@/components/profile/LinkEmailSheet';
 import ChangePasswordSheet from '@/components/profile/ChangePasswordSheet';
 import DeleteAccountSheet from '@/components/profile/DeleteAccountSheet';
+import { AppButton } from '@/components/ui/app-button';
 import { getMe, downloadTastingsCsv, startTelegramClaim, type Me } from '@/lib/apiClient';
 import { FEEDBACK_EMAIL } from '@/lib/constants';
 
@@ -117,13 +118,14 @@ function SettingsContent() {
           <Card rows={serviceRows} />
 
           {/* Удаление аккаунта */}
-          <button
+          <AppButton
             type="button"
+            variant="destructive-soft"
             onClick={() => setSheet('deleteAccount')}
-            className="w-full min-h-[40px] flex items-center justify-center px-6 py-[10px] rounded-full bg-button-destructive-bg border border-text-destructive shadow-xs text-[14px] font-medium text-text-destructive"
+            className="w-full"
           >
             Удалить аккаунт
-          </button>
+          </AppButton>
         </div>
       </div>
 

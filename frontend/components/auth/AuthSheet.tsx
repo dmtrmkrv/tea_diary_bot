@@ -3,6 +3,7 @@
 import { useState, type ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { XIcon, EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
+import { AppButton } from '@/components/ui/app-button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
@@ -172,13 +173,9 @@ export default function AuthSheet({
               Отправили ссылку для сброса пароля на <span className="font-semibold">{email.trim().toLowerCase()}</span>.
               Ссылка действует 1 час. Если письма нет — проверьте папку «Спам».
             </p>
-            <button
-              type="button"
-              onClick={onClose}
-              className="h-11 rounded-lg bg-primary text-[14px] font-medium text-primary-foreground"
-            >
+            <AppButton type="button" onClick={onClose}>
               Понятно
-            </button>
+            </AppButton>
           </div>
         ) : view === 'forgot' ? (
           <div className="px-4 pt-4 pb-6 flex flex-col gap-4">
@@ -198,21 +195,20 @@ export default function AuthSheet({
             {error && (
               <p className="text-[13px] leading-[18px] text-destructive">{error.text}</p>
             )}
-            <button
+            <AppButton
               type="button"
               onClick={handleForgot}
               disabled={email.trim() === '' || submitting}
-              className="h-11 rounded-lg bg-primary text-[14px] font-medium text-primary-foreground disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {submitting ? (<><Spinner className="size-4" />Минуту…</>) : 'Отправить ссылку'}
-            </button>
-            <button
+            </AppButton>
+            <AppButton
               type="button"
+              variant="ghost"
               onClick={() => { setView('form'); setError(null); }}
-              className="h-11 rounded-lg text-[14px] font-medium text-text-secondary"
             >
               Назад ко входу
-            </button>
+            </AppButton>
           </div>
         ) : (
         <div className="px-4 pt-4 pb-6 flex flex-col gap-4">
@@ -277,14 +273,9 @@ export default function AuthSheet({
             </p>
           )}
 
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-            className="h-11 rounded-lg bg-primary text-[14px] font-medium text-primary-foreground disabled:opacity-50 flex items-center justify-center gap-2"
-          >
+          <AppButton type="button" onClick={handleSubmit} disabled={!canSubmit}>
             {submitting ? (<><Spinner className="size-4" />Минуту…</>) : submitLabel}
-          </button>
+          </AppButton>
         </div>
         )}
       </div>

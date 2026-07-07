@@ -1,5 +1,6 @@
 'use client';
 
+import { AppButton } from '@/components/ui/app-button';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 
 /**
@@ -44,20 +45,22 @@ export default function ConfirmDeleteDialog({
           </p>
         )}
         <div className="flex flex-col gap-2 mt-2">
-          <button
+          <AppButton
             type="button"
+            variant="secondary"
             onClick={onCancel}
-            className="w-full h-11 rounded-full bg-surface-sunken text-[15px] font-medium text-foreground"
+            className="w-full"
           >
             Отменить
-          </button>
-          <button
+          </AppButton>
+          <AppButton
             type="button"
+            variant="destructive-soft"
             onClick={onConfirm}
-            className="w-full h-11 rounded-full bg-button-destructive-bg text-[15px] font-medium text-destructive"
+            className="w-full"
           >
             {confirmLabel}
-          </button>
+          </AppButton>
         </div>
       </div>
     </>

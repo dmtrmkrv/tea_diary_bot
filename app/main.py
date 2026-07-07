@@ -5193,6 +5193,7 @@ async def del_ok_cb(call: CallbackQuery):
 
         for photo in s.query(Photo).filter(Photo.tasting_id == t.id).all():
             delete_object(photo.object_key, photo.storage_backend)
+            delete_object(photo.thumb_object_key, photo.storage_backend)
         s.delete(t)
         s.commit()
     await call.message.answer(f"Удалил #{t.seq_no}.")

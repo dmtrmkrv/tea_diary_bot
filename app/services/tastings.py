@@ -116,6 +116,7 @@ def create_tasting(
                                 file_id=telegram_file_id,
                                 storage_backend=result.storage_backend,
                                 object_key=result.object_key,
+                                thumb_object_key=result.thumb_object_key,
                                 content_type=result.content_type,
                                 size_bytes=result.size_bytes,
                                 telegram_file_id=telegram_file_id,

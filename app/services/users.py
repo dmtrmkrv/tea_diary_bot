@@ -292,35 +292,30 @@ def delete_user(user_id: int) -> None:
             return
         # Ключи собираем ДО удаления — после каскада строк уже не будет.
         photo_rows = session.execute(
-            select(Photo.object_key, Photo.storage_backend)
+            select(Photo.object_key, Photo.thumb_object_key, Photo.storage_backend)
             .join(Tasting, Photo.tasting_id == Tasting.id)
             .where(Tasting.user_id == user_id, Photo.object_key.isnot(None))
         ).all()
-        tea_covers = (
-            session.execute(
-                select(TeaItem.cover_object_key).where(
-                    TeaItem.user_id == user_id, TeaItem.cover_object_key.isnot(None)
-                )
+        tea_covers = session.execute(
+            select(TeaItem.cover_object_key, TeaItem.cover_thumb_object_key).where(
+                TeaItem.user_id == user_id, TeaItem.cover_object_key.isnot(None)
             )
-            .scalars()
-            .all()
-        )
-        teaware_covers = (
-            session.execute(
-                select(Teaware.cover_object_key).where(
-                    Teaware.user_id == user_id, Teaware.cover_object_key.isnot(None)
-                )
+        ).all()
+        teaware_covers = session.execute(
+            select(Teaware.cover_object_key, Teaware.cover_thumb_object_key).where(
+                Teaware.user_id == user_id, Teaware.cover_object_key.isnot(None)
             )
-            .scalars()
-            .all()
-        )
+        ).all()
         session.delete(user)
         session.commit()
 
     # Файлы — ПОСЛЕ коммита БД (best-effort; осиротевший файл не критичен).
-    for object_key, backend in photo_rows:
+    for object_key, thumb_key, backend in photo_rows:
         delete_object(object_key, backend or "s3")
-    for object_key in tea_covers:
+        delete_object(thumb_key, backend or "s3")
+    for object_key, thumb_key in tea_covers:
         delete_object(object_key)
-    for object_key in teaware_covers:
+        delete_object(thumb_key)
+    for object_key, thumb_key in teaware_covers:
         delete_object(object_key)
+        delete_object(thumb_key)

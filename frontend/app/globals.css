@@ -213,8 +213,8 @@
 
   /* --- Accent --- */
   --accent-default: #d97706;     /* amber-600, brighter brand in dark */
-  --accent-hover: #fcd34d;       /* amber-300, hover goes lighter in dark */
-  --accent-pressed: #fde68a;     /* amber-200 */
+  --accent-hover: #b45309;       /* amber-700, hover темнее (как в светлой; светлее — слишком ярко на CTA) */
+  --accent-pressed: #92400e;     /* amber-800 */
   --accent-disabled: #44403c;    /* stone-700 */
   --accent-muted: #f59e0b;       /* amber-500 */
 

@@ -185,7 +185,10 @@ def list_tastings(
             item.tea_item_region = tea_item.region
             if tea_item.cover_object_key:
                 try:
-                    item.tea_item_cover_url = get_presigned_url(tea_item.cover_object_key)
+                    # Миниатюра для списка; у старых обложек её нет — оригинал
+                    item.tea_item_cover_url = get_presigned_url(
+                        tea_item.cover_thumb_object_key or tea_item.cover_object_key
+                    )
                 except Exception:
                     pass
         result.append(item)
@@ -203,7 +206,10 @@ def list_tastings(
         for p in photos:
             if p.tasting_id not in cover_map:
                 try:
-                    cover_map[p.tasting_id] = get_presigned_url(p.object_key)
+                    # Миниатюра для ленты; у старых фото её нет — оригинал
+                    cover_map[p.tasting_id] = get_presigned_url(
+                        p.thumb_object_key or p.object_key
+                    )
                 except Exception:
                     pass
         for item in result:
@@ -408,7 +414,10 @@ def get_tasting(
             result.tea_item_amount_g = tea_item.amount_g
             if tea_item.cover_object_key:
                 try:
-                    result.tea_item_cover_url = get_presigned_url(tea_item.cover_object_key)
+                    # Обложка на детальной — маленький чип, миниатюры достаточно
+                    result.tea_item_cover_url = get_presigned_url(
+                        tea_item.cover_thumb_object_key or tea_item.cover_object_key
+                    )
                 except Exception:
                     pass
 
@@ -422,7 +431,9 @@ def get_tasting(
             result.teaware_region = teaware.region
             if teaware.cover_object_key:
                 try:
-                    result.teaware_cover_url = get_presigned_url(teaware.cover_object_key)
+                    result.teaware_cover_url = get_presigned_url(
+                        teaware.cover_thumb_object_key or teaware.cover_object_key
+                    )
                 except Exception:
                     pass
 
@@ -539,6 +550,7 @@ def delete_tasting_api(
     ).scalars().all()
     for photo in photos:
         delete_object(photo.object_key, photo.storage_backend)
+        delete_object(photo.thumb_object_key, photo.storage_backend)
 
     db.delete(tasting)
     db.commit()
@@ -581,6 +593,7 @@ async def upload_tasting_photos(
                 file_id=saved.object_key or "",
                 storage_backend=saved.storage_backend,
                 object_key=saved.object_key,
+                thumb_object_key=saved.thumb_object_key,
                 content_type=saved.content_type,
                 size_bytes=saved.size_bytes,
             )
@@ -611,8 +624,10 @@ def delete_tasting_photo(
     # Сбой удаления файла оставит лишь осиротевший объект в S3 (мусор), что
     # безопаснее для пользователя.
     object_key = photo.object_key
+    thumb_object_key = photo.thumb_object_key
     storage_backend = photo.storage_backend
     db.delete(photo)
     db.commit()
     delete_object(object_key, storage_backend)
+    delete_object(thumb_object_key, storage_backend)
     return {"ok": True}

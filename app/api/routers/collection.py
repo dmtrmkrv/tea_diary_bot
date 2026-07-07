@@ -149,7 +149,9 @@ def list_tea(
         out.tasting_count = counts.get(item.id, 0)
         if item.cover_object_key:
             try:
-                out.cover_url = get_presigned_url(item.cover_object_key)
+                out.cover_url = get_presigned_url(
+                    item.cover_thumb_object_key or item.cover_object_key
+                )
             except Exception:
                 pass
         result.append(out)
@@ -201,10 +203,13 @@ async def upload_tea_photo(
             status_code=413 if exc.code == "file_too_large" else 400,
             detail={"code": exc.code, "message": exc.message},
         )
-    # Старый cover больше не нужен — чистим из хранилища
+    # Старый cover больше не нужен — чистим из хранилища (вместе с миниатюрой)
     if item.cover_object_key and item.cover_object_key != saved.object_key:
         delete_object(item.cover_object_key)
+    if item.cover_thumb_object_key and item.cover_thumb_object_key != saved.thumb_object_key:
+        delete_object(item.cover_thumb_object_key)
     item.cover_object_key = saved.object_key
+    item.cover_thumb_object_key = saved.thumb_object_key
     db.commit()
     db.refresh(item)
 
@@ -284,7 +289,9 @@ def list_tea_tastings(
         for p in photos:
             if p.tasting_id not in cover_map:
                 try:
-                    cover_map[p.tasting_id] = get_presigned_url(p.object_key)
+                    cover_map[p.tasting_id] = get_presigned_url(
+                        p.thumb_object_key or p.object_key
+                    )
                 except Exception:
                     pass
         for item in items:
@@ -303,6 +310,7 @@ def delete_tea(
     if not item or item.user_id != user_id:
         raise HTTPException(status_code=404, detail="Не найдено")
     delete_object(item.cover_object_key)
+    delete_object(item.cover_thumb_object_key)
     db.delete(item)
     db.commit()
     return {"ok": True}
@@ -351,7 +359,9 @@ def list_teaware(
         out.tasting_count = counts.get(item.id, 0)
         if item.cover_object_key:
             try:
-                out.cover_url = get_presigned_url(item.cover_object_key)
+                out.cover_url = get_presigned_url(
+                    item.cover_thumb_object_key or item.cover_object_key
+                )
             except Exception:
                 pass
         result.append(out)
@@ -403,10 +413,13 @@ async def upload_teaware_photo(
             status_code=413 if exc.code == "file_too_large" else 400,
             detail={"code": exc.code, "message": exc.message},
         )
-    # Старый cover больше не нужен — чистим из хранилища
+    # Старый cover больше не нужен — чистим из хранилища (вместе с миниатюрой)
     if item.cover_object_key and item.cover_object_key != saved.object_key:
         delete_object(item.cover_object_key)
+    if item.cover_thumb_object_key and item.cover_thumb_object_key != saved.thumb_object_key:
+        delete_object(item.cover_thumb_object_key)
     item.cover_object_key = saved.object_key
+    item.cover_thumb_object_key = saved.thumb_object_key
     db.commit()
     db.refresh(item)
 
@@ -460,7 +473,9 @@ def list_teaware_tastings(
         for p in photos:
             if p.tasting_id not in cover_map:
                 try:
-                    cover_map[p.tasting_id] = get_presigned_url(p.object_key)
+                    cover_map[p.tasting_id] = get_presigned_url(
+                        p.thumb_object_key or p.object_key
+                    )
                 except Exception:
                     pass
         for short in items:
@@ -479,6 +494,7 @@ def delete_teaware(
     if not item or item.user_id != user_id:
         raise HTTPException(status_code=404, detail="Не найдено")
     delete_object(item.cover_object_key)
+    delete_object(item.cover_thumb_object_key)
     db.delete(item)
     db.commit()
     return {"ok": True}

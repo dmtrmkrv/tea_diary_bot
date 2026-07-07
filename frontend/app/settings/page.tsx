@@ -12,8 +12,7 @@ import LinkEmailSheet from '@/components/profile/LinkEmailSheet';
 import ChangePasswordSheet from '@/components/profile/ChangePasswordSheet';
 import DeleteAccountSheet from '@/components/profile/DeleteAccountSheet';
 import { getMe, downloadTastingsCsv, startTelegramClaim, type Me } from '@/lib/apiClient';
-
-const FEEDBACK_EMAIL = 'info@leafpulse.ru';
+import { FEEDBACK_EMAIL } from '@/lib/constants';
 
 type Sheet = 'theme' | 'onboarding' | 'linkEmail' | 'changePassword' | 'deleteAccount' | null;
 type Row = { key: string; label: string; value?: string; onClick?: () => void };

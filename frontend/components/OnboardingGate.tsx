@@ -16,10 +16,11 @@ export default function OnboardingGate() {
 
   useEffect(() => {
     if (localStorage.getItem(SEEN_KEY)) return; // уже видел онбординг
-    localStorage.setItem(SEEN_KEY, '1'); // показываем один раз
+    // Флаг «показано» ставим в момент фактического открытия шторки, а не до
+    // запроса: иначе закрытая во время getMe() вкладка = онбординг потерян.
     getMe()
-      .then((m) => { setMe(m); setOpen(true); })
-      .catch(() => setOpen(true)); // профиль не подтянулся — покажем без claim-слайда
+      .then((m) => { setMe(m); localStorage.setItem(SEEN_KEY, '1'); setOpen(true); })
+      .catch(() => { localStorage.setItem(SEEN_KEY, '1'); setOpen(true); }); // без claim-слайда
   }, []);
 
   if (!open) return null;

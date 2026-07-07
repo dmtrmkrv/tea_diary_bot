@@ -53,7 +53,19 @@ Migration files are in `alembic/versions/`.
 
 **Photo storage**: Photos are downloaded from Telegram and stored either locally (`MEDIA_DIR`, default `/app/media`) or in S3. The `Photo` model tracks `storage_backend`, `object_key`, `telegram_file_id`.
 
-**Deployment**: Timeweb Cloud Docker deploy via `Dockerfile` + `entrypoint.sh`. The entrypoint runs Alembic migrations then starts the bot. `MAINTENANCE=1` skips both and keeps the container alive for console access.
+**Deployment**: Timeweb Cloud Docker deploy via `Dockerfile` + `entrypoint.sh`. The entrypoint runs Alembic migrations, then starts the FastAPI server (uvicorn :8000) and the bot in one container. `DISABLE_BOT=1` runs API only (staging); `MAINTENANCE=1` skips everything and keeps the container alive for console access. Prod deploys only from `main`, staging from `staging`; redeploys are manual (backend first, then frontend).
+
+## Web app (API + frontend)
+
+**API** (`app/api/`): FastAPI routers in `app/api/routers/` + `auth_router.py`. Every authenticated route depends on `get_current_user_id` (`app/api/auth.py`): Bearer JWT, rejects single-purpose tokens (`purpose` claim), and checks the `tv` claim against `users.token_version` in the DB on every request — bumping `token_version` (password change/reset) instantly revokes all sessions of a user.
+
+**Auth model**: one `User` row with optional identifiers — `telegram_id`, `email`+`password_hash` (argon2id), `yandex_id`. Login = email+password or Yandex OAuth; Telegram is only a one-time in-app claim (merges bot records into the account). Password reset by email: `password_resets` table stores SHA-256 hashes of one-time tokens (TTL 1 h); reset revokes all sessions. Account deletion (`DELETE /users/me`) requires the current password, or for OAuth-only accounts a 5-minute re-auth proof from `/auth/yandex/reauth` / `/auth/telegram/reauth`.
+
+**Frontend** (`frontend/`, Next.js App Router, SSR): before writing any code read `frontend/AGENTS.md` — the Next.js version differs from training data. The session is a JWT in an **HttpOnly cookie `token`**; the token must never be read or written in client JS. All browser requests go same-origin through the BFF proxy `frontend/app/api/[...path]/route.ts`, which reads the cookie, attaches `Authorization: Bearer`, forwards to the backend (`API_URL` env, falls back to staging), forwards `X-Forwarded-For` (rate limiting depends on it), and intercepts `access_token`/`reauth_token` from auth responses into HttpOnly cookies. `frontend/proxy.ts` (middleware) gates routes by cookie presence; `lib/api.ts` = server-side fetch (reads the cookie via `cookies()`), `lib/apiClient.ts` = client fetch through `/api`.
+
+**Rate limiting** (`app/api/ratelimit.py`): slowapi keyed by the first `X-Forwarded-For` address + an in-memory per-email failed-login counter (single uvicorn worker by design).
+
+**Mail** (`app/services/mailer.py`): SMTP via `SMTP_*` env — port 465 = implicit SSL, anything else = STARTTLS. Note: outbound SMTP ports on Timeweb Apps are blocked by default; support unblocked them for both staging and prod apps.
 
 ## Язык общения
 Всегда отвечай на русском языке.

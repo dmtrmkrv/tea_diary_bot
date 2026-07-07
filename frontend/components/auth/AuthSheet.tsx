@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { authForgotPassword, authLogin, authRegister, type AuthError } from '@/lib/apiClient';
+import { FEEDBACK_EMAIL } from '@/lib/constants';
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const MIN_PASSWORD = 8;
@@ -89,7 +90,7 @@ export default function AuthSheet({
     } catch (e) {
       const err = e as AuthError;
       if (err.code === 'mail_not_configured') {
-        setError({ text: 'Отправка почты временно недоступна. Напишите нам на info@leafpulse.ru.' });
+        setError({ text: `Отправка почты временно недоступна. Напишите нам на ${FEEDBACK_EMAIL}.` });
       } else if (err.status === 429) {
         setError({ text: 'Слишком много запросов — попробуйте через час.' });
       } else {

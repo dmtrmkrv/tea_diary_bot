@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -32,12 +32,21 @@ export default function BottomNav() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
+  // Лендинг живёт на «/» (как и лента) — основной способ скрыть меню там
+  // это CSS body:has([data-landing]) в globals.css. Этот JS — фолбэк для
+  // браузеров без :has (старые Android WebView / Firefox), где иначе меню
+  // висело бы поверх лендинга.
+  const [onLanding, setOnLanding] = useState(false);
+  useEffect(() => {
+    setOnLanding(!!document.querySelector('[data-landing]'));
+  }, [pathname]);
 
   if (
     pathname === '/login' || pathname.startsWith('/auth')
     || pathname === '/new' || pathname.endsWith('/edit')
     || pathname === '/privacy'
     || pathname === '/link-telegram'
+    || onLanding
   ) return null;
 
   function openSheet(name: 'tea' | 'teaware') {

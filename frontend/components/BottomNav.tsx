@@ -22,9 +22,10 @@ type AddAction =
   | { kind: 'sheet'; label: string; sheet: 'tea' | 'teaware' };
 
 const addActions: AddAction[] = [
-  { kind: 'link',  label: 'Дегустацию', href: '/new'      },
-  { kind: 'sheet', label: 'Посуду',     sheet: 'teaware'  },
-  { kind: 'sheet', label: 'Чай',        sheet: 'tea'      },
+  { kind: 'sheet', label: 'Чай',             sheet: 'tea'     },
+  { kind: 'sheet', label: 'Посуду',          sheet: 'teaware' },
+  { kind: 'link',  label: 'Дегустацию',      href: '/new'     },
+  { kind: 'link',  label: 'Быструю заметку', href: '/quick'   },
 ];
 
 export default function BottomNav() {
@@ -43,7 +44,7 @@ export default function BottomNav() {
 
   if (
     pathname === '/login' || pathname.startsWith('/auth')
-    || pathname === '/new' || pathname.endsWith('/edit')
+    || pathname === '/new' || pathname === '/quick' || pathname.endsWith('/edit')
     || pathname === '/privacy'
     || pathname === '/link-telegram'
     || onLanding

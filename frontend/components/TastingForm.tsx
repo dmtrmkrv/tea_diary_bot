@@ -42,17 +42,11 @@ import {
   type Teaware,
 } from '@/lib/apiClient';
 import ConfirmDiscardDialog from '@/components/ConfirmDiscardDialog';
+import { AROMA_OPTIONS, EFFECTS_OPTIONS } from '@/lib/constants';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { compressImage } from '@/lib/imageCompression';
 import { AppButton } from '@/components/ui/app-button';
 import { Spinner } from '@/components/ui/spinner';
-
-const AROMA_OPTIONS = [
-  'Хлебный', 'Кондитерский', 'Ореховый', 'Сухофрукты',
-  'Цветочный', 'Ягодный', 'Фруктовый', 'Травянистый',
-  'Овощной', 'Пряный', 'Древесный', 'Землистый',
-  'Дымный', 'Минеральный',
-];
 
 const TASTE_OPTIONS = AROMA_OPTIONS;
 
@@ -64,11 +58,6 @@ const AFTERTASTE_OPTIONS = [
 ];
 
 const BODY_OPTIONS = ['Тонкое', 'Лёгкое', 'Среднее', 'Плотное', 'Маслянистое'];
-
-const EFFECTS_OPTIONS = [
-  'Тепло', 'Охлаждение', 'Расслабление', 'Фокус',
-  'Бодрость', 'Тонус', 'Спокойствие', 'Сонливость',
-];
 
 const SCENARIOS_OPTIONS = ['Отдых', 'Работа/учеба', 'Творчество', 'Медитация', 'Общение', 'Прогулка'];
 

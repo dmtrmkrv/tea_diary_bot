@@ -29,6 +29,7 @@ import {
   type Teaware,
 } from '@/lib/apiClient';
 import ConfirmDiscardDialog from '@/components/ConfirmDiscardDialog';
+import { cn } from '@/lib/utils';
 import { AROMA_OPTIONS, EFFECTS_OPTIONS } from '@/lib/constants';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { compressImage } from '@/lib/imageCompression';
@@ -45,7 +46,7 @@ import { Spinner } from '@/components/ui/spinner';
 // Превью выбранных тегов для свёрнутого заголовка аккордеона.
 function tagsPreview(state: RichCheckboxState): string {
   const parts = [...state.selected];
-  if (state.other.trim()) parts.push(state.other.trim());
+  if (state.otherEnabled && state.other.trim()) parts.push(state.other.trim());
   return parts.join(', ');
 }
 
@@ -65,11 +66,11 @@ export default function QuickNoteForm() {
   const [rating, setRating] = useState(0);
   const [summary, setSummary] = useState('');
 
-  // Эксклюзивное раскрытие «Аромат»/«Вкус»: открыт максимум один
-  // (решение из макетов: в фокусе всегда одна секция).
-  const [openTags, setOpenTags] = useState<string[]>(['aroma']);
-  // Опциональный блок посуды — независимый, по умолчанию свёрнут.
-  const [openGear, setOpenGear] = useState<string[]>([]);
+  // Секции-аккордеоны (посуда/аромат/вкус/ощущения): все свёрнуты при
+  // открытии формы, раскрыта максимум одна — «в фокусе всегда одна секция»
+  // (решение из макетов). Секции в отдельных карточках, эксклюзивность
+  // координируется этим общим состоянием.
+  const [openSection, setOpenSection] = useState<string | null>(null);
 
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
@@ -192,83 +193,77 @@ export default function QuickNoteForm() {
             <TeaCombobox value={teaItem} onChange={setTeaItem} />
           </Field>
 
-          <Card>
-            <Accordion className="w-full" multiple={false} value={openGear} onValueChange={setOpenGear}>
-              <AccordionItem value="gear" className="border-b-0">
-                <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                  <SectionTitle
-                    title="Посуда • Вес • Температура"
-                    preview={!openGear.includes('gear') ? gearPreview : ''}
-                  />
-                </AccordionTrigger>
-                <AccordionContent className="px-4 pb-4">
-                  <div className="flex flex-col gap-3">
-                    <TeawareCombobox value={teaware} onChange={setTeaware} />
-                    <div className="grid grid-cols-2 gap-3">
-                      <Input
-                        inputMode="numeric"
-                        value={grams}
-                        onChange={(e) => setGrams(e.target.value.replace(/[^\d.]/g, ''))}
-                        placeholder="Вес (гр)"
-                      />
-                      <Input
-                        inputMode="numeric"
-                        value={tempC}
-                        onChange={(e) => setTempC(e.target.value.replace(/\D/g, ''))}
-                        placeholder="Температура (°C)"
-                      />
-                    </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          </Card>
-
-          <Card>
-            <Accordion className="w-full" multiple={false} value={openTags} onValueChange={setOpenTags}>
-              <AccordionItem value="aroma" className="border-b last:border-b-0">
-                <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                  <SectionTitle
-                    title="Аромат"
-                    preview={!openTags.includes('aroma') ? tagsPreview(aroma) : ''}
-                  />
-                </AccordionTrigger>
-                <AccordionContent className="px-4 pb-4">
-                  <RichCheckboxGroup
-                    options={AROMA_OPTIONS}
-                    value={aroma}
-                    onChange={setAroma}
-                  />
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="taste" className="border-b-0">
-                <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                  <SectionTitle
-                    title="Вкус"
-                    preview={!openTags.includes('taste') ? tagsPreview(taste) : ''}
-                  />
-                </AccordionTrigger>
-                <AccordionContent className="px-4 pb-4">
-                  <RichCheckboxGroup
-                    options={AROMA_OPTIONS}
-                    value={taste}
-                    onChange={setTaste}
-                  />
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          </Card>
-
-          <Card>
-            <div className="px-4 py-3 flex flex-col gap-3">
-              <p className="text-[14px] font-medium text-foreground">Ощущения</p>
-              <RichCheckboxGroup
-                options={EFFECTS_OPTIONS}
-                value={effects}
-                onChange={setEffects}
-              />
+          <FormSection
+            id="gear"
+            title="Посуда • Вес • Температура"
+            preview={gearPreview}
+            openSection={openSection}
+            onOpenChange={setOpenSection}
+            // Нейтрализуем типографский отступ p из базового AccordionContent:
+            // шторки выбора/добавления посуды рендерятся внутри этой секции,
+            // и без этого их строки «разъезжаются».
+            contentClassName="[&_p:not(:last-child)]:mb-0"
+          >
+            <div className="flex flex-col gap-3">
+              <TeawareCombobox value={teaware} onChange={setTeaware} />
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  inputMode="numeric"
+                  value={grams}
+                  onChange={(e) => setGrams(e.target.value.replace(/[^\d.]/g, ''))}
+                  placeholder="Вес (гр)"
+                />
+                <Input
+                  inputMode="numeric"
+                  value={tempC}
+                  onChange={(e) => setTempC(e.target.value.replace(/\D/g, ''))}
+                  placeholder="Температура (°C)"
+                />
+              </div>
             </div>
-          </Card>
+          </FormSection>
+
+          <FormSection
+            id="aroma"
+            title="Аромат"
+            preview={tagsPreview(aroma)}
+            openSection={openSection}
+            onOpenChange={setOpenSection}
+          >
+            <RichCheckboxGroup
+              options={AROMA_OPTIONS}
+              value={aroma}
+              onChange={setAroma}
+            />
+          </FormSection>
+
+          <FormSection
+            id="taste"
+            title="Вкус"
+            preview={tagsPreview(taste)}
+            openSection={openSection}
+            onOpenChange={setOpenSection}
+          >
+            <RichCheckboxGroup
+              options={AROMA_OPTIONS}
+              value={taste}
+              onChange={setTaste}
+            />
+          </FormSection>
+
+          <FormSection
+            id="effects"
+            title="Ощущения"
+            preview={tagsPreview(effects)}
+            openSection={openSection}
+            onOpenChange={setOpenSection}
+          >
+            <RichCheckboxGroup
+              options={EFFECTS_OPTIONS}
+              value={effects}
+              onChange={setEffects}
+            />
+          </FormSection>
 
           <Card>
             <div className="px-4 py-3 flex flex-col gap-3">
@@ -277,14 +272,12 @@ export default function QuickNoteForm() {
             </div>
           </Card>
 
-          <Field label="Заметка:">
-            <Textarea
-              value={summary}
-              onChange={(e) => setSummary(e.target.value)}
-              placeholder="Пара слов о впечатлении"
-              className="min-h-24"
-            />
-          </Field>
+          <Textarea
+            value={summary}
+            onChange={(e) => setSummary(e.target.value)}
+            placeholder="Пара слов о впечатлении"
+            className="min-h-24"
+          />
 
           <div>
             <input
@@ -349,15 +342,54 @@ export default function QuickNoteForm() {
   );
 }
 
-// Заголовок секции-аккордеона с превью выбранного в свёрнутом состоянии.
-function SectionTitle({ title, preview }: { title: string; preview: string }) {
+// Секция-аккордеон формы: отдельная карточка, в свёрнутом заголовке — превью
+// выбранного (обрезается троеточием, чтобы стрелка не «убегала» за край).
+// Эксклюзивность между секциями координирует родитель через openSection.
+function FormSection({
+  id,
+  title,
+  preview,
+  openSection,
+  onOpenChange,
+  contentClassName,
+  children,
+}: {
+  id: string;
+  title: string;
+  preview: string;
+  openSection: string | null;
+  onOpenChange: (section: string | null) => void;
+  contentClassName?: string;
+  children: React.ReactNode;
+}) {
+  const isOpen = openSection === id;
   return (
-    <span className="flex min-w-0 flex-col gap-0.5">
-      <span className="text-[16px] font-semibold text-foreground">{title}</span>
-      {preview && (
-        <span className="truncate text-[12px] font-normal text-text-secondary">{preview}</span>
-      )}
-    </span>
+    <Card>
+      <Accordion
+        className="w-full"
+        multiple={false}
+        value={isOpen ? [id] : []}
+        onValueChange={(v: string[]) => onOpenChange(v.length > 0 ? id : null)}
+      >
+        <AccordionItem value={id} className="border-b-0">
+          {/* min-w-0: триггер — flex-элемент, без этого длинное превью
+              распирает его шире карточки и стрелка уезжает за край */}
+          <AccordionTrigger className="min-w-0 px-4 py-3 hover:no-underline">
+            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="text-[16px] font-semibold text-foreground">{title}</span>
+              {!isOpen && preview && (
+                <span className="truncate text-[12px] font-normal text-text-secondary">
+                  {preview}
+                </span>
+              )}
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className={cn('px-4 pb-4', contentClassName)}>
+            {children}
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+    </Card>
   );
 }
 

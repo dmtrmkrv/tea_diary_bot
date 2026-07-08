@@ -9,7 +9,11 @@ import {
   UserIcon,
   PlusCircleIcon,
   XCircleIcon,
+  LeafIcon,
+  CoffeeIcon,
+  NotePencilIcon,
 } from '@phosphor-icons/react';
+import type { Icon as PhosphorIcon } from '@phosphor-icons/react';
 
 const navLinks = [
   { href: '/',           label: 'Дегустации', Icon: BowlSteamIcon },
@@ -18,14 +22,14 @@ const navLinks = [
 ];
 
 type AddAction =
-  | { kind: 'link'; label: string; href: string }
-  | { kind: 'sheet'; label: string; sheet: 'tea' | 'teaware' };
+  | { kind: 'link'; label: string; href: string; Icon: PhosphorIcon }
+  | { kind: 'sheet'; label: string; sheet: 'tea' | 'teaware'; Icon: PhosphorIcon };
 
 const addActions: AddAction[] = [
-  { kind: 'sheet', label: 'Чай',             sheet: 'tea'     },
-  { kind: 'sheet', label: 'Посуду',          sheet: 'teaware' },
-  { kind: 'link',  label: 'Дегустацию',      href: '/new'     },
-  { kind: 'link',  label: 'Быструю заметку', href: '/quick'   },
+  { kind: 'sheet', label: 'Чай',             sheet: 'tea',     Icon: LeafIcon       },
+  { kind: 'sheet', label: 'Посуду',          sheet: 'teaware', Icon: CoffeeIcon     },
+  { kind: 'link',  label: 'Дегустацию',      href: '/new',     Icon: BowlSteamIcon  },
+  { kind: 'link',  label: 'Быструю заметку', href: '/quick',   Icon: NotePencilIcon },
 ];
 
 export default function BottomNav() {
@@ -69,18 +73,20 @@ export default function BottomNav() {
       {open && (
         <div className="fixed bottom-[92px] left-1/2 -translate-x-1/2 w-[calc(100%-16px)] max-w-[414px] z-50 flex flex-col items-end gap-2">
           {addActions.map((a, i) => {
-            const cls = "lp-menu-item flex h-12 items-center justify-center rounded-full border border-border-strong bg-nav-bg backdrop-blur-md px-5 text-[16px] font-medium text-foreground";
+            const cls = "lp-menu-item flex h-12 items-center justify-center gap-2 rounded-full border border-border-strong bg-nav-bg backdrop-blur-md px-5 text-[16px] font-medium text-foreground";
             // Лесенка от плюсика вверх: нижний пункт стартует первым
             const delay = { animationDelay: `${(addActions.length - 1 - i) * 45}ms` };
             if (a.kind === 'link') {
               return (
                 <Link key={a.label} href={a.href} onClick={() => setOpen(false)} className={cls} style={delay}>
+                  <a.Icon size={20} className="text-foreground" />
                   {a.label}
                 </Link>
               );
             }
             return (
               <button key={a.label} type="button" onClick={() => openSheet(a.sheet)} className={cls} style={delay}>
+                <a.Icon size={20} className="text-foreground" />
                 {a.label}
               </button>
             );

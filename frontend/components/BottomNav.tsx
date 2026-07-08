@@ -60,24 +60,26 @@ export default function BottomNav() {
     <>
       {open && (
         <div
-          className="fixed inset-0 z-40 bg-overlay-scrim backdrop-blur-sm"
+          className="fixed inset-0 z-40 bg-overlay-scrim backdrop-blur-sm lp-scrim-in"
           onClick={() => setOpen(false)}
         />
       )}
 
       {open && (
         <div className="fixed bottom-[92px] left-1/2 -translate-x-1/2 w-[calc(100%-16px)] max-w-[414px] z-50 flex flex-col items-end gap-2">
-          {addActions.map((a) => {
-            const cls = "flex h-12 items-center justify-center rounded-full border border-border-strong bg-nav-bg backdrop-blur-md px-5 text-[16px] font-medium text-foreground";
+          {addActions.map((a, i) => {
+            const cls = "lp-menu-item flex h-12 items-center justify-center rounded-full border border-border-strong bg-nav-bg backdrop-blur-md px-5 text-[16px] font-medium text-foreground";
+            // Лесенка от плюсика вверх: нижний пункт стартует первым
+            const delay = { animationDelay: `${(addActions.length - 1 - i) * 45}ms` };
             if (a.kind === 'link') {
               return (
-                <Link key={a.label} href={a.href} onClick={() => setOpen(false)} className={cls}>
+                <Link key={a.label} href={a.href} onClick={() => setOpen(false)} className={cls} style={delay}>
                   {a.label}
                 </Link>
               );
             }
             return (
-              <button key={a.label} type="button" onClick={() => openSheet(a.sheet)} className={cls}>
+              <button key={a.label} type="button" onClick={() => openSheet(a.sheet)} className={cls} style={delay}>
                 {a.label}
               </button>
             );

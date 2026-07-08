@@ -492,6 +492,26 @@ select {
 }
 .lp-shake { animation: lp-shake 0.4s ease-in-out; }
 
+/* Меню под «+»: пункты появляются fade + сдвиг снизу, лесенкой от плюсика
+ * (задержка через inline animation-delay по индексу). Скрим — мягкий fade. */
+@keyframes lp-menu-item-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.lp-menu-item {
+  opacity: 0; /* до старта анимации (с учётом delay) пункт невидим */
+  animation: lp-menu-item-in 0.25s ease-out forwards;
+}
+@keyframes lp-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.lp-scrim-in { animation: lp-fade-in 0.2s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .lp-menu-item { animation: none; opacity: 1; }
+  .lp-scrim-in { animation: none; }
+}
+
 /* Лендинг (data-landing на корне): страница живёт на «/», где usePathname
  * не отличит её от ленты, поэтому нижнюю навигацию и её отступ прячем CSS-ом. */
 body:has([data-landing]) .bottom-nav-slot { display: none; }

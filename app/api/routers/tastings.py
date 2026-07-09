@@ -87,6 +87,10 @@ class TastingDetail(TastingOut):
     # `photos`, и model_validate(from_attributes) попытался бы провалидировать
     # ORM-объекты Photo как PhotoOut (без url) → ValidationError/500.
     photo_list: List[PhotoOut] = []
+    # Заметки привязанного сорта/посуды: шторки, открываемые с детальной,
+    # показывают их наравне со шторками из коллекции.
+    tea_item_notes: Optional[str] = None
+    teaware_notes: Optional[str] = None
 
 
 class TastingListOut(BaseModel):
@@ -412,6 +416,7 @@ def get_tasting(
             result.tea_item_year = tea_item.year
             result.tea_item_region = tea_item.region
             result.tea_item_amount_g = tea_item.amount_g
+            result.tea_item_notes = tea_item.notes
             if tea_item.cover_object_key:
                 try:
                     # Обложка на детальной — маленький чип, миниатюры достаточно
@@ -429,6 +434,7 @@ def get_tasting(
             result.teaware_volume_ml = teaware.volume_ml
             result.teaware_material = teaware.material
             result.teaware_region = teaware.region
+            result.teaware_notes = teaware.notes
             if teaware.cover_object_key:
                 try:
                     result.teaware_cover_url = get_presigned_url(

@@ -23,6 +23,7 @@ import {
 } from '@/lib/apiClient';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { useSheetCoverFade } from '@/hooks/useSheetCoverFade';
 import PaginationButtons from '@/components/PaginationButtons';
 import NotesSection from '@/components/NotesSection';
 import { formatTastingDatetime } from '@/lib/datetime';
@@ -50,6 +51,9 @@ export default function TeawareItemSheet({
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  // Фолбэк затемнения фото при скролле для Safari < 26 (без scroll-driven CSS)
+  const sheetScrollRef = useRef<HTMLDivElement>(null);
+  const coverRef = useRef<HTMLDivElement>(null);
 
   useBodyScrollLock(item != null);
 
@@ -97,6 +101,8 @@ export default function TeawareItemSheet({
     return () => { cancelled = true; };
   }, [item, page, loadKey]);
 
+  useSheetCoverFade(sheetScrollRef, coverRef, !!item);
+
   if (!item) return null;
 
   const loading = data?.key !== loadKey;
@@ -127,8 +133,11 @@ export default function TeawareItemSheet({
       <div className="fixed inset-0 z-[60] bg-overlay-scrim backdrop-blur-sm" onClick={onClose} />
       <div className="fixed left-1/2 -translate-x-1/2 bottom-0 w-full max-w-2xl z-[70] bg-card rounded-t-[24px] flex flex-col max-h-[calc(100svh-48px)] overflow-hidden">
 
+        {/* Скролл-область: фото — часть контента и уезжает при прокрутке
+            (постоянное закрытие — крестик в футере и тап по скриму) */}
+        <div ref={sheetScrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-col">
         {/* Cover */}
-        <div className="relative aspect-[2/1] shrink-0 rounded-3xl overflow-hidden bg-surface-app">
+        <div ref={coverRef} className="lp-sheet-cover relative aspect-[2/1] shrink-0 rounded-3xl overflow-hidden bg-surface-app">
           {item.cover_url ? (
             <Image src={item.cover_url} alt={item.name} fill className="object-cover" />
           ) : (
@@ -151,7 +160,7 @@ export default function TeawareItemSheet({
         </div>
 
         {/* Content */}
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pt-4 pb-2 flex flex-col gap-4">
+        <div className="px-4 pt-4 pb-2 flex flex-col gap-4">
 
           {/* Title + more */}
           <div className="flex flex-col gap-2">
@@ -273,14 +282,26 @@ export default function TeawareItemSheet({
         </div>
 
         {/* Footer */}
+        </div>
+
         <div className="flex gap-2 p-4 border-t border-border-default bg-card shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Закрыть"
+            className="h-11 w-11 shrink-0 rounded-full border border-border-strong bg-surface-muted text-text-secondary shadow-xs flex items-center justify-center transition-colors hover:bg-surface-sunken active:bg-surface-sunken-strong outline-none focus-visible:ring-[3px] focus-visible:ring-ring-focus"
+          >
+            <XIcon size={16} weight="bold" />
+          </button>
           <AppButton
             type="button"
             variant="secondary"
-            onClick={onClose}
-            className="w-[120px] shrink-0"
+            onClick={() => {
+              if (item) router.push(`/quick?teaware_id=${item.id}`);
+            }}
+            className="flex-1"
           >
-            Закрыть
+            Быстрая заметка
           </AppButton>
           <AppButton
             type="button"
@@ -289,7 +310,7 @@ export default function TeawareItemSheet({
             }}
             className="flex-1"
           >
-            Новая дегустация
+            Дегустация
           </AppButton>
         </div>
       </div>

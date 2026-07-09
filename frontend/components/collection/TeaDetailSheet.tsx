@@ -11,6 +11,7 @@ import CategoryBadge from '@/components/CategoryBadge';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
 import { getTeaItemTastings, deleteTeaItem, updateTeaAmount, getMe, type TeaItem, type TastingShort } from '@/lib/apiClient';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { useSheetCoverFade } from '@/hooks/useSheetCoverFade';
 import PaginationButtons from '@/components/PaginationButtons';
 import { formatTastingDatetime } from '@/lib/datetime';
 
@@ -41,6 +42,9 @@ export default function TeaDetailSheet({
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  // Фолбэк затемнения фото при скролле для Safari < 26 (без scroll-driven CSS)
+  const sheetScrollRef = useRef<HTMLDivElement>(null);
+  const coverRef = useRef<HTMLDivElement>(null);
 
   // --- Остаток (автосохранение: степпер с debounce, инпут по blur) ---
   const [amountState, setAmountState] = useState<{ itemId: number; value: string }>({
@@ -155,6 +159,8 @@ export default function TeaDetailSheet({
 
   useBodyScrollLock(item != null);
 
+  useSheetCoverFade(sheetScrollRef, coverRef, !!item);
+
   if (!item) return null;
 
   const loading = data?.key !== loadKey;
@@ -183,9 +189,9 @@ export default function TeaDetailSheet({
       <div className="fixed left-1/2 -translate-x-1/2 bottom-0 w-full max-w-2xl z-[70] bg-card rounded-t-3xl flex flex-col max-h-[calc(100svh-48px)] overflow-hidden">
         {/* Скролл-область: фото — часть контента и уезжает при прокрутке
             (постоянное закрытие — крестик в футере и тап по скриму) */}
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-col">
+        <div ref={sheetScrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-col">
         {/* Cover full-bleed — handle и X поверх (по макету 98:2050) */}
-        <div className="lp-sheet-cover relative aspect-[2/1] shrink-0 rounded-3xl overflow-hidden bg-surface-app flex items-center justify-center">
+        <div ref={coverRef} className="lp-sheet-cover relative aspect-[2/1] shrink-0 rounded-3xl overflow-hidden bg-surface-app flex items-center justify-center">
           {item.cover_url ? (
             <Image src={item.cover_url} alt={item.name} fill className="object-cover" />
           ) : (

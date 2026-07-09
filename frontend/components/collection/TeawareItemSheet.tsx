@@ -23,6 +23,7 @@ import {
 } from '@/lib/apiClient';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { useSheetCoverFade } from '@/hooks/useSheetCoverFade';
 import PaginationButtons from '@/components/PaginationButtons';
 import NotesSection from '@/components/NotesSection';
 import { formatTastingDatetime } from '@/lib/datetime';
@@ -50,6 +51,9 @@ export default function TeawareItemSheet({
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  // Фолбэк затемнения фото при скролле для Safari < 26 (без scroll-driven CSS)
+  const sheetScrollRef = useRef<HTMLDivElement>(null);
+  const coverRef = useRef<HTMLDivElement>(null);
 
   useBodyScrollLock(item != null);
 
@@ -97,6 +101,8 @@ export default function TeawareItemSheet({
     return () => { cancelled = true; };
   }, [item, page, loadKey]);
 
+  useSheetCoverFade(sheetScrollRef, coverRef, !!item);
+
   if (!item) return null;
 
   const loading = data?.key !== loadKey;
@@ -129,9 +135,9 @@ export default function TeawareItemSheet({
 
         {/* Скролл-область: фото — часть контента и уезжает при прокрутке
             (постоянное закрытие — крестик в футере и тап по скриму) */}
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-col">
+        <div ref={sheetScrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-col">
         {/* Cover */}
-        <div className="lp-sheet-cover relative aspect-[2/1] shrink-0 rounded-3xl overflow-hidden bg-surface-app">
+        <div ref={coverRef} className="lp-sheet-cover relative aspect-[2/1] shrink-0 rounded-3xl overflow-hidden bg-surface-app">
           {item.cover_url ? (
             <Image src={item.cover_url} alt={item.name} fill className="object-cover" />
           ) : (

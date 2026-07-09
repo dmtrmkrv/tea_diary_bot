@@ -131,7 +131,7 @@ export default function TeawareItemSheet({
             (постоянное закрытие — крестик в футере и тап по скриму) */}
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-col">
         {/* Cover */}
-        <div className="relative aspect-[2/1] shrink-0 rounded-3xl overflow-hidden bg-surface-app">
+        <div className="lp-sheet-cover relative aspect-[2/1] shrink-0 rounded-3xl overflow-hidden bg-surface-app">
           {item.cover_url ? (
             <Image src={item.cover_url} alt={item.name} fill className="object-cover" />
           ) : (

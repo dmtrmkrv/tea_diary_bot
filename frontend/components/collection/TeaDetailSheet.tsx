@@ -185,7 +185,7 @@ export default function TeaDetailSheet({
             (постоянное закрытие — крестик в футере и тап по скриму) */}
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-col">
         {/* Cover full-bleed — handle и X поверх (по макету 98:2050) */}
-        <div className="relative aspect-[2/1] shrink-0 rounded-3xl overflow-hidden bg-surface-app flex items-center justify-center">
+        <div className="lp-sheet-cover relative aspect-[2/1] shrink-0 rounded-3xl overflow-hidden bg-surface-app flex items-center justify-center">
           {item.cover_url ? (
             <Image src={item.cover_url} alt={item.name} fill className="object-cover" />
           ) : (

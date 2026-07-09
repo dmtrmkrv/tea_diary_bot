@@ -507,6 +507,23 @@ select {
   to   { opacity: 1; }
 }
 .lp-scrim-in { animation: lp-fade-in 0.2s ease-out; }
+
+/* Фото в шторках коллекции: лёгкое затемнение при уходе в скролл.
+ * Scroll-driven анимация (без JS): прогресс привязан к выходу фото из
+ * скролл-области. Прогрессивное улучшение — без поддержки эффекта нет. */
+@supports (animation-timeline: view()) {
+  @keyframes lp-cover-fade {
+    to { opacity: 0.45; filter: brightness(0.65); }
+  }
+  .lp-sheet-cover {
+    animation: lp-cover-fade linear both;
+    animation-timeline: view();
+    animation-range: exit 0% exit 85%;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .lp-sheet-cover { animation: none; }
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .lp-menu-item { animation: none; opacity: 1; }
   .lp-scrim-in { animation: none; }

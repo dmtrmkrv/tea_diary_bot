@@ -181,6 +181,9 @@ export default function TeaDetailSheet({
     <>
       <div className="fixed inset-0 z-[60] bg-overlay-scrim backdrop-blur-sm" onClick={onClose} />
       <div className="fixed left-1/2 -translate-x-1/2 bottom-0 w-full max-w-2xl z-[70] bg-card rounded-t-3xl flex flex-col max-h-[calc(100svh-48px)] overflow-hidden">
+        {/* Скролл-область: фото — часть контента и уезжает при прокрутке
+            (постоянное закрытие — крестик в футере и тап по скриму) */}
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-col">
         {/* Cover full-bleed — handle и X поверх (по макету 98:2050) */}
         <div className="relative aspect-[2/1] shrink-0 rounded-3xl overflow-hidden bg-surface-app flex items-center justify-center">
           {item.cover_url ? (
@@ -200,7 +203,7 @@ export default function TeaDetailSheet({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto overscroll-contain px-4 pt-4 pb-4 flex flex-col gap-4">
+        <div className="px-4 pt-4 pb-4 flex flex-col gap-4">
           <div className="flex flex-col gap-3">
           <div className="flex items-start justify-between gap-2">
             <h2 className="text-[20px] leading-[24px] font-semibold text-foreground">
@@ -338,14 +341,26 @@ export default function TeaDetailSheet({
           )}
         </div>
 
+        </div>
+
         <div className="flex gap-2 p-4 border-t border-border-default bg-card shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Закрыть"
+            className="h-11 w-11 shrink-0 rounded-full border border-border-strong bg-surface-muted text-text-secondary shadow-xs flex items-center justify-center transition-colors hover:bg-surface-sunken active:bg-surface-sunken-strong outline-none focus-visible:ring-[3px] focus-visible:ring-ring-focus"
+          >
+            <XIcon size={16} weight="bold" />
+          </button>
           <AppButton
             type="button"
             variant="secondary"
-            onClick={onClose}
-            className="w-[120px] shrink-0"
+            onClick={() => {
+              if (item) router.push(`/quick?tea_item_id=${item.id}`);
+            }}
+            className="flex-1"
           >
-            Закрыть
+            Быстрая заметка
           </AppButton>
           <AppButton
             type="button"
@@ -354,7 +369,7 @@ export default function TeaDetailSheet({
             }}
             className="flex-1"
           >
-            Новая дегустация
+            Дегустация
           </AppButton>
         </div>
       </div>

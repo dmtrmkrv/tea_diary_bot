@@ -234,10 +234,12 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
               extra={<CaretRightIcon size={24} className="text-muted-foreground shrink-0 mt-0.5" />}
             />
           )}
+          {/* У quick-записей (бот и веб) в aroma_dry лежит просто «аромат»,
+              а в aroma_warmed — «вкус» (исторический маппинг из бота). */}
           {t.aroma_dry && (
             <DataRow
               icon={<PlantIcon size={24} />}
-              label="Аромат сухого листа"
+              label={t.entry_mode === 'quick' ? 'Аромат' : 'Аромат сухого листа'}
               value={t.aroma_dry}
               wide
               border
@@ -246,7 +248,7 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
           {t.aroma_warmed && (
             <DataRow
               icon={<BowlSteamIcon size={24} />}
-              label="Аромат прогретого/промытого листа"
+              label={t.entry_mode === 'quick' ? 'Вкус' : 'Аромат прогретого/промытого листа'}
               value={t.aroma_warmed}
               wide
               border

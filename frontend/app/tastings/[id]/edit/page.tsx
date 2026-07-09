@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { unstable_rethrow } from 'next/navigation';
 import { getTasting, getMe } from '@/lib/api';
 import TastingForm, { type TastingFormRecord } from '@/components/TastingForm';
+import QuickNoteForm, { type QuickNoteRecord } from '@/components/QuickNoteForm';
 
 // Дата дегустации для поля формы (YYYY-MM-DD) с учётом часового пояса юзера.
 // Полночь UTC — бэкдейт-маркер «только дата»: берём дату как есть, без сдвига.
@@ -27,6 +28,31 @@ export default async function EditTastingPage({ params }: { params: Promise<{ id
     getMe().catch((e) => { unstable_rethrow(e); return null; }) as Promise<{ tz_offset_min: number } | null>,
   ]);
   const tzOffset = me?.tz_offset_min ?? 0;
+
+  // Быстрая заметка редактируется своей же формой, а не полной
+  // (у quick другой смысл полей: aroma_dry = «аромат», aroma_warmed = «вкус»).
+  if (t.entry_mode === 'quick') {
+    const quickRecord: QuickNoteRecord = {
+      name: t.name,
+      grams: t.grams ?? null,
+      temp_c: t.temp_c ?? null,
+      aroma_dry: t.aroma_dry ?? null,
+      aroma_warmed: t.aroma_warmed ?? null,
+      effects_csv: t.effects_csv ?? null,
+      rating: t.rating ?? 0,
+      summary: t.summary ?? null,
+      photos: t.photo_list ?? [],
+    };
+    return (
+      <QuickNoteForm
+        mode="edit"
+        tastingId={tastingId}
+        initialTeaItemId={t.tea_item_id ?? null}
+        initialTeawareId={t.teaware_id ?? null}
+        record={quickRecord}
+      />
+    );
+  }
 
   const record: TastingFormRecord = {
     name: t.name,

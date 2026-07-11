@@ -34,6 +34,7 @@ export type TeaItem = {
   vendor: string | null;
   notes: string | null;
   amount_g: number | null;
+  is_favorite: boolean;
   cover_url: string | null;
   tasting_count: number;
   created_at: string;
@@ -69,11 +70,12 @@ export type TeawareList = { items: Teaware[]; total: number };
 export function getTeaCollection(
   limit = 10,
   offset = 0,
-  filter: { q?: string; categories?: string } = {}
+  filter: { q?: string; categories?: string; favorites?: boolean } = {}
 ) {
   const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
   if (filter.q) params.set('q', filter.q);
   if (filter.categories) params.set('categories', filter.categories);
+  if (filter.favorites) params.set('favorites', 'true');
   return apiCall<TeaItemList>(`/collection/tea?${params.toString()}`);
 }
 
@@ -100,6 +102,7 @@ export type FlavorProfile = {
   avg_rating: number | null;
   last_tasting_at: string | null;
   item_created_at: string | null;
+  item_is_favorite: boolean;
 };
 
 export function getTeaFlavorProfile(itemId: number) {
@@ -113,6 +116,14 @@ export type TeaCreateInput = {
   region?: string | null;
   amount_g?: number | null;
 };
+
+export function updateTeaFavorite(itemId: number, is_favorite: boolean) {
+  return apiCall<TeaItem>(`/collection/tea/${itemId}/favorite`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ is_favorite }),
+  });
+}
 
 export function updateTeaAmount(itemId: number, amount_g: number | null) {
   return apiCall<TeaItem>(`/collection/tea/${itemId}/amount`, {

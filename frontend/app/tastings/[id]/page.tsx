@@ -188,6 +188,7 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
               notes: t.tea_item_notes ?? null,
               vendor: null,
               amount_g: t.tea_item_amount_g ?? null,
+              is_favorite: false,
               tasting_count: 0,
               created_at: '',
             }} />

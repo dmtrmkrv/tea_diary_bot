@@ -6,10 +6,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { XIcon, LeafIcon, BowlSteamIcon, DotsThreeIcon, MinusIcon, PlusIcon, StarIcon, LightningIcon } from '@phosphor-icons/react';
+import { XIcon, LeafIcon, BowlSteamIcon, DotsThreeIcon, MinusIcon, PlusIcon, StarIcon, LightningIcon, HeartStraightIcon } from '@phosphor-icons/react';
 import CategoryBadge from '@/components/CategoryBadge';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
-import { getTeaItemTastings, getTeaFlavorProfile, deleteTeaItem, updateTeaAmount, getMe, type TeaItem, type TastingShort, type FlavorProfile } from '@/lib/apiClient';
+import { getTeaItemTastings, getTeaFlavorProfile, deleteTeaItem, updateTeaAmount, updateTeaFavorite, getMe, type TeaItem, type TastingShort, type FlavorProfile } from '@/lib/apiClient';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useSheetCoverFade } from '@/hooks/useSheetCoverFade';
 import PaginationButtons from '@/components/PaginationButtons';
@@ -27,11 +27,13 @@ export default function TeaDetailSheet({
   onClose,
   onDeleted,
   onAmountChanged,
+  onFavoriteChanged,
 }: {
   item: TeaItem | null;
   onClose: () => void;
   onDeleted?: () => void;
   onAmountChanged?: () => void;
+  onFavoriteChanged?: () => void;
 }) {
   const router = useRouter();
   const [pageState, setPageState] = useState<{ itemId: number; page: number }>({
@@ -42,6 +44,23 @@ export default function TeaDetailSheet({
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  // Оптимистичное избранное: показываем сразу, при ошибке откатываем
+  const [favState, setFavState] = useState<{ itemId: number; value: boolean } | null>(null);
+
+  async function toggleFavorite() {
+    if (!item) return;
+    const itemId = item.id;
+    const next = !isFavorite;
+    setFavState({ itemId, value: next });
+    try {
+      await updateTeaFavorite(itemId, next);
+      onFavoriteChanged?.();
+    } catch {
+      setFavState({ itemId, value: !next });
+      toast.error('Не удалось обновить избранное. Попробуйте ещё раз.');
+    }
+  }
 
   // Вкладки «Обзор / Записи» — сбрасываются при смене сорта (паттерн pageState)
   const [tabState, setTabState] = useState<{ itemId: number; tab: 'overview' | 'records' }>({
@@ -62,6 +81,14 @@ export default function TeaDetailSheet({
       .catch(() => {});
     return () => { cancelled = true; };
   }, [item]);
+
+  // Источник истины для сердечка — профиль (у сорта, открытого не из коллекции,
+  // в item нет is_favorite); оптимистичный клик перекрывает и то и другое
+  const isFavorite =
+    item && favState?.itemId === item.id
+      ? favState.value
+      : profile?.item_is_favorite ?? item?.is_favorite ?? false;
+
   const menuRef = useRef<HTMLDivElement>(null);
   // Фолбэк затемнения фото при скролле для Safari < 26 (без scroll-driven CSS)
   const sheetScrollRef = useRef<HTMLDivElement>(null);
@@ -239,7 +266,21 @@ export default function TeaDetailSheet({
             <h2 className="text-[20px] leading-[24px] font-semibold text-foreground">
               {item.name}
             </h2>
-            <div ref={menuRef} className="relative shrink-0 -mt-1">
+            <div className="flex items-center gap-2 shrink-0 -mt-1">
+            <button
+              type="button"
+              onClick={toggleFavorite}
+              aria-label={isFavorite ? 'Убрать из избранного' : 'В избранное'}
+              aria-pressed={isFavorite}
+              className="w-8 h-8 flex items-center justify-center rounded-full transition-colors hover:bg-surface-sunken"
+            >
+              {isFavorite ? (
+                <HeartStraightIcon size={24} weight="fill" className="text-accent-default" />
+              ) : (
+                <HeartStraightIcon size={24} className="text-muted-foreground" />
+              )}
+            </button>
+            <div ref={menuRef} className="relative shrink-0">
               <button
                 type="button"
                 onClick={() => setMenuOpen((v) => !v)}
@@ -259,6 +300,7 @@ export default function TeaDetailSheet({
                   </button>
                 </div>
               )}
+            </div>
             </div>
           </div>
 

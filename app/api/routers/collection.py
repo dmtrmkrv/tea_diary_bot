@@ -8,6 +8,7 @@ import datetime
 from app.api.deps import get_db
 from app.api.auth import get_current_user_id
 from app.db.models import TeaItem, Teaware, Tasting, Photo
+from app.services.flavor_profile import build_flavor_profile
 from app.services.storage import (
     get_presigned_url,
     save_tea_item_photo_bytes,
@@ -100,6 +101,19 @@ class TastingShortOut(BaseModel):
 class TastingsListOut(BaseModel):
     items: List[TastingShortOut]
     total: int
+
+
+class FlavorTagOut(BaseModel):
+    tag: str
+    count: int
+
+
+class FlavorProfileOut(BaseModel):
+    aroma: List[FlavorTagOut]
+    taste: List[FlavorTagOut]
+    effects: List[FlavorTagOut]
+    records_used: int
+    avg_rating: Optional[float] = None
 
 
 # ---- Чай ----
@@ -246,6 +260,18 @@ def update_tea_amount(
         except Exception:
             pass
     return out
+
+
+@router.get("/tea/{item_id}/profile", response_model=FlavorProfileOut)
+def get_tea_flavor_profile(
+    item_id: int,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),
+):
+    item = db.get(TeaItem, item_id)
+    if not item or item.user_id != user_id:
+        raise HTTPException(status_code=404, detail="Не найдено")
+    return build_flavor_profile(db, user_id=user_id, tea_item_id=item_id)
 
 
 @router.get("/tea/{item_id}/tastings", response_model=TastingsListOut)

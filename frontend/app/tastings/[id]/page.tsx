@@ -133,12 +133,12 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
               <div className="flex gap-1 items-center">
                 {t.entry_mode === 'quick' && (
                   <span className="border border-badge-rating-border rounded-full px-1 py-0.5 flex items-center justify-center min-w-[20px] min-h-[20px]">
-                    <LightningIcon size={16} className="text-badge-quick-text" />
+                    <LightningIcon size={16} weight="fill" className="text-badge-quick-text" />
                   </span>
                 )}
                 {t.rating != null && (
                   <span className="border border-badge-rating-border rounded-full px-2 py-0.5 flex items-center gap-1 min-h-[20px]">
-                    <StarIcon size={16} className="text-badge-rating-text" />
+                    <StarIcon size={16} weight="fill" className="text-badge-rating-text" />
                     <span className="text-[12px] font-medium text-badge-rating-text leading-[16px]">{t.rating}/10</span>
                   </span>
                 )}

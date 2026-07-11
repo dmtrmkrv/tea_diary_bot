@@ -117,6 +117,8 @@ class FlavorProfileOut(BaseModel):
     records_used: int
     avg_rating: Optional[float] = None
     last_tasting_at: Optional[datetime.datetime] = None
+    # Дата добавления сорта: у шторки, открытой не из коллекции, нет created_at
+    item_created_at: Optional[datetime.datetime] = None
 
 
 # ---- Чай ----
@@ -274,7 +276,9 @@ def get_tea_flavor_profile(
     item = db.get(TeaItem, item_id)
     if not item or item.user_id != user_id:
         raise HTTPException(status_code=404, detail="Не найдено")
-    return build_flavor_profile(db, user_id=user_id, tea_item_id=item_id)
+    profile = build_flavor_profile(db, user_id=user_id, tea_item_id=item_id)
+    profile["item_created_at"] = item.created_at
+    return profile
 
 
 @router.get("/tea/{item_id}/tastings", response_model=TastingsListOut)

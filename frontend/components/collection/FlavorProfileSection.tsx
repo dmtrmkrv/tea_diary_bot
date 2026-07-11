@@ -113,7 +113,7 @@ export default function FlavorProfileSection({
             Вкусовой профиль
           </h3>
           <div className="flex items-center gap-1.5">
-            <StarIcon size={24} weight="fill" className="text-accent-default" />
+            <StarIcon size={24} weight="fill" className="text-badge-rating-border" />
             <p className="text-[18px] leading-[24px] font-semibold text-foreground">
               {profile?.avg_rating != null
                 ? String(profile.avg_rating).replace('.', ',')

@@ -99,6 +99,7 @@ export type FlavorProfile = {
   records_used: number;
   avg_rating: number | null;
   last_tasting_at: string | null;
+  item_created_at: string | null;
 };
 
 export function getTeaFlavorProfile(itemId: number) {

@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { XIcon, LeafIcon, BowlSteamIcon, CaretRightIcon, DotsThreeIcon, MinusIcon, PlusIcon, StarIcon, LightningIcon } from '@phosphor-icons/react';
+import { XIcon, LeafIcon, BowlSteamIcon, DotsThreeIcon, MinusIcon, PlusIcon, StarIcon, LightningIcon } from '@phosphor-icons/react';
 import CategoryBadge from '@/components/CategoryBadge';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
 import { getTeaItemTastings, getTeaFlavorProfile, deleteTeaItem, updateTeaAmount, getMe, type TeaItem, type TastingShort, type FlavorProfile } from '@/lib/apiClient';
@@ -354,7 +354,7 @@ export default function TeaDetailSheet({
             </div>
             <div className="flex items-start justify-between">
               <p>Дата добавления</p>
-              <p>{formatShortDate(item.created_at, tzOffset)}</p>
+              <p>{formatShortDate(item.created_at || profile?.item_created_at || null, tzOffset)}</p>
             </div>
           </div>
           </>
@@ -402,7 +402,6 @@ export default function TeaDetailSheet({
                         {t.name}
                       </p>
                     </div>
-                    <CaretRightIcon size={24} className="text-muted-foreground shrink-0" />
                   </Link>
                 ))}
               </div>

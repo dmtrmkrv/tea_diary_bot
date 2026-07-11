@@ -10,7 +10,6 @@ import {
   XIcon,
   ImageSquareIcon,
   BowlSteamIcon,
-  CaretRightIcon,
   DotsThreeIcon,
   StarIcon,
   LightningIcon,
@@ -269,7 +268,6 @@ export default function TeawareItemSheet({
                         {t.name}
                       </p>
                     </div>
-                    <CaretRightIcon size={24} className="text-muted-foreground shrink-0" />
                   </Link>
                 ))}
               </div>

@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { LeafIcon } from '@phosphor-icons/react/dist/ssr';
+import { LeafIcon, StarIcon, LightningIcon } from '@phosphor-icons/react/dist/ssr';
 import CategoryBadge from '@/components/CategoryBadge';
 import { formatTastingDatetime } from '@/lib/datetime';
 
@@ -21,22 +21,6 @@ export interface TastingItem {
   tea_item_year: number | null;
   tea_item_region: string | null;
   tea_item_cover_url: string | null;
-}
-
-function StarIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-      <path d="M7.239 2.34c.3-.921 1.603-.921 1.902 0l.856 2.634a1 1 0 00.951.69h2.77c.969 0 1.371 1.24.588 1.81l-2.24 1.627a1 1 0 00-.364 1.118l.856 2.634c.3.921-.755 1.688-1.54 1.118l-2.24-1.627a1 1 0 00-1.175 0l-2.24 1.627c-.784.57-1.838-.197-1.539-1.118l.856-2.634a1 1 0 00-.364-1.118L1.694 7.474c-.783-.57-.38-1.81.588-1.81h2.77a1 1 0 00.951-.69l.856-2.634z" />
-    </svg>
-  );
-}
-
-function LightningIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-      <path d="M9.04 1.037A1 1 0 019.6 2v4h3.2a1 1 0 01.82 1.573l-5.6 8A1 1 0 016.4 15v-4H3.2a1 1 0 01-.82-1.573l5.6-8a1 1 0 011.06-.39z" />
-    </svg>
-  );
 }
 
 function TeaItemRow({ item }: { item: TastingItem }) {
@@ -110,12 +94,12 @@ export default function TastingCard({ item, tzOffset = 0 }: { item: TastingItem;
               <div className="flex items-center gap-1">
                 {isQuick && (
                   <div className="flex items-center justify-center min-h-[20px] min-w-[20px] px-1 py-0.5 rounded-full border border-badge-rating-border text-badge-quick-text">
-                    <LightningIcon />
+                    <LightningIcon size={16} weight="fill" />
                   </div>
                 )}
                 {hasRating && (
                   <div className="flex items-center gap-1 min-h-[20px] px-2 py-0.5 rounded-full border border-badge-rating-border text-badge-rating-text">
-                    <StarIcon />
+                    <StarIcon size={16} weight="fill" />
                     <span className="text-[12px] font-medium leading-[16px] whitespace-nowrap">
                       {item.rating}/10
                     </span>

@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { XIcon, LeafIcon, BowlSteamIcon, CaretRightIcon, DotsThreeIcon, MinusIcon, PlusIcon } from '@phosphor-icons/react';
+import { XIcon, LeafIcon, BowlSteamIcon, CaretRightIcon, DotsThreeIcon, MinusIcon, PlusIcon, StarIcon, LightningIcon } from '@phosphor-icons/react';
 import CategoryBadge from '@/components/CategoryBadge';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
 import { getTeaItemTastings, getTeaFlavorProfile, deleteTeaItem, updateTeaAmount, getMe, type TeaItem, type TastingShort, type FlavorProfile } from '@/lib/apiClient';
@@ -190,6 +190,9 @@ export default function TeaDetailSheet({
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const hasTastings = total > 0;
+  // Счётчик вкладки: у сорта, открытого не из коллекции (детальная дегустации),
+  // tasting_count не заполнен — после загрузки списка берём честный total.
+  const recordsCount = loading ? item.tasting_count : total;
 
   async function handleDelete() {
     if (!item) return;
@@ -294,7 +297,7 @@ export default function TeaDetailSheet({
             >
               Записи
               <span className="bg-surface-sunken-strong rounded-full min-w-4 h-4 px-1 flex items-center justify-center text-[12px] leading-[16px] font-semibold text-foreground">
-                {item.tasting_count}
+                {recordsCount}
               </span>
             </button>
           </div>
@@ -361,25 +364,40 @@ export default function TeaDetailSheet({
             <p className="text-[14px] text-muted-foreground">Загрузка…</p>
           ) : hasTastings ? (
             <>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col divide-y divide-border-default">
                 {tastings.map((t) => (
                   <Link
                     key={t.id}
                     href={`/tastings/${t.id}`}
                     onClick={onClose}
-                    className="bg-surface-sunken rounded-2xl pl-2 pr-4 py-2 flex items-center gap-3"
+                    className="py-2.5 flex items-center gap-3"
                   >
-                    <div className="w-[50px] h-[50px] shrink-0 rounded-lg overflow-hidden bg-placeholder-tea-bg border border-border-strong relative flex items-center justify-center">
+                    <div className="w-[50px] h-[50px] shrink-0 rounded-[10px] overflow-hidden bg-surface-input border border-border-strong relative flex items-center justify-center">
                       {t.cover_url ? (
                         <Image src={t.cover_url} alt={t.name} fill className="object-cover" />
                       ) : (
-                        <LeafIcon size={18} className="text-placeholder-tea-icon" />
+                        <BowlSteamIcon size={24} className="text-muted-foreground" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0 flex flex-col gap-2">
-                      <p className="text-[12px] leading-[16px] font-medium text-muted-foreground">
-                        {formatTastingDatetime(t.created_at, tzOffset)}
-                      </p>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[12px] leading-[16px] font-medium text-muted-foreground truncate">
+                          {formatTastingDatetime(t.created_at, tzOffset)}
+                        </p>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {t.entry_mode === 'quick' && (
+                            <span className="flex items-center justify-center min-h-[20px] min-w-[20px] px-1 py-0.5 rounded-full border border-badge-rating-border text-badge-quick-text">
+                              <LightningIcon size={16} weight="fill" />
+                            </span>
+                          )}
+                          {t.rating > 0 && (
+                            <span className="flex items-center gap-1 min-h-[20px] px-2 py-0.5 rounded-full border border-badge-rating-border text-badge-rating-text">
+                              <StarIcon size={16} weight="fill" />
+                              <span className="text-[12px] font-medium leading-[16px]">{t.rating}</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
                       <p className="text-[14px] leading-[20px] font-semibold text-foreground truncate">
                         {t.name}
                       </p>
@@ -398,13 +416,13 @@ export default function TeaDetailSheet({
               )}
             </>
           ) : (
-            <div className="border border-border-default rounded-2xl py-4 flex flex-col items-center gap-4">
+            <div className="bg-surface-input border border-border-default rounded-2xl py-4 px-4 flex flex-col items-center gap-4">
               <span className="w-14 h-14 rounded-full bg-placeholder-tea-bg flex items-center justify-center">
                 <BowlSteamIcon size={24} className="text-muted-foreground" />
               </span>
-              <div className="flex flex-col gap-2 text-center px-4">
-                <p className="text-[18px] leading-[24px] font-semibold text-text-secondary">Дегустаций нет</p>
-                <p className="text-[14px] leading-[20px] text-muted-foreground">
+              <div className="flex flex-col gap-1 text-center">
+                <p className="text-[16px] leading-[24px] font-semibold text-text-secondary">Дегустаций нет</p>
+                <p className="text-[12px] leading-[16px] text-muted-foreground">
                   Создайте новую дегустацию с этим сортом.
                 </p>
               </div>

@@ -94,6 +94,8 @@ class TastingShortOut(BaseModel):
     name: str
     created_at: datetime.datetime
     cover_url: Optional[str] = None
+    rating: int = 0
+    entry_mode: str = "full"
     class Config:
         from_attributes = True
 

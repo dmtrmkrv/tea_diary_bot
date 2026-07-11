@@ -552,6 +552,7 @@ body:has([data-landing]) .app-content { padding-bottom: 0; }
 .flavor-pill-zemlistyy { background: #ebebe3; border-color: #b2b28f; }
 .flavor-pill-dymnyy { background: #ededee; border-color: #b8b8bf; }
 .flavor-pill-mineralnyy { background: #e8edf1; border-color: #a3b8cc; }
+.flavor-pill-myod { background: #f1e8be; border-color: #dcc455; }
 
 .dark .flavor-pill { background: #333333; border-color: #73706e; color: #ccc9c7; }
 .dark .flavor-pill-khlebnyy { background: #383024; border-color: #8c734d; color: #e5d1a6; }
@@ -568,3 +569,4 @@ body:has([data-landing]) .app-content { padding-bottom: 0; }
 .dark .flavor-pill-zemlistyy { background: #303026; border-color: #73734d; color: #cccc9e; }
 .dark .flavor-pill-dymnyy { background: #303033; border-color: #737380; color: #c7c7d1; }
 .dark .flavor-pill-mineralnyy { background: #262e38; border-color: #59738c; color: #adc7e0; }
+.dark .flavor-pill-myod { background: #3b3821; border-color: #a08920; color: #e5d46b; }

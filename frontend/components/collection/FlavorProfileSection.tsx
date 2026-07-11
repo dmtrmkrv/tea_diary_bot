@@ -6,12 +6,11 @@ import {
   CaretDownIcon,
   CaretUpIcon,
   DropHalfBottomIcon,
-  FeatherIcon,
   InfoIcon,
   MaskHappyIcon,
-  SparkleIcon,
   StarIcon,
 } from '@phosphor-icons/react';
+import FlavorProfileEmptyIcon from '@/components/collection/FlavorProfileEmptyIcon';
 import type { FlavorProfile, FlavorTag } from '@/lib/apiClient';
 
 // Свёрнутый вид секции — первые N пиллов + «Показать ещё»
@@ -34,6 +33,7 @@ const PILL_CLASS: Record<string, string> = {
   'Землистый': 'flavor-pill-zemlistyy',
   'Дымный': 'flavor-pill-dymnyy',
   'Минеральный': 'flavor-pill-mineralnyy',
+  'Мёд': 'flavor-pill-myod',
 };
 
 function recordsLabel(n: number): string {
@@ -49,7 +49,7 @@ function TagPill({ tag, count }: FlavorTag) {
       className={`flavor-pill ${PILL_CLASS[tag] ?? ''} inline-flex items-center gap-2 border rounded-full pl-2.5 pr-1.5 py-1.5 text-[12px] leading-[16px] font-medium`}
     >
       {tag}
-      <span className="bg-surface-elevated rounded-full px-1.5 py-0.5 text-[12px] leading-[16px] font-medium text-foreground">
+      <span className="bg-surface-elevated dark:bg-surface-sunken-strong rounded-full px-1.5 py-0.5 text-[12px] leading-[16px] font-medium text-foreground">
         ×{count}
       </span>
     </span>
@@ -79,17 +79,17 @@ function TagGroup({
         {visible.map((t) => (
           <TagPill key={t.tag} tag={t.tag} count={t.count} />
         ))}
-        {hasMore && (
-          <button
-            type="button"
-            onClick={() => setExpanded((v) => !v)}
-            className="flex items-center gap-1 py-1 text-[12px] leading-[16px] font-medium text-accent-default"
-          >
-            {expanded ? 'Свернуть' : 'Показать еще'}
-            {expanded ? <CaretUpIcon size={16} /> : <CaretDownIcon size={16} />}
-          </button>
-        )}
       </div>
+      {hasMore && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="self-start flex items-center gap-1 py-1 text-[12px] leading-[16px] font-medium text-accent-default"
+        >
+          {expanded ? 'Свернуть' : 'Показать еще'}
+          {expanded ? <CaretUpIcon size={16} /> : <CaretDownIcon size={16} />}
+        </button>
+      )}
     </div>
   );
 }
@@ -168,11 +168,7 @@ export default function FlavorProfileSection({
         </>
       ) : (
         <div className="bg-surface-input border border-border-default rounded-2xl py-4 px-4 flex flex-col items-center gap-4">
-          <span className="relative text-accent-default">
-            <FeatherIcon size={40} />
-            <SparkleIcon size={14} className="absolute -top-1 -right-3" />
-            <SparkleIcon size={9} className="absolute -bottom-0.5 -left-3" />
-          </span>
+          <FlavorProfileEmptyIcon />
           <div className="flex flex-col gap-1 text-center">
             <p className="text-[16px] leading-[24px] font-semibold text-text-secondary">
               Здесь появится профиль сорта

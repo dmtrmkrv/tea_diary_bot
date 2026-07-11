@@ -9,11 +9,12 @@ import { toast } from 'sonner';
 import { XIcon, LeafIcon, BowlSteamIcon, CaretRightIcon, DotsThreeIcon, MinusIcon, PlusIcon } from '@phosphor-icons/react';
 import CategoryBadge from '@/components/CategoryBadge';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
-import { getTeaItemTastings, deleteTeaItem, updateTeaAmount, getMe, type TeaItem, type TastingShort } from '@/lib/apiClient';
+import { getTeaItemTastings, getTeaFlavorProfile, deleteTeaItem, updateTeaAmount, getMe, type TeaItem, type TastingShort, type FlavorProfile } from '@/lib/apiClient';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useSheetCoverFade } from '@/hooks/useSheetCoverFade';
 import PaginationButtons from '@/components/PaginationButtons';
-import { formatTastingDatetime } from '@/lib/datetime';
+import FlavorProfileSection from '@/components/collection/FlavorProfileSection';
+import { formatTastingDatetime, formatShortDate } from '@/lib/datetime';
 
 const PAGE_SIZE = 4;
 
@@ -41,6 +42,26 @@ export default function TeaDetailSheet({
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  // Вкладки «Обзор / Записи» — сбрасываются при смене сорта (паттерн pageState)
+  const [tabState, setTabState] = useState<{ itemId: number; tab: 'overview' | 'records' }>({
+    itemId: 0,
+    tab: 'overview',
+  });
+  const tab = item && tabState.itemId === item.id ? tabState.tab : 'overview';
+
+  // Вкусовой профиль (агрегат с бэкенда)
+  const [profileState, setProfileState] = useState<{ itemId: number; profile: FlavorProfile } | null>(null);
+  const profile = item && profileState?.itemId === item.id ? profileState.profile : null;
+  useEffect(() => {
+    if (!item) return;
+    const itemId = item.id;
+    let cancelled = false;
+    getTeaFlavorProfile(itemId)
+      .then((p) => { if (!cancelled) setProfileState({ itemId, profile: p }); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [item]);
   const menuRef = useRef<HTMLDivElement>(null);
   // Фолбэк затемнения фото при скролле для Safari < 26 (без scroll-driven CSS)
   const sheetScrollRef = useRef<HTMLDivElement>(null);
@@ -253,9 +274,36 @@ export default function TeaDetailSheet({
           </div>
           </div>
 
+          {/* Вкладки «Обзор / Записи» (по макету 429:11054) */}
+          <div className="flex items-center bg-surface-sunken rounded-full p-1 w-full">
+            <button
+              type="button"
+              onClick={() => item && setTabState({ itemId: item.id, tab: 'overview' })}
+              className={`flex-1 min-h-8 rounded-full px-2.5 text-[14px] leading-[20px] font-medium text-foreground transition-colors ${
+                tab === 'overview' ? 'bg-surface-elevated shadow-md' : ''
+              }`}
+            >
+              Обзор
+            </button>
+            <button
+              type="button"
+              onClick={() => item && setTabState({ itemId: item.id, tab: 'records' })}
+              className={`flex-1 min-h-8 rounded-full px-2.5 text-[14px] leading-[20px] font-medium text-foreground transition-colors flex items-center justify-center gap-2 ${
+                tab === 'records' ? 'bg-surface-elevated shadow-md' : ''
+              }`}
+            >
+              Записи
+              <span className="bg-surface-sunken-strong rounded-full min-w-4 h-4 px-1 flex items-center justify-center text-[12px] leading-[16px] font-semibold text-foreground">
+                {item.tasting_count}
+              </span>
+            </button>
+          </div>
+
+          {tab === 'overview' && (
+          <>
           {/* В наличии — степпер с автосохранением (без кнопок подтверждения) */}
-          <div className="flex items-center justify-between border-t border-b border-border-default py-4">
-            <p className="text-[16px] font-medium text-foreground">В наличии (гр)</p>
+          <div className="flex items-center justify-between">
+            <p className="text-[18px] leading-[24px] font-semibold text-foreground">В наличии (гр)</p>
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -285,14 +333,31 @@ export default function TeaDetailSheet({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <h3 className="text-[16px] font-medium text-foreground">Дегустации</h3>
-            <span className="bg-surface-sunken-strong rounded-full px-2 h-4 flex items-center text-[12px] font-semibold text-foreground">
-              {total}
-            </span>
-          </div>
+          <div className="h-px bg-border-input" />
 
-          {loading ? (
+          <FlavorProfileSection profile={profile} loading={profile == null} />
+
+          <div className="h-px bg-border-input" />
+
+          {/* Мета-строки (по макету: последняя запись и дата добавления) */}
+          <div className="flex flex-col gap-3 text-[12px] leading-[16px] font-medium text-text-secondary">
+            <div className="flex items-start justify-between">
+              <p>Последняя запись</p>
+              <p>
+                {profile?.last_tasting_at
+                  ? formatShortDate(profile.last_tasting_at, tzOffset)
+                  : 'Записей пока нет'}
+              </p>
+            </div>
+            <div className="flex items-start justify-between">
+              <p>Дата добавления</p>
+              <p>{formatShortDate(item.created_at, tzOffset)}</p>
+            </div>
+          </div>
+          </>
+          )}
+
+          {tab === 'records' && (loading ? (
             <p className="text-[14px] text-muted-foreground">Загрузка…</p>
           ) : hasTastings ? (
             <>
@@ -344,7 +409,7 @@ export default function TeaDetailSheet({
                 </p>
               </div>
             </div>
-          )}
+          ))}
         </div>
 
         </div>

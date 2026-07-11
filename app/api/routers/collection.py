@@ -114,6 +114,7 @@ class FlavorProfileOut(BaseModel):
     effects: List[FlavorTagOut]
     records_used: int
     avg_rating: Optional[float] = None
+    last_tasting_at: Optional[datetime.datetime] = None
 
 
 # ---- Чай ----

@@ -84,6 +84,20 @@ export function getTeaItemTastings(itemId: number, limit = 3, offset = 0) {
   return apiCall<TastingsList>(`/collection/tea/${itemId}/tastings?limit=${limit}&offset=${offset}`);
 }
 
+export type FlavorTag = { tag: string; count: number };
+export type FlavorProfile = {
+  aroma: FlavorTag[];
+  taste: FlavorTag[];
+  effects: FlavorTag[];
+  records_used: number;
+  avg_rating: number | null;
+  last_tasting_at: string | null;
+};
+
+export function getTeaFlavorProfile(itemId: number) {
+  return apiCall<FlavorProfile>(`/collection/tea/${itemId}/profile`);
+}
+
 export type TeaCreateInput = {
   name: string;
   category?: string | null;

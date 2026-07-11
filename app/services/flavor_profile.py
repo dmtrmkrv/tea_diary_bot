@@ -153,6 +153,7 @@ def build_flavor_profile(db: Session, user_id: int, tea_item_id: int) -> dict:
             ratings.append(t.rating)
 
     avg_rating = round(sum(ratings) / len(ratings), 1) if ratings else None
+    last_tasting_at = max((t.created_at for t in tastings), default=None)
 
     return {
         "aroma": _top(aroma),
@@ -160,4 +161,5 @@ def build_flavor_profile(db: Session, user_id: int, tea_item_id: int) -> dict:
         "effects": _top(effects),
         "records_used": records_used,
         "avg_rating": avg_rating,
+        "last_tasting_at": last_tasting_at,
     }

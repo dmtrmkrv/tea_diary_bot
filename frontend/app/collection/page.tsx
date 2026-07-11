@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { LeafIcon, StackIcon, PlusIcon, MagnifyingGlassIcon, XIcon } from '@phosphor-icons/react';
+import { LeafIcon, StackIcon, PlusIcon, MagnifyingGlassIcon, XIcon, HeartStraightIcon } from '@phosphor-icons/react';
 import ToggleChips from '@/components/form/ToggleChips';
 import TeaCard from '@/components/collection/TeaCard';
 import TeaDetailSheet from '@/components/collection/TeaDetailSheet';
@@ -53,6 +53,7 @@ function CollectionInner() {
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [teaCats, setTeaCats] = useState<string[]>([]);
+  const [favOnly, setFavOnly] = useState(false);
   const [selected, setSelected] = useState<TeaItem | null>(null);
   const [selectedTeaware, setSelectedTeaware] = useState<Teaware | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Teaware | null>(null);
@@ -67,7 +68,7 @@ function CollectionInner() {
     // Новый запрос/фильтр — начинаем с первой страницы
     setPage(1);
     setWPage(1);
-  }, [debouncedQuery, teaCats]);
+  }, [debouncedQuery, teaCats, favOnly]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -76,6 +77,7 @@ function CollectionInner() {
         getTeaCollection(PAGE_SIZE, (page - 1) * PAGE_SIZE, {
           q: debouncedQuery,
           categories: teaCats.join(','),
+          favorites: favOnly,
         }),
         getTeawareCollection(PAGE_SIZE, (wPage - 1) * PAGE_SIZE, {
           q: debouncedQuery,
@@ -89,7 +91,7 @@ function CollectionInner() {
       setLoading(false);
       setFirstLoad(false);
     }
-  }, [page, wPage, debouncedQuery, teaCats]);
+  }, [page, wPage, debouncedQuery, teaCats, favOnly]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -137,7 +139,7 @@ function CollectionInner() {
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const wTotalPages = Math.max(1, Math.ceil(teawareTotal / PAGE_SIZE));
-  const hasFilter = Boolean(debouncedQuery) || teaCats.length > 0;
+  const hasFilter = Boolean(debouncedQuery) || teaCats.length > 0 || favOnly;
   const notFound = <EmptySearch />;
 
   return (
@@ -197,7 +199,26 @@ function CollectionInner() {
             )}
           </div>
           {tab === 'tea' && (
-            <ToggleChips options={CATEGORY_FILTER} value={teaCats} onChange={setTeaCats} />
+            <ToggleChips
+              options={CATEGORY_FILTER}
+              value={teaCats}
+              onChange={setTeaCats}
+              leading={
+                <button
+                  type="button"
+                  onClick={() => setFavOnly((v) => !v)}
+                  aria-pressed={favOnly}
+                  className={`shrink-0 h-9 px-3 rounded-lg border text-[14px] font-medium transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring-focus flex items-center gap-2 ${
+                    favOnly
+                      ? 'bg-button-toggle-bg border-accent-default text-foreground'
+                      : 'bg-surface-input border-border-input text-text-secondary'
+                  }`}
+                >
+                  <HeartStraightIcon size={20} weight="fill" className="text-accent-default" />
+                  Избранное
+                </button>
+              }
+            />
           )}
         </div>
       </div>
@@ -289,6 +310,7 @@ function CollectionInner() {
                   item={item}
                   onClick={() => setSelected(item)}
                   onDelete={() => setTeaDeleteTarget(item)}
+                  onFavoriteChanged={load}
                 />
               ))}
             </div>
@@ -302,7 +324,7 @@ function CollectionInner() {
         )}
       </div>
 
-      <TeaDetailSheet item={selected} onClose={() => setSelected(null)} onDeleted={load} onAmountChanged={load} />
+      <TeaDetailSheet item={selected} onClose={() => setSelected(null)} onDeleted={load} onAmountChanged={load} onFavoriteChanged={load} />
 
       <TeawareItemSheet
         item={selectedTeaware}

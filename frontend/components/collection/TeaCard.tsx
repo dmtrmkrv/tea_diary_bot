@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { LeafIcon, DotsThreeIcon } from '@phosphor-icons/react';
+import { toast } from 'sonner';
+import { LeafIcon, DotsThreeIcon, HeartStraightIcon } from '@phosphor-icons/react';
 import CategoryBadge from '@/components/CategoryBadge';
-import type { TeaItem } from '@/lib/apiClient';
+import { updateTeaFavorite, type TeaItem } from '@/lib/apiClient';
 
 function pluralizeTastings(n: number): string {
   const mod10 = n % 10;
@@ -18,13 +19,31 @@ export default function TeaCard({
   item,
   onClick,
   onDelete,
+  onFavoriteChanged,
 }: {
   item: TeaItem;
   onClick: () => void;
   onDelete: () => void;
+  onFavoriteChanged?: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Оптимистичное сердечко: показываем сразу, при ошибке откатываем
+  const [favState, setFavState] = useState<{ itemId: number; value: boolean } | null>(null);
+  const isFavorite = favState?.itemId === item.id ? favState.value : item.is_favorite;
+
+  async function toggleFavorite() {
+    const next = !isFavorite;
+    setFavState({ itemId: item.id, value: next });
+    try {
+      await updateTeaFavorite(item.id, next);
+      onFavoriteChanged?.();
+    } catch {
+      setFavState({ itemId: item.id, value: !next });
+      toast.error('Не удалось обновить избранное. Попробуйте ещё раз.');
+    }
+  }
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -56,9 +75,24 @@ export default function TeaCard({
 
       <div className="flex-1 min-w-0 flex flex-col gap-3 pointer-events-none">
         <div className="flex flex-col gap-2">
-          <p className="text-[14px] leading-[20px] font-semibold text-foreground truncate">
-            {item.name}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="flex-1 min-w-0 text-[14px] leading-[20px] font-semibold text-foreground truncate">
+              {item.name}
+            </p>
+            <button
+              type="button"
+              onClick={toggleFavorite}
+              aria-label={isFavorite ? 'Убрать из избранного' : 'В избранное'}
+              aria-pressed={isFavorite}
+              className="shrink-0 pointer-events-auto z-10 w-8 h-8 -my-1.5 -mr-1.5 flex items-center justify-center rounded-full transition-colors hover:bg-surface-sunken"
+            >
+              {isFavorite ? (
+                <HeartStraightIcon size={20} weight="fill" className="text-accent-default" />
+              ) : (
+                <HeartStraightIcon size={20} className="text-muted-foreground" />
+              )}
+            </button>
+          </div>
           <div className="flex flex-wrap gap-1">
             {item.category && <CategoryBadge category={item.category} />}
             {item.year != null && (

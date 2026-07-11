@@ -533,3 +533,40 @@ select {
  * не отличит её от ленты, поэтому нижнюю навигацию и её отступ прячем CSS-ом. */
 body:has([data-landing]) .bottom-nav-slot { display: none; }
 body:has([data-landing]) .app-content { padding-bottom: 0; }
+
+/* Цветовое кодирование тегов вкусового профиля (палитра из Фигмы,
+ * «Tag Color Coding» / «Tag Color Coding_Dark»). Нейтральный вариант
+ * (.flavor-pill) — для ощущений и тегов без своего цвета (напр. «Мёд»). */
+.flavor-pill { background: #f5f5f4; border-color: #d6d3d1; color: #332e29; }
+.flavor-pill-khlebnyy { background: #f9f0e4; border-color: #e7c99d; }
+.flavor-pill-konditerskiy { background: #f9ebe1; border-color: #ebb68f; }
+.flavor-pill-orekhovyy { background: #f1ece6; border-color: #d1bda4; }
+.flavor-pill-sukhofrukty { background: #f4ecdd; border-color: #d9bf87; }
+.flavor-pill-tsvetochnyy { background: #f0e7f4; border-color: #c598d2; }
+.flavor-pill-yagodnyy { background: #f4e7e7; border-color: #e5a4a4; }
+.flavor-pill-fruktovyy { background: #f6e8f1; border-color: #dba6c9; }
+.flavor-pill-travyanistyy { background: #eef2e1; border-color: #c1d18f; }
+.flavor-pill-ovoshchnoy { background: #e5f1e5; border-color: #9ecc9e; }
+.flavor-pill-pryanyy { background: #ebf1e5; border-color: #adc794; }
+.flavor-pill-drevesnyy { background: #f0e8e0; border-color: #c2a680; }
+.flavor-pill-zemlistyy { background: #ebebe3; border-color: #b2b28f; }
+.flavor-pill-dymnyy { background: #ededee; border-color: #b8b8bf; }
+.flavor-pill-mineralnyy { background: #e8edf1; border-color: #a3b8cc; }
+.flavor-pill-myod { background: #f1e8be; border-color: #dcc455; }
+
+.dark .flavor-pill { background: #333333; border-color: #73706e; color: #ccc9c7; }
+.dark .flavor-pill-khlebnyy { background: #383024; border-color: #8c734d; color: #e5d1a6; }
+.dark .flavor-pill-konditerskiy { background: #3d2b26; border-color: #94614d; color: #ebbfa6; }
+.dark .flavor-pill-orekhovyy { background: #332e29; border-color: #806e59; color: #d9c7ad; }
+.dark .flavor-pill-sukhofrukty { background: #3b3321; border-color: #948047; color: #e5d494; }
+.dark .flavor-pill-tsvetochnyy { background: #38293d; border-color: #855994; color: #d9b8e5; }
+.dark .flavor-pill-yagodnyy { background: #3d2626; border-color: #995959; color: #ebb2b2; }
+.dark .flavor-pill-fruktovyy { background: #382938; border-color: #8c618c; color: #e0b8e0; }
+.dark .flavor-pill-travyanistyy { background: #293621; border-color: #6b8c4d; color: #bfe099; }
+.dark .flavor-pill-ovoshchnoy { background: #243324; border-color: #598559; color: #add9ad; }
+.dark .flavor-pill-pryanyy { background: #2b3626; border-color: #668554; color: #bfd99e; }
+.dark .flavor-pill-drevesnyy { background: #362e24; border-color: #806647; color: #d9bf94; }
+.dark .flavor-pill-zemlistyy { background: #303026; border-color: #73734d; color: #cccc9e; }
+.dark .flavor-pill-dymnyy { background: #303033; border-color: #737380; color: #c7c7d1; }
+.dark .flavor-pill-mineralnyy { background: #262e38; border-color: #59738c; color: #adc7e0; }
+.dark .flavor-pill-myod { background: #3b3821; border-color: #a08920; color: #e5d46b; }

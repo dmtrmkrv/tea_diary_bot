@@ -113,7 +113,7 @@ export default function TastingHero({
             <div className="flex items-center gap-1">
               {isQuick && (
                 <span className="bg-white/10 border border-badge-rating-border rounded-full px-1 py-0.5 flex items-center justify-center min-w-[20px] min-h-[20px]">
-                  <LightningIcon size={16} className="text-badge-quick-text" />
+                  <LightningIcon size={16} weight="fill" className="text-badge-quick-text" />
                 </span>
               )}
               {rating != null && rating > 0 && (

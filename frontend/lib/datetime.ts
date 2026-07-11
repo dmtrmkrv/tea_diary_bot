@@ -23,3 +23,18 @@ export function formatTastingDatetime(
   const h = local.getUTCHours(), m = local.getUTCMinutes();
   return `${datePart}, ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
+
+// Короткая дата «10.07.2026» — та же логика полночи-UTC, что выше.
+export function formatShortDate(
+  isoString: string | null,
+  offsetMin: number,
+): string | null {
+  if (!isoString) return null;
+  const iso = isoString.endsWith('Z') ? isoString : isoString + 'Z';
+  const date = new Date(iso);
+  const isBackdate = date.getUTCHours() === 0 && date.getUTCMinutes() === 0;
+  const local = isBackdate ? date : new Date(date.getTime() + offsetMin * 60000);
+  return new Intl.DateTimeFormat('ru-RU', {
+    day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC',
+  }).format(local);
+}

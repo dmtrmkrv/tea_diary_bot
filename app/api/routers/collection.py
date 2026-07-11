@@ -8,6 +8,7 @@ import datetime
 from app.api.deps import get_db
 from app.api.auth import get_current_user_id
 from app.db.models import TeaItem, Teaware, Tasting, Photo
+from app.services.flavor_profile import build_flavor_profile
 from app.services.storage import (
     get_presigned_url,
     save_tea_item_photo_bytes,
@@ -30,6 +31,7 @@ class TeaItemOut(BaseModel):
     vendor: Optional[str]
     notes: Optional[str]
     amount_g: Optional[float] = None
+    is_favorite: bool = False
     cover_url: Optional[str] = None
     tasting_count: int = 0
     created_at: datetime.datetime
@@ -50,6 +52,10 @@ class TeaItemCreate(BaseModel):
 class TeaItemAmountUpdate(BaseModel):
     # None — выключить учёт остатка; число >= 0 — новое значение в граммах
     amount_g: Optional[float] = None
+
+
+class TeaItemFavoriteUpdate(BaseModel):
+    is_favorite: bool
 
 
 class TeaItemListOut(BaseModel):
@@ -93,6 +99,8 @@ class TastingShortOut(BaseModel):
     name: str
     created_at: datetime.datetime
     cover_url: Optional[str] = None
+    rating: int = 0
+    entry_mode: str = "full"
     class Config:
         from_attributes = True
 
@@ -100,6 +108,23 @@ class TastingShortOut(BaseModel):
 class TastingsListOut(BaseModel):
     items: List[TastingShortOut]
     total: int
+
+
+class FlavorTagOut(BaseModel):
+    tag: str
+    count: int
+
+
+class FlavorProfileOut(BaseModel):
+    aroma: List[FlavorTagOut]
+    taste: List[FlavorTagOut]
+    effects: List[FlavorTagOut]
+    records_used: int
+    avg_rating: Optional[float] = None
+    last_tasting_at: Optional[datetime.datetime] = None
+    # Данные сорта: у шторки, открытой не из коллекции, нет created_at/is_favorite
+    item_created_at: Optional[datetime.datetime] = None
+    item_is_favorite: bool = False
 
 
 # ---- Чай ----
@@ -110,6 +135,7 @@ def list_tea(
     offset: int = Query(0, ge=0),
     q: str = "",
     categories: str = "",
+    favorites: bool = Query(False),
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id),
 ):
@@ -120,6 +146,8 @@ def list_tea(
     cat_list = [c.strip() for c in categories.split(",") if c.strip()]
     if cat_list:
         filters.append(TeaItem.category.in_(cat_list))
+    if favorites:
+        filters.append(TeaItem.is_favorite.is_(True))
 
     total = db.execute(
         select(func.count(TeaItem.id)).where(*filters)
@@ -246,6 +274,45 @@ def update_tea_amount(
         except Exception:
             pass
     return out
+
+
+@router.patch("/tea/{item_id}/favorite", response_model=TeaItemOut)
+def update_tea_favorite(
+    item_id: int,
+    data: TeaItemFavoriteUpdate,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),
+):
+    item = db.get(TeaItem, item_id)
+    if not item or item.user_id != user_id:
+        raise HTTPException(status_code=404, detail="Не найдено")
+
+    item.is_favorite = data.is_favorite
+    db.commit()
+    db.refresh(item)
+
+    out = TeaItemOut.model_validate(item)
+    if item.cover_object_key:
+        try:
+            out.cover_url = get_presigned_url(item.cover_object_key)
+        except Exception:
+            pass
+    return out
+
+
+@router.get("/tea/{item_id}/profile", response_model=FlavorProfileOut)
+def get_tea_flavor_profile(
+    item_id: int,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user_id),
+):
+    item = db.get(TeaItem, item_id)
+    if not item or item.user_id != user_id:
+        raise HTTPException(status_code=404, detail="Не найдено")
+    profile = build_flavor_profile(db, user_id=user_id, tea_item_id=item_id)
+    profile["item_created_at"] = item.created_at
+    profile["item_is_favorite"] = item.is_favorite
+    return profile
 
 
 @router.get("/tea/{item_id}/tastings", response_model=TastingsListOut)

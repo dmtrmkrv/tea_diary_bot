@@ -6,14 +6,15 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { XIcon, LeafIcon, BowlSteamIcon, CaretRightIcon, DotsThreeIcon, MinusIcon, PlusIcon } from '@phosphor-icons/react';
+import { XIcon, LeafIcon, BowlSteamIcon, DotsThreeIcon, MinusIcon, PlusIcon, StarIcon, LightningIcon, HeartStraightIcon } from '@phosphor-icons/react';
 import CategoryBadge from '@/components/CategoryBadge';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
-import { getTeaItemTastings, deleteTeaItem, updateTeaAmount, getMe, type TeaItem, type TastingShort } from '@/lib/apiClient';
+import { getTeaItemTastings, getTeaFlavorProfile, deleteTeaItem, updateTeaAmount, updateTeaFavorite, getMe, type TeaItem, type TastingShort, type FlavorProfile } from '@/lib/apiClient';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useSheetCoverFade } from '@/hooks/useSheetCoverFade';
 import PaginationButtons from '@/components/PaginationButtons';
-import { formatTastingDatetime } from '@/lib/datetime';
+import FlavorProfileSection from '@/components/collection/FlavorProfileSection';
+import { formatTastingDatetime, formatShortDate } from '@/lib/datetime';
 
 const PAGE_SIZE = 4;
 
@@ -26,11 +27,13 @@ export default function TeaDetailSheet({
   onClose,
   onDeleted,
   onAmountChanged,
+  onFavoriteChanged,
 }: {
   item: TeaItem | null;
   onClose: () => void;
   onDeleted?: () => void;
   onAmountChanged?: () => void;
+  onFavoriteChanged?: () => void;
 }) {
   const router = useRouter();
   const [pageState, setPageState] = useState<{ itemId: number; page: number }>({
@@ -41,6 +44,51 @@ export default function TeaDetailSheet({
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  // Оптимистичное избранное: показываем сразу, при ошибке откатываем
+  const [favState, setFavState] = useState<{ itemId: number; value: boolean } | null>(null);
+
+  async function toggleFavorite() {
+    if (!item) return;
+    const itemId = item.id;
+    const next = !isFavorite;
+    setFavState({ itemId, value: next });
+    try {
+      await updateTeaFavorite(itemId, next);
+      onFavoriteChanged?.();
+    } catch {
+      setFavState({ itemId, value: !next });
+      toast.error('Не удалось обновить избранное. Попробуйте ещё раз.');
+    }
+  }
+
+  // Вкладки «Обзор / Записи» — сбрасываются при смене сорта (паттерн pageState)
+  const [tabState, setTabState] = useState<{ itemId: number; tab: 'overview' | 'records' }>({
+    itemId: 0,
+    tab: 'overview',
+  });
+  const tab = item && tabState.itemId === item.id ? tabState.tab : 'overview';
+
+  // Вкусовой профиль (агрегат с бэкенда)
+  const [profileState, setProfileState] = useState<{ itemId: number; profile: FlavorProfile } | null>(null);
+  const profile = item && profileState?.itemId === item.id ? profileState.profile : null;
+  useEffect(() => {
+    if (!item) return;
+    const itemId = item.id;
+    let cancelled = false;
+    getTeaFlavorProfile(itemId)
+      .then((p) => { if (!cancelled) setProfileState({ itemId, profile: p }); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [item]);
+
+  // Источник истины для сердечка — профиль (у сорта, открытого не из коллекции,
+  // в item нет is_favorite); оптимистичный клик перекрывает и то и другое
+  const isFavorite =
+    item && favState?.itemId === item.id
+      ? favState.value
+      : profile?.item_is_favorite ?? item?.is_favorite ?? false;
+
   const menuRef = useRef<HTMLDivElement>(null);
   // Фолбэк затемнения фото при скролле для Safari < 26 (без scroll-driven CSS)
   const sheetScrollRef = useRef<HTMLDivElement>(null);
@@ -169,6 +217,9 @@ export default function TeaDetailSheet({
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const hasTastings = total > 0;
+  // Счётчик вкладки: у сорта, открытого не из коллекции (детальная дегустации),
+  // tasting_count не заполнен — после загрузки списка берём честный total.
+  const recordsCount = loading ? item.tasting_count : total;
 
   async function handleDelete() {
     if (!item) return;
@@ -215,7 +266,21 @@ export default function TeaDetailSheet({
             <h2 className="text-[20px] leading-[24px] font-semibold text-foreground">
               {item.name}
             </h2>
-            <div ref={menuRef} className="relative shrink-0 -mt-1">
+            <div className="flex items-center gap-2 shrink-0 -mt-1">
+            <button
+              type="button"
+              onClick={toggleFavorite}
+              aria-label={isFavorite ? 'Убрать из избранного' : 'В избранное'}
+              aria-pressed={isFavorite}
+              className="w-8 h-8 flex items-center justify-center rounded-full transition-colors hover:bg-surface-sunken"
+            >
+              {isFavorite ? (
+                <HeartStraightIcon size={24} weight="fill" className="text-accent-default" />
+              ) : (
+                <HeartStraightIcon size={24} className="text-muted-foreground" />
+              )}
+            </button>
+            <div ref={menuRef} className="relative shrink-0">
               <button
                 type="button"
                 onClick={() => setMenuOpen((v) => !v)}
@@ -236,6 +301,7 @@ export default function TeaDetailSheet({
                 </div>
               )}
             </div>
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-1">
@@ -253,9 +319,36 @@ export default function TeaDetailSheet({
           </div>
           </div>
 
+          {/* Вкладки «Обзор / Записи» (по макету 429:11054) */}
+          <div className="flex items-center bg-surface-sunken rounded-full p-1 w-full">
+            <button
+              type="button"
+              onClick={() => item && setTabState({ itemId: item.id, tab: 'overview' })}
+              className={`flex-1 min-h-8 rounded-full px-2.5 text-[14px] leading-[20px] font-medium text-foreground transition-colors ${
+                tab === 'overview' ? 'bg-surface-elevated shadow-md' : ''
+              }`}
+            >
+              Обзор
+            </button>
+            <button
+              type="button"
+              onClick={() => item && setTabState({ itemId: item.id, tab: 'records' })}
+              className={`flex-1 min-h-8 rounded-full px-2.5 text-[14px] leading-[20px] font-medium text-foreground transition-colors flex items-center justify-center gap-2 ${
+                tab === 'records' ? 'bg-surface-elevated shadow-md' : ''
+              }`}
+            >
+              Записи
+              <span className="bg-surface-sunken-strong rounded-full min-w-4 h-4 px-1 flex items-center justify-center text-[12px] leading-[16px] font-semibold text-foreground">
+                {recordsCount}
+              </span>
+            </button>
+          </div>
+
+          {tab === 'overview' && (
+          <>
           {/* В наличии — степпер с автосохранением (без кнопок подтверждения) */}
-          <div className="flex items-center justify-between border-t border-b border-border-default py-4">
-            <p className="text-[16px] font-medium text-foreground">В наличии (гр)</p>
+          <div className="flex items-center justify-between">
+            <p className="text-[18px] leading-[24px] font-semibold text-foreground">В наличии (гр)</p>
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -285,41 +378,72 @@ export default function TeaDetailSheet({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <h3 className="text-[16px] font-medium text-foreground">Дегустации</h3>
-            <span className="bg-surface-sunken-strong rounded-full px-2 h-4 flex items-center text-[12px] font-semibold text-foreground">
-              {total}
-            </span>
-          </div>
+          <div className="h-px bg-border-input" />
 
-          {loading ? (
+          <FlavorProfileSection profile={profile} loading={profile == null} />
+
+          <div className="h-px bg-border-input" />
+
+          {/* Мета-строки (по макету: последняя запись и дата добавления) */}
+          <div className="flex flex-col gap-3 text-[12px] leading-[16px] font-medium text-text-secondary">
+            <div className="flex items-start justify-between">
+              <p>Последняя запись</p>
+              <p>
+                {profile?.last_tasting_at
+                  ? formatShortDate(profile.last_tasting_at, tzOffset)
+                  : 'Записей пока нет'}
+              </p>
+            </div>
+            <div className="flex items-start justify-between">
+              <p>Дата добавления</p>
+              <p>{formatShortDate(item.created_at || profile?.item_created_at || null, tzOffset)}</p>
+            </div>
+          </div>
+          </>
+          )}
+
+          {tab === 'records' && (loading ? (
             <p className="text-[14px] text-muted-foreground">Загрузка…</p>
           ) : hasTastings ? (
             <>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col divide-y divide-border-default">
                 {tastings.map((t) => (
                   <Link
                     key={t.id}
                     href={`/tastings/${t.id}`}
                     onClick={onClose}
-                    className="bg-surface-sunken rounded-2xl pl-2 pr-4 py-2 flex items-center gap-3"
+                    className="py-2.5 flex items-center gap-3"
                   >
-                    <div className="w-[50px] h-[50px] shrink-0 rounded-lg overflow-hidden bg-placeholder-tea-bg border border-border-strong relative flex items-center justify-center">
+                    <div className="w-[50px] h-[50px] shrink-0 rounded-[10px] overflow-hidden bg-surface-input border border-border-strong relative flex items-center justify-center">
                       {t.cover_url ? (
                         <Image src={t.cover_url} alt={t.name} fill className="object-cover" />
                       ) : (
-                        <LeafIcon size={18} className="text-placeholder-tea-icon" />
+                        <BowlSteamIcon size={24} className="text-muted-foreground" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0 flex flex-col gap-2">
-                      <p className="text-[12px] leading-[16px] font-medium text-muted-foreground">
-                        {formatTastingDatetime(t.created_at, tzOffset)}
-                      </p>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[12px] leading-[16px] font-medium text-muted-foreground truncate">
+                          {formatTastingDatetime(t.created_at, tzOffset)}
+                        </p>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {t.entry_mode === 'quick' && (
+                            <span className="flex items-center justify-center min-h-[20px] min-w-[20px] px-1 py-0.5 rounded-full border border-badge-rating-border text-badge-quick-text">
+                              <LightningIcon size={16} weight="fill" />
+                            </span>
+                          )}
+                          {t.rating > 0 && (
+                            <span className="flex items-center gap-1 min-h-[20px] px-2 py-0.5 rounded-full border border-badge-rating-border text-badge-rating-text">
+                              <StarIcon size={16} weight="fill" />
+                              <span className="text-[12px] font-medium leading-[16px]">{t.rating}</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
                       <p className="text-[14px] leading-[20px] font-semibold text-foreground truncate">
                         {t.name}
                       </p>
                     </div>
-                    <CaretRightIcon size={24} className="text-muted-foreground shrink-0" />
                   </Link>
                 ))}
               </div>
@@ -333,18 +457,18 @@ export default function TeaDetailSheet({
               )}
             </>
           ) : (
-            <div className="border border-border-default rounded-2xl py-4 flex flex-col items-center gap-4">
+            <div className="bg-surface-input border border-border-default rounded-2xl py-4 px-4 flex flex-col items-center gap-4">
               <span className="w-14 h-14 rounded-full bg-placeholder-tea-bg flex items-center justify-center">
                 <BowlSteamIcon size={24} className="text-muted-foreground" />
               </span>
-              <div className="flex flex-col gap-2 text-center px-4">
-                <p className="text-[18px] leading-[24px] font-semibold text-text-secondary">Дегустаций нет</p>
-                <p className="text-[14px] leading-[20px] text-muted-foreground">
+              <div className="flex flex-col gap-1 text-center">
+                <p className="text-[16px] leading-[24px] font-semibold text-text-secondary">Дегустаций нет</p>
+                <p className="text-[12px] leading-[16px] text-muted-foreground">
                   Создайте новую дегустацию с этим сортом.
                 </p>
               </div>
             </div>
-          )}
+          ))}
         </div>
 
         </div>

@@ -13,10 +13,13 @@ export default function ToggleChips({
   options,
   value,
   onChange,
+  leading,
 }: {
   options: string[];
   value: string[];
   onChange: (next: string[]) => void;
+  // Кастомные чипы перед опциями в том же скролл-ряду (напр. «Избранное»)
+  leading?: React.ReactNode;
 }) {
   function toggle(opt: string) {
     onChange(
@@ -26,6 +29,7 @@ export default function ToggleChips({
 
   return (
     <div className="flex gap-2 overflow-x-auto overscroll-x-contain no-scrollbar -mx-4 px-4 pb-1">
+      {leading}
       {options.map((opt) => {
         const active = value.includes(opt);
         return (

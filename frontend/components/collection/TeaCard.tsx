@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { toast } from 'sonner';
-import { LeafIcon, DotsThreeIcon, HeartStraightIcon } from '@phosphor-icons/react';
+import { LeafIcon, DotsThreeIcon, HeartStraightIcon, StarIcon } from '@phosphor-icons/react';
 import CategoryBadge from '@/components/CategoryBadge';
 import { updateTeaFavorite, type TeaItem } from '@/lib/apiClient';
 
@@ -75,10 +75,19 @@ export default function TeaCard({
 
       <div className="flex-1 min-w-0 flex flex-col gap-3 pointer-events-none">
         <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <p className="flex-1 min-w-0 text-[14px] leading-[20px] font-semibold text-foreground truncate">
+          {/* Название 1–2 строки; рейтинг и сердечко прижаты к первой строке */}
+          <div className="flex items-start gap-2">
+            <p className="flex-1 min-w-0 text-[14px] leading-[20px] font-semibold text-foreground line-clamp-2">
               {item.name}
             </p>
+            {item.avg_rating != null && (
+              <span className="shrink-0 h-5 flex items-center gap-1">
+                <StarIcon size={16} weight="fill" className="text-badge-rating-border" />
+                <span className="text-[12px] leading-[16px] font-medium text-placeholder-tea-icon">
+                  {String(item.avg_rating).replace('.', ',')}
+                </span>
+              </span>
+            )}
             <button
               type="button"
               onClick={toggleFavorite}

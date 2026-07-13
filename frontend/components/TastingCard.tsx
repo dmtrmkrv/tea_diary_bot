@@ -101,7 +101,7 @@ export default function TastingCard({ item, tzOffset = 0 }: { item: TastingItem;
                   <div className="flex items-center gap-1 min-h-[20px] px-2 py-0.5 rounded-full border border-badge-rating-border text-badge-rating-text">
                     <StarIcon size={16} weight="fill" />
                     <span className="text-[12px] font-medium leading-[16px] whitespace-nowrap">
-                      {item.rating}/10
+                      {item.rating}
                     </span>
                   </div>
                 )}

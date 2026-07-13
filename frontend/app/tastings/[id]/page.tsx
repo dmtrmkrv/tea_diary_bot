@@ -190,6 +190,7 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
               amount_g: t.tea_item_amount_g ?? null,
               is_favorite: false,
               tasting_count: 0,
+              avg_rating: null,
               created_at: '',
             }} />
           )}

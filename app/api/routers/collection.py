@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
-from sqlalchemy import select, func
+from sqlalchemy import select, func, case
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 from typing import Optional, List
@@ -34,6 +34,8 @@ class TeaItemOut(BaseModel):
     is_favorite: bool = False
     cover_url: Optional[str] = None
     tasting_count: int = 0
+    # Средний рейтинг записей сорта (как в профиле: rating=0 не учитывается)
+    avg_rating: Optional[float] = None
     created_at: datetime.datetime
     class Config:
         from_attributes = True
@@ -163,18 +165,29 @@ def list_tea(
 
     item_ids = [it.id for it in items]
     counts: dict[int, int] = {}
+    avg_ratings: dict[int, Optional[float]] = {}
     if item_ids:
         rows = db.execute(
-            select(Tasting.tea_item_id, func.count(Tasting.id))
+            select(
+                Tasting.tea_item_id,
+                func.count(Tasting.id),
+                # avg игнорирует NULL — записи без оценки не тянут среднюю вниз
+                func.avg(case((Tasting.rating > 0, Tasting.rating))),
+            )
             .where(Tasting.user_id == user_id, Tasting.tea_item_id.in_(item_ids))
             .group_by(Tasting.tea_item_id)
         ).all()
         counts = {row[0]: row[1] for row in rows}
+        avg_ratings = {
+            row[0]: round(float(row[2]), 1) if row[2] is not None else None
+            for row in rows
+        }
 
     result: List[TeaItemOut] = []
     for item in items:
         out = TeaItemOut.model_validate(item)
         out.tasting_count = counts.get(item.id, 0)
+        out.avg_rating = avg_ratings.get(item.id)
         if item.cover_object_key:
             try:
                 out.cover_url = get_presigned_url(

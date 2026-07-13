@@ -37,6 +37,7 @@ export type TeaItem = {
   is_favorite: boolean;
   cover_url: string | null;
   tasting_count: number;
+  avg_rating: number | null;
   created_at: string;
 };
 

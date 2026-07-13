@@ -171,7 +171,7 @@ export default function FlavorProfileSection({
           <FlavorProfileEmptyIcon />
           <div className="flex flex-col gap-1 text-center">
             <p className="text-[16px] leading-[24px] font-semibold text-text-secondary">
-              Здесь появится профиль сорта
+              Здесь появится вкусовой профиль
             </p>
             <p className="text-[12px] leading-[16px] text-muted-foreground">
               Он собирается из ароматов, вкусов и ощущений в ваших дегустациях.

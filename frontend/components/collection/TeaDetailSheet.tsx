@@ -15,6 +15,7 @@ import { useSheetCoverFade } from '@/hooks/useSheetCoverFade';
 import PaginationButtons from '@/components/PaginationButtons';
 import FlavorProfileSection from '@/components/collection/FlavorProfileSection';
 import { formatTastingDatetime, formatShortDate } from '@/lib/datetime';
+import { ymGoal } from '@/lib/metrika';
 
 const PAGE_SIZE = 4;
 
@@ -55,6 +56,7 @@ export default function TeaDetailSheet({
     setFavState({ itemId, value: next });
     try {
       await updateTeaFavorite(itemId, next);
+      if (next) ymGoal('favorite_added');
       onFavoriteChanged?.();
     } catch {
       setFavState({ itemId, value: !next });

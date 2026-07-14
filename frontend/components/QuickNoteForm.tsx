@@ -36,6 +36,7 @@ import {
 import ConfirmDiscardDialog from '@/components/ConfirmDiscardDialog';
 import { cn } from '@/lib/utils';
 import { AROMA_OPTIONS, EFFECTS_OPTIONS } from '@/lib/constants';
+import { ymGoal } from '@/lib/metrika';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { compressImage } from '@/lib/imageCompression';
 import { AppButton } from '@/components/ui/app-button';
@@ -246,6 +247,7 @@ export default function QuickNoteForm(props: QuickNoteFormProps = {}) {
 
   async function handleCreate() {
     const created = await createTasting({ ...buildPayload(), entry_mode: 'quick' });
+    ymGoal('record_created_quick');
     if (photos.length > 0) {
       try {
         await uploadTastingPhotos(created.id, photos);

@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { LeafIcon, DotsThreeIcon, HeartStraightIcon, StarIcon } from '@phosphor-icons/react';
 import CategoryBadge from '@/components/CategoryBadge';
 import { updateTeaFavorite, type TeaItem } from '@/lib/apiClient';
+import { ymGoal } from '@/lib/metrika';
 
 function pluralizeTastings(n: number): string {
   const mod10 = n % 10;
@@ -38,6 +39,7 @@ export default function TeaCard({
     setFavState({ itemId: item.id, value: next });
     try {
       await updateTeaFavorite(item.id, next);
+      if (next) ymGoal('favorite_added');
       onFavoriteChanged?.();
     } catch {
       setFavState({ itemId: item.id, value: !next });

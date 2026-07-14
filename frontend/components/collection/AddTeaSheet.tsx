@@ -14,6 +14,7 @@ import { Spinner } from '@/components/ui/spinner';
 import ConfirmDiscardDialog from '@/components/ConfirmDiscardDialog';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { ymGoal } from '@/lib/metrika';
 
 // В UI пуэры сокращены до «Шу»/«Шен» (3 колонки без переносов),
 // в БД сохраняются канонические формы — см. CATEGORY_CANONICAL.
@@ -134,6 +135,7 @@ export default function AddTeaSheet({
         region: region.trim() || null,
         amount_g: amount ? Number(amount) : null,
       });
+      ymGoal('tea_added');
       if (photoFile) {
         try {
           await uploadTeaItemPhoto(created.id, photoFile);

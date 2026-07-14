@@ -43,6 +43,7 @@ import {
 } from '@/lib/apiClient';
 import ConfirmDiscardDialog from '@/components/ConfirmDiscardDialog';
 import { AROMA_OPTIONS, EFFECTS_OPTIONS } from '@/lib/constants';
+import { ymGoal } from '@/lib/metrika';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { compressImage } from '@/lib/imageCompression';
 import { AppButton } from '@/components/ui/app-button';
@@ -380,6 +381,7 @@ export default function TastingForm(props: TastingFormProps) {
 
   async function handleCreate() {
     const created = await createTasting({ ...buildPayload(), entry_mode: 'web' });
+    ymGoal('record_created_full');
     if (photos.length > 0) {
       try {
         await uploadTastingPhotos(created.id, photos);

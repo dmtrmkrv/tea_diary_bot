@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ChangeEvent } from 'react';
+import { useEffect, useState, type ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { XIcon, EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
 import { AppButton } from '@/components/ui/app-button';
@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { authForgotPassword, authLogin, authRegister, type AuthError } from '@/lib/apiClient';
 import { FEEDBACK_EMAIL } from '@/lib/constants';
+import { ymGoal } from '@/lib/metrika';
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const MIN_PASSWORD = 8;
@@ -72,6 +73,11 @@ export default function AuthSheet({
 
   const isRegister = mode === 'register';
   const isForgot = view !== 'form';
+
+  // Цель Метрики: открыта форма регистрации (email-путь; OAuth не трекаем)
+  useEffect(() => {
+    if (isRegister) ymGoal('signup_started', { method: 'email' });
+  }, [isRegister]);
   const title = isForgot ? 'Сброс пароля' : isRegister ? 'Регистрация' : 'Вход по почте';
   const submitLabel = isRegister ? 'Зарегистрироваться' : 'Войти';
   const canSubmit = email.trim() !== '' && password !== ''
@@ -123,6 +129,7 @@ export default function AuthSheet({
       // Сессионную куку (HttpOnly) ставит BFF-прокси в ответе — тут только редирект.
       if (isRegister) {
         await authRegister(mail, password, consented);
+        ymGoal('signup_completed', { method: 'email' });
       } else {
         await authLogin(mail, password);
       }

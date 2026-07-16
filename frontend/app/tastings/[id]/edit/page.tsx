@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 
-import { unstable_rethrow } from 'next/navigation';
+import { redirect, unstable_rethrow } from 'next/navigation';
 import { getTasting, getMe } from '@/lib/api';
 import TastingForm, { type TastingFormRecord } from '@/components/TastingForm';
 import QuickNoteForm, { type QuickNoteRecord } from '@/components/QuickNoteForm';
@@ -20,13 +20,18 @@ function effectiveDateStr(createdAt: string | null, tzOffsetMin: number): string
   return `${base.getUTCFullYear()}-${String(base.getUTCMonth() + 1).padStart(2, '0')}-${String(base.getUTCDate()).padStart(2, '0')}`;
 }
 
+export const metadata = { title: 'Редактирование записи' };
+
 export default async function EditTastingPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const tastingId = Number(id);
   const [t, me] = await Promise.all([
-    getTasting(tastingId),
+    getTasting(Number(id)),
     getMe().catch((e) => { unstable_rethrow(e); return null; }) as Promise<{ tz_offset_min: number } | null>,
   ]);
+  // Старая ссылка по глобальному id — на канонический адрес (как на детальной).
+  if (t.seq_no !== Number(id)) redirect(`/tastings/${t.seq_no}/edit`);
+  // В URL — персональный номер, в API-вызовы форм идёт глобальный t.id.
+  const tastingId: number = t.id;
   const tzOffset = me?.tz_offset_min ?? 0;
 
   // Быстрая заметка редактируется своей же формой, а не полной
@@ -47,6 +52,7 @@ export default async function EditTastingPage({ params }: { params: Promise<{ id
       <QuickNoteForm
         mode="edit"
         tastingId={tastingId}
+        tastingSeqNo={t.seq_no}
         initialTeaItemId={t.tea_item_id ?? null}
         initialTeawareId={t.teaware_id ?? null}
         record={quickRecord}
@@ -72,6 +78,7 @@ export default async function EditTastingPage({ params }: { params: Promise<{ id
     <TastingForm
       mode="edit"
       tastingId={tastingId}
+      tastingSeqNo={t.seq_no}
       initialTeaItemId={t.tea_item_id ?? null}
       initialTeawareId={t.teaware_id ?? null}
       initialTastedDate={effectiveDateStr(t.created_at ?? null, tzOffset)}

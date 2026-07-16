@@ -98,6 +98,7 @@ class TeawareListOut(BaseModel):
 
 class TastingShortOut(BaseModel):
     id: int
+    seq_no: int
     name: str
     created_at: datetime.datetime
     cover_url: Optional[str] = None

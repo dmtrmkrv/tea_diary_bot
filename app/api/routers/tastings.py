@@ -371,15 +371,27 @@ def export_tastings_csv(
     )
 
 
-@router.get("/{tasting_id}", response_model=TastingDetail)
+@router.get("/{tasting_no}", response_model=TastingDetail)
 def get_tasting(
-    tasting_id: int,
+    tasting_no: int,
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user_id),
 ):
-    tasting = db.get(Tasting, tasting_id)
-    if not tasting or tasting.user_id != user_id:
+    # В URL — персональный номер записи (seq_no, как #42 в боте и № в CSV).
+    # Фолбэк по старому глобальному id оставлен для ссылок/закладок, сделанных
+    # до перехода: фронт по несовпадению номера редиректит на канонический URL.
+    tasting = db.execute(
+        select(Tasting).where(
+            Tasting.user_id == user_id, Tasting.seq_no == tasting_no
+        )
+    ).scalar_one_or_none()
+    if tasting is None:
+        legacy = db.get(Tasting, tasting_no)
+        if legacy is not None and legacy.user_id == user_id:
+            tasting = legacy
+    if not tasting:
         raise HTTPException(status_code=404, detail="Не найдено")
+    tasting_id = tasting.id
 
     infusions = db.execute(
         select(Infusion)

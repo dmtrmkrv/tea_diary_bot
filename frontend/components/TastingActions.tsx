@@ -7,7 +7,8 @@ import { DotsThreeOutlineIcon } from '@phosphor-icons/react';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
 import { deleteTasting } from '@/lib/apiClient';
 
-export default function TastingActions({ tastingId }: { tastingId: number }) {
+// tastingId — глобальный id для API-вызовов; seqNo — персональный номер для URL.
+export default function TastingActions({ tastingId, seqNo }: { tastingId: number; seqNo: number }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -49,7 +50,7 @@ export default function TastingActions({ tastingId }: { tastingId: number }) {
         <div className="absolute right-0 top-10 bg-popover rounded-lg shadow-lg z-50 overflow-hidden min-w-[160px]">
           <button
             className="w-full text-left px-4 py-3 text-[14px] text-foreground hover:bg-surface-sunken transition-colors border-b border-border-default"
-            onClick={() => { setOpen(false); router.push(`/tastings/${tastingId}/edit`); }}
+            onClick={() => { setOpen(false); router.push(`/tastings/${seqNo}/edit`); }}
           >
             Редактировать
           </button>

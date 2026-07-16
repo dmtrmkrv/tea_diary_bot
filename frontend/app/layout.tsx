@@ -20,7 +20,9 @@ export const metadata: Metadata = {
   // База для абсолютных URL в метаданных (og:image и т.п.).
   // NEXT_PUBLIC_SITE_URL можно задать на стейдже, дефолт — прод-домен.
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://leafpulse.ru"),
-  title: "Чайный дневник",
+  // Шаблон: дочерние страницы задают только своё имя («Коллекция» и т.п.),
+  // суффикс приклеивается сам; страницы без своего title получают default.
+  title: { template: "%s — Чайный дневник", default: "Чайный дневник" },
   description: "Записи чайных дегустаций",
 };
 

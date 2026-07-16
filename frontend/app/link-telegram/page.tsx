@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { parseTelegramAuth } from '@/lib/telegramAuth';
+import { parseTelegramAuth, verifyTelegramState } from '@/lib/telegramAuth';
 import { authClaim, type AuthError } from '@/lib/apiClient';
 
 // Callback переноса записей из бота. Сюда Telegram возвращает подписанные
@@ -22,8 +22,11 @@ export default function LinkTelegramPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Метка state должна совпасть с сохранённой перед редиректом — иначе
+    // перенос начинали не мы (login-CSRF), данные не отправляем.
+    const stateOk = verifyTelegramState();
     const user = parseTelegramAuth();
-    if (!user) {
+    if (!user || !stateOk) {
       setError('Не получилось получить данные от Telegram. Попробуйте ещё раз.');
       return;
     }

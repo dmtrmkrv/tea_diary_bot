@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { parseTelegramAuth } from '@/lib/telegramAuth';
+import { parseTelegramAuth, verifyTelegramState } from '@/lib/telegramAuth';
 import { authTelegramReauth, type AuthError } from '@/lib/apiClient';
 
 // Callback повторного подтверждения через Telegram (перед удалением аккаунта).
@@ -16,8 +16,11 @@ export default function ReauthTelegramPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Метка state должна совпасть с сохранённой перед редиректом — иначе
+    // подтверждение начинали не мы (login-CSRF), данные не отправляем.
+    const stateOk = verifyTelegramState();
     const user = parseTelegramAuth();
-    if (!user) {
+    if (!user || !stateOk) {
       setError('Не получилось получить данные от Telegram. Попробуйте ещё раз.');
       return;
     }

@@ -1,6 +1,6 @@
 'use client';
 
-import type { TelegramUser } from './telegramAuth';
+import { saveTelegramState, type TelegramUser } from './telegramAuth';
 
 // Все запросы идут через BFF-прокси на своём домене (app/api/[...path]/route.ts):
 // сессия — в HttpOnly-куке, браузер шлёт её сам, токен в JS не попадает.
@@ -412,7 +412,9 @@ export async function startTelegramClaim(): Promise<void> {
     cache: 'no-store',
   });
   if (!res.ok) throw new Error('claim-url');
-  const { url } = await res.json();
+  const { url, state } = await res.json();
+  // Сохраняем метку — на возврате /link-telegram сверит её (CSRF-защита).
+  if (state) saveTelegramState(state);
   window.location.href = url;
 }
 
@@ -444,6 +446,7 @@ export async function startTelegramReauth(): Promise<void> {
     cache: 'no-store',
   });
   if (!res.ok) throw new Error('reauth-url');
-  const { url } = await res.json();
+  const { url, state } = await res.json();
+  if (state) saveTelegramState(state);
   window.location.href = url;
 }

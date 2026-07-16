@@ -118,7 +118,9 @@ def telegram_auth(request: Request, data: TelegramAuthData):
         if user is not None:
             if data.first_name:
                 user.first_name = data.first_name[:64]
-            if data.photo_url:
+            # Аватарка потом отдаётся фронту как ссылка — храним только https
+            # разумной длины, всё прочее (javascript:, data: и т.п.) молча пропускаем.
+            if data.photo_url and data.photo_url.startswith("https://") and len(data.photo_url) <= 512:
                 user.photo_url = data.photo_url
             if data.tz_offset_min is not None:
                 user.tz_offset_min = data.tz_offset_min

@@ -141,6 +141,20 @@ def create_yandex_user(
         return user
 
 
+def _use_row_locks(session) -> bool:
+    """Row-locks (SELECT … FOR UPDATE) поддерживает только PostgreSQL;
+    на локальном SQLite работаем без них, как раньше."""
+    return session.bind is not None and session.bind.dialect.name == "postgresql"
+
+
+def _get_user_locked(session, user_id: int) -> Optional[User]:
+    """Строка юзера под row-lock, чтобы параллельные слияние/привязка/удаление
+    одного аккаунта не накладывались друг на друга."""
+    if _use_row_locks(session):
+        return session.get(User, user_id, with_for_update=True)
+    return session.get(User, user_id)
+
+
 class AuthConflict(Exception):
     """Бизнес-конфликт при привязке/слиянии аккаунтов (роутер мапит в HTTP)."""
 
@@ -170,7 +184,7 @@ def link_email_login(
             ).first()
             if taken is not None:
                 raise AuthConflict("email_taken", "Этот email уже зарегистрирован")
-            user = session.get(User, user_id)
+            user = _get_user_locked(session, user_id)
             if user is None:
                 raise AuthConflict("account_not_found", "Аккаунт не найден")
             if user.email is not None and user.email != norm:
@@ -223,20 +237,17 @@ def claim_telegram(current_user_id: int, telegram_id: int) -> User:
     """
     with SessionLocal() as session:
         with session.begin():
-            telegram_user = (
-                session.execute(
-                    select(User).where(
-                        (User.id == telegram_id) | (User.telegram_id == telegram_id)
-                    )
-                )
-                .scalars()
-                .first()
+            telegram_stmt = select(User).where(
+                (User.id == telegram_id) | (User.telegram_id == telegram_id)
             )
+            if _use_row_locks(session):
+                telegram_stmt = telegram_stmt.with_for_update()
+            telegram_user = session.execute(telegram_stmt).scalars().first()
             if telegram_user is None:
                 raise AuthConflict(
                     "no_bot_records", "Не нашли записей бота для этого Telegram"
                 )
-            current = session.get(User, current_user_id)
+            current = _get_user_locked(session, current_user_id)
             if current is None:
                 raise AuthConflict("account_not_found", "Аккаунт не найден")
             if telegram_user.id == current.id:
@@ -287,7 +298,7 @@ def delete_user(user_id: int) -> None:
     коллекцию. Файлы (фото, обложки) удаляем явно — каскад их не трогает.
     """
     with SessionLocal() as session:
-        user = session.get(User, user_id)
+        user = _get_user_locked(session, user_id)
         if user is None:
             return
         # Ключи собираем ДО удаления — после каскада строк уже не будет.

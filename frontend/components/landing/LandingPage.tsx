@@ -6,6 +6,7 @@
 import Link from 'next/link';
 import { Source_Serif_4 } from 'next/font/google';
 import { FEEDBACK_EMAIL } from '@/lib/constants';
+import LandingAnchor from '@/components/landing/LandingAnchor';
 import LandingCtaLink from '@/components/landing/LandingCtaLink';
 import LandingScrollGoals from '@/components/landing/LandingScrollGoals';
 import {
@@ -60,9 +61,9 @@ function Hero() {
         <div className="mx-auto flex h-[60px] max-w-[736px] items-center justify-between rounded-full border border-[#d6d3d1] bg-white/40 pl-5 pr-4 shadow-[0px_4px_15px_-5px_rgba(0,0,0,0.15)] backdrop-blur-md md:h-14 md:pl-6 xl:max-w-[917px]">
           <LandingLogo className="h-8 w-auto text-[#1c1917]" />
           <nav className="hidden items-center gap-10 text-[12px] font-medium text-[#1c1917] md:flex">
-            <a href="#features" className="transition-opacity hover:opacity-70">Функционал</a>
-            <a href="#more" className="transition-opacity hover:opacity-70">Возможности</a>
-            <a href="#cta" className="transition-opacity hover:opacity-70">Создать</a>
+            <LandingAnchor href="#features" className="transition-opacity hover:opacity-70">Функционал</LandingAnchor>
+            <LandingAnchor href="#more" className="transition-opacity hover:opacity-70">Возможности</LandingAnchor>
+            <LandingAnchor href="#cta" className="transition-opacity hover:opacity-70">Создать</LandingAnchor>
           </nav>
           <LandingCtaLink href="/login" button="header_login" className={`${PRIMARY_BTN} min-h-[32px] px-4 text-[14px]`}>
             Войти
@@ -93,12 +94,12 @@ function Hero() {
           >
             Начать бесплатно
           </LandingCtaLink>
-          <a
+          <LandingAnchor
             href="#features"
             className="flex min-h-10 flex-1 items-center justify-center whitespace-nowrap rounded-full border border-[#f5f5f4] px-6 text-[14px] font-medium text-[#fafaf9] transition-colors hover:bg-white/10"
           >
             Узнать больше
-          </a>
+          </LandingAnchor>
         </div>
       </div>
     </section>

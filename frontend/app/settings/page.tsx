@@ -88,8 +88,8 @@ function SettingsContent() {
   }
 
   const serviceRows: Row[] = [
-    { key: 'report', label: 'Сообщить об ошибке', onClick: () => {
-      window.location.href = `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent('LeafPulse: сообщение об ошибке')}`;
+    { key: 'report', label: 'Сообщить об ошибке/Оставить отзыв', onClick: () => {
+      window.location.href = `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent('LeafPulse: обратная связь')}`;
     } },
     { key: 'privacy', label: 'Политика конфиденциальности', onClick: () => router.push('/privacy') },
   ];

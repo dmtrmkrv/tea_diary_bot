@@ -118,7 +118,9 @@ def telegram_auth(request: Request, data: TelegramAuthData):
         if user is not None:
             if data.first_name:
                 user.first_name = data.first_name[:64]
-            if data.photo_url:
+            # Аватарка потом отдаётся фронту как ссылка — храним только https
+            # разумной длины, всё прочее (javascript:, data: и т.п.) молча пропускаем.
+            if data.photo_url and data.photo_url.startswith("https://") and len(data.photo_url) <= 512:
                 user.photo_url = data.photo_url
             if data.tz_offset_min is not None:
                 user.tz_offset_min = data.tz_offset_min
@@ -141,17 +143,24 @@ def telegram_login_url(return_to: str = "/login"):
 
     return_to — только относительный путь на нашем домене (защита от
     open-redirect): должен начинаться с одиночного «/».
+
+    state — случайная метка против login-CSRF (как у Яндекса): фронт сохраняет
+    её перед редиректом, Telegram возвращает в составе return_to, страница
+    возврата сверяет. У oauth.telegram.org нет родного параметра state, поэтому
+    метка едет прямо в query возвратного URL.
     """
     if not return_to.startswith("/") or return_to.startswith("//"):
         return_to = "/login"
+    state = secrets.token_urlsafe(32)
+    sep = "&" if "?" in return_to else "?"
     bot_id = BOT_TOKEN.split(":", 1)[0] if BOT_TOKEN else ""
     params = {
         "bot_id": bot_id,
         "origin": WEB_URL,
         "request_access": "write",
-        "return_to": f"{WEB_URL}{return_to}",
+        "return_to": f"{WEB_URL}{return_to}{sep}state={state}",
     }
-    return {"url": "https://oauth.telegram.org/auth?" + urlencode(params)}
+    return {"url": "https://oauth.telegram.org/auth?" + urlencode(params), "state": state}
 
 
 def generate_login_code(telegram_id: int) -> str:

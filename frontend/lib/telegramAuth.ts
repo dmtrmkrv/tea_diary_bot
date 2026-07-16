@@ -11,6 +11,23 @@ export interface TelegramUser {
   hash: string;
 }
 
+// Ключ sessionStorage для метки state (CSRF-защита, по аналогии с Яндексом).
+const STATE_KEY = 'tg_oauth_state';
+
+export function saveTelegramState(state: string) {
+  sessionStorage.setItem(STATE_KEY, state);
+}
+
+// Сверяем ?state= из возвратного URL с сохранённой меткой. Метка одноразовая:
+// удаляем её при любом исходе, чтобы повторный визит по ссылке не прошёл.
+export function verifyTelegramState(): boolean {
+  if (typeof window === 'undefined') return false;
+  const expected = sessionStorage.getItem(STATE_KEY);
+  sessionStorage.removeItem(STATE_KEY);
+  const got = new URLSearchParams(window.location.search).get('state');
+  return Boolean(expected && got && expected === got);
+}
+
 // Данные могут вернуться либо в hash (#tgAuthResult=base64url(json)),
 // либо в query (?id=&hash=…). Поддерживаем оба варианта.
 export function parseTelegramAuth(): TelegramUser | null {

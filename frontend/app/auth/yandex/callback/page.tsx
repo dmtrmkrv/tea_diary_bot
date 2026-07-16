@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authYandex, authYandexReauth, type AuthError } from '@/lib/apiClient';
+import { ymGoal } from '@/lib/metrika';
 
 // Callback Яндекс-OAuth. Два режима (метка yandex_oauth_mode в sessionStorage):
 // вход (по умолчанию) — code меняется на сессию, и повторное подтверждение
@@ -39,7 +40,12 @@ export default function YandexCallbackPage() {
     // Убираем code из URL, чтобы не остался в истории.
     window.history.replaceState(null, '', window.location.pathname);
     (isReauth ? authYandexReauth(code) : authYandex(code))
-      .then(() => {
+      .then((res) => {
+        // Впервые созданный аккаунт → цель «регистрация» (у email-пути она
+        // уходит из AuthSheet; для Яндекса факт создания знает только бэкенд).
+        if (!isReauth && (res as { created?: boolean }).created) {
+          ymGoal('signup_completed', { method: 'yandex' });
+        }
         router.replace(isReauth ? '/settings?reauth=ok' : '/');
       })
       .catch((e: AuthError) => {

@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { redirect } from 'next/navigation';
 
 const API_URL = process.env.API_URL || 'https://dmtrmkrv-tea-diary-bot-03bd.twc1.net';
@@ -48,9 +49,12 @@ export async function getTeawareList() {
   return apiFetch('/collection/teaware?limit=100&offset=0');
 }
 
-export async function getTasting(id: number) {
-  return apiFetch(`/tastings/${id}`);
-}
+// В URL — персональный номер записи (seq_no); бэкенд сам делает фолбэк по
+// старому глобальному id. cache() — чтобы generateMetadata и страница
+// делили один запрос за рендер.
+export const getTasting = cache(async (no: number) => {
+  return apiFetch(`/tastings/${no}`);
+});
 
 export async function getMe() {
   return apiFetch('/users/me');

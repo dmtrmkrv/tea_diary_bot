@@ -19,12 +19,14 @@ const PAGE_SIZE = 10;
 // залогиненным — ленту. Метаданные тоже ветвятся: у лендинга свои title/description.
 export async function generateMetadata(): Promise<Metadata> {
   const hasToken = (await cookies()).has('token');
-  if (hasToken) return { title: 'Чайный дневник', description: 'Записи чайных дегустаций' };
+  // absolute — обойти шаблон «%s — Чайный дневник» из корневого layout:
+  // у ленты и лендинга полный title свой, без суффикса.
+  if (hasToken) return { title: { absolute: 'Чайный дневник' }, description: 'Записи чайных дегустаций' };
   const title = 'LeafPulse — личный чайный дневник';
   const description =
     'Записывайте дегустации, ведите коллекцию чая и посуды, отслеживайте любимые вкусы. Всё в одном месте.';
   return {
-    title,
+    title: { absolute: title },
     description,
     // OG/Twitter — превью ссылки в Telegram и соцсетях (абсолютные URL
     // собираются из metadataBase в app/layout.tsx)

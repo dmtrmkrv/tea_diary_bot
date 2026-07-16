@@ -71,7 +71,8 @@ export type QuickNoteRecord = {
 
 type QuickNoteFormProps = {
   mode?: 'create' | 'edit';
-  tastingId?: number;
+  tastingId?: number;      // глобальный id — для API-вызовов
+  tastingSeqNo?: number;   // персональный номер — для URL-переходов
   initialTeaItemId?: number | null;
   initialTeawareId?: number | null;
   record?: QuickNoteRecord;
@@ -94,9 +95,9 @@ function serializeQuickForm(v: {
 }
 
 export default function QuickNoteForm(props: QuickNoteFormProps = {}) {
-  const { mode = 'create', tastingId, initialTeaItemId, initialTeawareId, record } = props;
+  const { mode = 'create', tastingId, tastingSeqNo, initialTeaItemId, initialTeawareId, record } = props;
   const router = useRouter();
-  const backHref = mode === 'edit' && tastingId ? `/tastings/${tastingId}` : '/';
+  const backHref = mode === 'edit' && tastingSeqNo ? `/tastings/${tastingSeqNo}` : '/';
 
   const [name, setName] = useState(record?.name ?? '');
   const [teaItem, setTeaItem] = useState<TeaItem | null>(null);
@@ -256,7 +257,7 @@ export default function QuickNoteForm(props: QuickNoteFormProps = {}) {
         toast.error(err.code ? `Заметка сохранена, но фото не загрузилось: ${err.message}` : 'Заметка сохранена, но фото не загрузились');
       }
     }
-    router.push(`/tastings/${created.id}`);
+    router.push(`/tastings/${created.seq_no}`);
   }
 
   async function handleEdit() {
@@ -278,7 +279,7 @@ export default function QuickNoteForm(props: QuickNoteFormProps = {}) {
       }
     }
     initialSnapshot.current = currentSnapshot;
-    router.push(`/tastings/${tastingId}`);
+    router.push(`/tastings/${tastingSeqNo ?? tastingId}`);
     router.refresh();
   }
 

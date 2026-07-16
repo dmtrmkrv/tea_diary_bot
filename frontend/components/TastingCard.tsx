@@ -77,7 +77,7 @@ export default function TastingCard({ item, tzOffset = 0 }: { item: TastingItem;
   const hasTeaItem = item.tea_item_id != null;
 
   return (
-    <Link href={`/tastings/${item.id}`}>
+    <Link href={`/tastings/${item.seq_no}`}>
       <article className="bg-card rounded-2xl overflow-hidden shadow-lg">
         {item.cover_url && (
           <div className="relative aspect-[2/1] w-full">

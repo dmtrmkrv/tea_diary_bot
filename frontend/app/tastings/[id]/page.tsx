@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
 
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import {
   ArrowLeftIcon,
@@ -15,7 +16,7 @@ import {
   LightningIcon,
   CompassIcon,
 } from '@phosphor-icons/react/dist/ssr';
-import { unstable_rethrow } from 'next/navigation';
+import { redirect, unstable_rethrow } from 'next/navigation';
 import { getTasting, getMe } from '@/lib/api';
 import CategoryBadge from '@/components/CategoryBadge';
 import NotesSection from '@/components/NotesSection';
@@ -78,12 +79,27 @@ function DataRow({
   );
 }
 
+// Title вкладки — название чая (getTasting под React cache: страница и
+// метаданные делят один запрос). Ошибки глотаем — их обработает сама страница.
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  try {
+    const t = await getTasting(Number(id));
+    return { title: t.name };
+  } catch {
+    return {};
+  }
+}
+
 export default async function TastingPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const [t, me] = await Promise.all([
     getTasting(Number(id)),
     getMe().catch((e) => { unstable_rethrow(e); return null; }) as Promise<{ tz_offset_min: number } | null>,
   ]);
+  // Запись нашлась по старому глобальному id (ссылка/закладка до перехода на
+  // персональные номера) — уводим на канонический адрес.
+  if (t.seq_no !== Number(id)) redirect(`/tastings/${t.seq_no}`);
   const tzOffset = me?.tz_offset_min ?? 0;
 
   const datetime = formatTastingDatetime(t.created_at ?? null, tzOffset);
@@ -98,6 +114,7 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
         <div className="max-w-2xl mx-auto sm:px-4">
           <TastingHero
             id={t.id}
+            seqNo={t.seq_no}
             photos={t.photo_urls}
             name={t.name}
             datetime={datetime}
@@ -120,7 +137,7 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
             >
               <ArrowLeftIcon size={16} />
             </Link>
-            <TastingActions tastingId={t.id} />
+            <TastingActions tastingId={t.id} seqNo={t.seq_no} />
           </div>
 
           {/* Title group */}

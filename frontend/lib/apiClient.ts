@@ -45,6 +45,7 @@ export type TeaItemList = { items: TeaItem[]; total: number };
 
 export type TastingShort = {
   id: number;
+  seq_no: number;
   name: string;
   created_at: string;
   cover_url?: string | null;
@@ -219,7 +220,7 @@ export type TastingCreateInput = {
   infusions?: InfusionInput[];
 };
 
-export type TastingCreatedOut = { id: number };
+export type TastingCreatedOut = { id: number; seq_no: number };
 
 export function createTasting(data: TastingCreateInput) {
   return apiCall<TastingCreatedOut & Record<string, unknown>>('/tastings', {

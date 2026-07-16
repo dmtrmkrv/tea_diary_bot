@@ -234,7 +234,7 @@ export default function TeawareItemSheet({
                 {tastings.map((t) => (
                   <Link
                     key={t.id}
-                    href={`/tastings/${t.id}`}
+                    href={`/tastings/${t.seq_no}`}
                     onClick={onClose}
                     className="py-2.5 flex items-center gap-3"
                   >

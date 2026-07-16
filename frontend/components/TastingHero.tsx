@@ -15,7 +15,8 @@ import TastingActions from '@/components/TastingActions';
 import FullscreenGallery from '@/components/FullscreenGallery';
 
 type Props = {
-  id: number;
+  id: number;      // глобальный id — для API-вызовов (удаление)
+  seqNo: number;   // персональный номер — для URL (переход в edit)
   photos: string[];
   name: string;
   datetime: string | null;
@@ -32,7 +33,7 @@ type Props = {
 // legacy-бейджи (on-image) и контролы фото-карусели.
 // Тап по фото → fullscreen-галерея. Фикс-высота ~400px. Макет Figma 196:5527.
 export default function TastingHero({
-  id, photos, name, datetime, rating, isQuick, category, year, region,
+  id, seqNo, photos, name, datetime, rating, isQuick, category, year, region,
 }: Props) {
   const [current, setCurrent] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -100,7 +101,7 @@ export default function TastingHero({
           >
             <ArrowLeftIcon size={16} />
           </Link>
-          <TastingActions tastingId={id} />
+          <TastingActions tastingId={id} seqNo={seqNo} />
         </div>
 
         {/* Нижний блок: дата/рейтинг, заголовок, бейджи, контролы (клик не открывает fullscreen) */}

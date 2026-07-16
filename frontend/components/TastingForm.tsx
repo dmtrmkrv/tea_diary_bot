@@ -116,7 +116,8 @@ export type TastingFormRecord = {
 
 type TastingFormProps = {
   mode: 'create' | 'edit';
-  tastingId?: number;
+  tastingId?: number;      // глобальный id — для API-вызовов
+  tastingSeqNo?: number;   // персональный номер — для URL-переходов
   initialTeaItemId?: number | null;
   initialTeawareId?: number | null;
   initialTastedDate?: string;   // YYYY-MM-DD (режим edit; считается с учётом TZ юзера)
@@ -185,9 +186,9 @@ function serializeForm(v: {
 }
 
 export default function TastingForm(props: TastingFormProps) {
-  const { mode, tastingId, initialTeaItemId, initialTeawareId, record } = props;
+  const { mode, tastingId, tastingSeqNo, initialTeaItemId, initialTeawareId, record } = props;
   const router = useRouter();
-  const backHref = mode === 'edit' && tastingId ? `/tastings/${tastingId}` : '/';
+  const backHref = mode === 'edit' && tastingSeqNo ? `/tastings/${tastingSeqNo}` : '/';
 
   const [name, setName] = useState(record?.name ?? '');
   const [tastedDate, setTastedDate] = useState(() => props.initialTastedDate ?? todayStr());
@@ -390,7 +391,7 @@ export default function TastingForm(props: TastingFormProps) {
         toast.error(err.code ? `Дегустация сохранена, но фото не загрузилось: ${err.message}` : 'Дегустация сохранена, но фото не загрузились');
       }
     }
-    router.push(`/tastings/${created.id}`);
+    router.push(`/tastings/${created.seq_no}`);
   }
 
   async function handleEdit() {
@@ -412,7 +413,7 @@ export default function TastingForm(props: TastingFormProps) {
       }
     }
     initialSnapshot.current = currentSnapshot;
-    router.push(`/tastings/${tastingId}`);
+    router.push(`/tastings/${tastingSeqNo ?? tastingId}`);
     router.refresh();
   }
 

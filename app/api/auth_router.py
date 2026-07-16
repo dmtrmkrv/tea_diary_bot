@@ -402,17 +402,20 @@ def yandex_auth(request: Request, data: YandexCodeData):
     email = info.get("default_email") or (info.get("emails") or [None])[0]
     name = info.get("display_name") or info.get("first_name")
 
+    created = False
     user = find_user_by_yandex_id(yandex_id)
     if user is None:
         try:
             user = create_yandex_user(yandex_id, email, name)
+            created = True
         except IntegrityError:
             # Гонка по yandex_id — кто-то успел создать; берём существующего.
             user = find_user_by_yandex_id(yandex_id)
             if user is None:
                 raise HTTPException(status_code=502, detail={"code": "yandex_failed", "message": "Не удалось войти через Яндекс"})
     token = create_jwt_token(user.id, user.username, user.token_version)
-    return {"access_token": token, "token_type": "bearer"}
+    # created — фронту для цели Метрики «регистрация» (BFF пробрасывает поле).
+    return {"access_token": token, "token_type": "bearer", "created": created}
 
 
 # --- Смена пароля (из настроек) ---

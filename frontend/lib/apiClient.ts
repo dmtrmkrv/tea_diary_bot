@@ -353,7 +353,8 @@ export function authLogin(email: string, password: string) {
 
 // Вход через Яндекс: обмен кода (от callback) на сессию. Токена ещё нет.
 export function authYandex(code: string) {
-  return authCall('/auth/yandex', { code });
+  // created — бэкенд сообщает, что аккаунт создан впервые (цель Метрики).
+  return authCall('/auth/yandex', { code }) as Promise<{ ok: boolean; created?: boolean }>;
 }
 
 // Сброс пароля: запрос ссылки на почту (ответ всегда ok — существование

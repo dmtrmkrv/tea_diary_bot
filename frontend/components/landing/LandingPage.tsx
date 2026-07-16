@@ -6,6 +6,8 @@
 import Link from 'next/link';
 import { Source_Serif_4 } from 'next/font/google';
 import { FEEDBACK_EMAIL } from '@/lib/constants';
+import LandingCtaLink from '@/components/landing/LandingCtaLink';
+import LandingScrollGoals from '@/components/landing/LandingScrollGoals';
 import {
   BrowsersIcon,
   ChartPieIcon,
@@ -26,6 +28,7 @@ const PRIMARY_BTN =
 export default function LandingPage() {
   return (
     <div data-landing className={`${serif.variable} overflow-hidden bg-[#e7e5e4]`}>
+      <LandingScrollGoals />
       <Hero />
       <Features />
       <MoreFeatures />
@@ -61,9 +64,9 @@ function Hero() {
             <a href="#more" className="transition-opacity hover:opacity-70">Возможности</a>
             <a href="#cta" className="transition-opacity hover:opacity-70">Создать</a>
           </nav>
-          <Link href="/login" className={`${PRIMARY_BTN} min-h-[32px] px-4 text-[14px]`}>
+          <LandingCtaLink href="/login" button="header_login" className={`${PRIMARY_BTN} min-h-[32px] px-4 text-[14px]`}>
             Войти
-          </Link>
+          </LandingCtaLink>
         </div>
       </div>
 
@@ -83,12 +86,13 @@ function Hero() {
         </div>
         {/* Мобилка: обе кнопки равной ширины (flex-1); с планшета — контейнер 402px */}
         <div className="flex w-full justify-center gap-3 md:w-[402px]">
-          <Link
+          <LandingCtaLink
             href="/login?tab=register"
+            button="hero_start"
             className={`${PRIMARY_BTN} min-h-10 flex-1 whitespace-nowrap px-6 text-[14px] md:w-[196px] md:flex-none`}
           >
             Начать бесплатно
-          </Link>
+          </LandingCtaLink>
           <a
             href="#features"
             className="flex min-h-10 flex-1 items-center justify-center whitespace-nowrap rounded-full border border-[#f5f5f4] px-6 text-[14px] font-medium text-[#fafaf9] transition-colors hover:bg-white/10"
@@ -357,14 +361,14 @@ function Cta() {
           </h2>
         </div>
         <div className="flex w-[280px] flex-col items-center gap-6">
-          <Link href="/login?tab=register" className={`${PRIMARY_BTN} min-h-12 w-full px-8 text-[16px]`}>
+          <LandingCtaLink href="/login?tab=register" button="bottom_register" className={`${PRIMARY_BTN} min-h-12 w-full px-8 text-[16px]`}>
             Зарегистрироваться
-          </Link>
+          </LandingCtaLink>
           <p className="text-[14px] leading-5 text-[#fafaf9]">
             Уже есть аккаунт?{' '}
-            <Link href="/login" className="text-[#d97706] underline-offset-2 hover:underline">
+            <LandingCtaLink href="/login" button="bottom_login" className="text-[#d97706] underline-offset-2 hover:underline">
               Войти
-            </Link>
+            </LandingCtaLink>
           </p>
         </div>
       </div>

@@ -21,6 +21,7 @@ import {
   type Teaware,
   type TastingShort,
 } from '@/lib/apiClient';
+import CategoryBadge from '@/components/CategoryBadge';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteDialog';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { useSheetCoverFade } from '@/hooks/useSheetCoverFade';
@@ -114,6 +115,8 @@ export default function TeawareItemSheet({
 
   const tags = [item.region, item.material, item.volume_ml != null ? `${item.volume_ml} мл` : null]
     .filter(Boolean) as string[];
+  // «Подходит для чая» — CSV из формы посуды (только предопределённые категории)
+  const suitable = (item.suitable_csv ?? '').split(',').map((s) => s.trim()).filter(Boolean);
 
   async function handleDelete() {
     if (!item) return;
@@ -210,16 +213,31 @@ export default function TeawareItemSheet({
           )}
           </div>
 
-          {/* Заметка по посуде (макет 116:5503) */}
-          {item.notes && item.notes.trim() && (
+          {/* Заметка + «Подходит для чая» (макет 478:8839) */}
+          {((item.notes && item.notes.trim()) || suitable.length > 0) && (
             <div className="flex flex-col gap-2 w-full">
               <div className="h-px bg-border-default" />
-              <NotesSection text={item.notes} limit={87} />
-              <div className="h-px bg-border-default" />
+              {item.notes && item.notes.trim() && (
+                <>
+                  <NotesSection text={item.notes} limit={87} />
+                  <div className="h-px bg-border-default" />
+                </>
+              )}
+              {suitable.length > 0 && (
+                <div className="flex flex-col gap-2.5">
+                  <p className="text-[14px] leading-[20px] font-medium text-foreground">Подходит для чая:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {suitable.map((c) => (
+                      <CategoryBadge key={c} category={c} />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
-          <div className="flex items-center gap-2">
+          {/* mt-1: до секции дегустаций в макете 20px (gap-4 родителя + 4) */}
+          <div className="flex items-center gap-2 mt-1">
             <h3 className="text-[16px] font-medium text-foreground">Дегустации</h3>
             <span className="bg-surface-sunken-strong rounded-full px-2 h-4 flex items-center text-[12px] font-semibold text-foreground">
               {total}

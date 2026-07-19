@@ -221,7 +221,7 @@ export default async function TastingPage({ params }: { params: Promise<{ id: st
               volume_ml: t.teaware_volume_ml ?? null,
               material: t.teaware_material ?? null,
               region: t.teaware_region ?? null,
-              suitable_csv: null,
+              suitable_csv: t.teaware_suitable_csv ?? null,
               notes: t.teaware_notes ?? null,
               cover_url: t.teaware_cover_url ?? null,
               tasting_count: 0,

@@ -91,6 +91,9 @@ class TastingDetail(TastingOut):
     # показывают их наравне со шторками из коллекции.
     tea_item_notes: Optional[str] = None
     teaware_notes: Optional[str] = None
+    # «Подходит для чая» посуды: шторка, открытая с детальной, показывает
+    # те же теги, что и шторка из коллекции.
+    teaware_suitable_csv: Optional[str] = None
 
 
 class TastingListOut(BaseModel):
@@ -447,6 +450,7 @@ def get_tasting(
             result.teaware_material = teaware.material
             result.teaware_region = teaware.region
             result.teaware_notes = teaware.notes
+            result.teaware_suitable_csv = teaware.suitable_csv
             if teaware.cover_object_key:
                 try:
                     result.teaware_cover_url = get_presigned_url(

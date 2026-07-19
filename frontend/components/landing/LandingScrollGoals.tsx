@@ -10,6 +10,10 @@ const SECTIONS = ['features', 'cta'];
 
 export default function LandingScrollGoals() {
   useEffect(() => {
+    // Факт показа лендинга: по URL его не отличить от ленты (обе на «/»),
+    // а код точно знает, что отрендерил. Цель «Просмотр лендинга» + честный
+    // первый шаг воронки в Метрике.
+    ymGoal('landing_view');
     const seen = new Set<string>();
     const observer = new IntersectionObserver(
       (entries) => {

@@ -236,8 +236,9 @@ export default function TeawareItemSheet({
             </div>
           )}
 
-          {/* mt-1: до секции дегустаций в макете 20px (gap-4 родителя + 4) */}
-          <div className="flex items-center gap-2 mt-1">
+          {/* Отступы секции по макету 479:9159: сверху 20px (gap-4 + mt-1),
+              до списка 12px (gap-4 − mb-1) */}
+          <div className="flex items-center gap-2 mt-1 -mb-1">
             <h3 className="text-[16px] font-medium text-foreground">Дегустации</h3>
             <span className="bg-surface-sunken-strong rounded-full px-2 h-4 flex items-center text-[12px] font-semibold text-foreground">
               {total}
